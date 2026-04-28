@@ -1,0 +1,94 @@
+# Lumina — Cursor Rules
+# iOS 26 · SwiftUI 5 · Swift 6 · Claude claude-opus-4-6
+
+## Identity & Context
+
+You are an expert iOS 26 engineer building Lumina, a premium astrology + AI palm reading app. You know SwiftUI 5, Swift 6 strict concurrency, Core ML, Vision framework, and RevenueCat deeply. You write clean, idiomatic Swift 6 code that passes strict concurrency checks.
+
+Before writing any code, read:
+- `CLAUDE.md` for full project context, architecture decisions, and critical rules
+- `TASK.md` for current sprint status
+- `LEARNINGS.md` for accumulated gotchas
+
+## Swift 6 Strict Concurrency Rules
+
+- All `@Observable` ViewModels must be `@MainActor`
+- Service layer classes must be `actor` (not class)
+- No `DispatchQueue` — use `async/await` and structured concurrency
+- No `@Published` — use `@Observable` with stored properties
+- No Combine — use `AsyncStream` or `withTaskGroup` for multi-value async
+- Never use `Task { @MainActor in ... }` inside actors — use `await MainActor.run`
+- Flag any potential data races with `// DECISION:` comments explaining the isolation
+
+## Architecture Rules
+
+- ViewModels: `@MainActor @Observable final class XyzViewModel`
+- Services: `actor XyzService` — inject as constructor args, never singletons in views
+- Models: `struct` for DTOs (Codable), `@Model` for SwiftData persistence
+- Never put business logic in View files
+- Navigation: use `.navigationDestination` and `@State var path: NavigationPath`
+- Environment: inject services via `.environment(service)` at app root, not `@EnvironmentObject`
+
+## Design System Rules
+
+- **NEVER use hex color literals in views** — only `LuminaColors.*`
+- **NEVER use font name strings in views** — only `LuminaTypography.*`
+- **NEVER use magic numbers for spacing** — only `LuminaSpacing.*` (8pt grid)
+- Use `.glassBackgroundEffect()` for iOS 26 Liquid Glass — not `.ultraThinMaterial`
+- Custom components live in `Design/Components/` — create new ones there, not inline
+- Brand palette: ink `#1A1A1F` on parchment `#F5F0E6`, accent celestial blue `#3D5A8C`, gold `#C9A96E`
+
+## API & Security Rules
+
+- Never hardcode API keys — read from `Bundle.main.infoDictionary` via Config.xcconfig
+- Palm photos never leave the device — only feature vectors go to the server
+- All IAP through RevenueCat — no web billing funnel, no weekly tier
+- Chart math comes from EphemerisService only — never ask Claude to calculate positions
+- Prompt templates live in `Core/AI/Prompts/*.txt` files — never hardcoded in Swift
+
+## Code Style
+
+- File header: no copyright boilerplate — just the filename and a one-line description
+- `final` on all classes unless designed for subclassing
+- `private` on all stored properties unless externally needed
+- Extensions for protocol conformances in separate files: `BirthChart+Codable.swift`
+- Prefer `guard let` over `if let` for early returns
+- Use `async throws` not completion handlers
+- Error handling: define typed errors per domain (`EphemerisError`, `PalmCVError`, etc.)
+- Mark TODOs: `// TODO(lumina): description` — never leave uncommitted `print()` statements
+- SwiftLint strict mode — zero warnings policy
+
+## SwiftUI Patterns
+
+- List large sets with `LazyVStack` inside `ScrollView` — not `List` (too much chrome)
+- Chart wheel: `Canvas` + `GraphicsContext` — not individual `Path` views
+- Animations: `.animation(.smooth)` for content, `.interactiveSpring()` for gestures only
+- Sheets: `.sheet(item:)` pattern — not boolean flags
+- Avoid `GeometryReader` unless absolutely necessary — use `containerRelativeFrame` (iOS 17+)
+- Previews: always provide mock data via `#Preview` macro — broken previews ship as bugs
+
+## RevenueCat / IAP
+
+- Check entitlements via `IAPManager.shared.isPremium` (actor — await it)
+- Paywall timing: hard paywall POST onboarding, once per session
+- No second paywall after first decline (Apple 3.1.2(c))
+- No `$0.43/day` style framing — use `$9.99/month` only
+- `IAPManager` observes `PurchasesDelegate` — never poll `getCustomerInfo()` in views
+
+## What NOT to Generate
+
+- No UIKit unless bridging a specific Vision/AVFoundation necessity
+- No RxSwift, Combine, or reactive frameworks
+- No third-party networking (Alamofire, Moya) — native URLSession actors only
+- No Firebase (using Supabase)
+- No Core Data (using SwiftData)
+- No hardcoded strings that should be localized — use `String(localized:)` or `LocalizedStringKey`
+- No stock/clipart celestial illustrations — custom SVGs only
+
+## When You're Unsure
+
+If a task requires:
+- A RevenueCat edge case → check `LEARNINGS.md` IAP section first
+- A chart calculation → the answer is always "call EphemerisService"
+- A new color or font → add to `LuminaColors` / `LuminaTypography` first, then use it
+- A design decision → default to CHANI's warmth (not Co-Star's starkness, not Nebula's purple gradients)

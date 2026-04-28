@@ -1,0 +1,108 @@
+# ─────────────────────────────────────────
+# Lumina .gitignore
+# ─────────────────────────────────────────
+
+# ── Secrets & Environment (NEVER COMMIT) ──
+.env
+.env.local
+.env.*.local
+secrets/
+*.xcconfig
+!project.xcconfig        # only the non-secret base config is committed
+
+# ── Xcode ──
+# Build artifacts
+build/
+DerivedData/
+*.xcresult
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# User-specific Xcode settings
+*.xcuserdata/
+xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Xcode SPM caches
+.build/
+~/Library/Developer/Xcode/DerivedData
+
+# Xcode preview content (large, auto-regenerated)
+**/PreviewContent/
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# ── Swift Package Manager ──
+.build/
+.swiftpm/
+*.resolved              # KEEP — pin dependency versions for reproducibility
+# (Package.resolved is intentionally NOT ignored)
+
+# ── macOS ──
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Icon
+
+# ── Node.js (backend/) ──
+backend/node_modules/
+backend/dist/
+backend/.env
+backend/.env.local
+backend/coverage/
+backend/*.log
+
+# ── Python (ML model scripts) ──
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+.Python
+pip-log.txt
+.eggs/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ── ML / Core ML ──
+# Large model weights — store in Git LFS or a bucket
+*.mlmodel
+*.mlpackage
+!Core/PalmCV/Models/.gitkeep   # keep the directory
+
+# ── CI / Coverage ──
+*.xcresult
+coverage/
+lcov.info
+*.junit
+
+# ── Editor ──
+.cursor/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── Logs ──
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── RevenueCat ──
+# No generated files, but make sure no paywallData*.json with receipts slips in
+paywallData*.json
+
+# ── Temporary ──
+tmp/
+temp/
+*.tmp

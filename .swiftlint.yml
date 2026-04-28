@@ -1,0 +1,186 @@
+# .swiftlint.yml — Lumina SwiftLint Config
+# Strict mode — zero warnings policy (CI enforces --strict)
+
+# ── Included / Excluded paths ──
+included:
+  - Lumina
+  - LuminaTests
+
+excluded:
+  - Lumina/Resources
+  - .build
+  - DerivedData
+  - Packages
+
+# ── Opt-in rules (not enabled by default) ──
+opt_in_rules:
+  - array_init
+  - closure_body_length
+  - closure_end_indentation
+  - closure_spacing
+  - collection_alignment
+  - colon
+  - contains_over_filter_count
+  - contains_over_filter_is_empty
+  - contains_over_first_not_nil
+  - contains_over_range_nil_comparison
+  - convenience_type
+  - discouraged_none_name
+  - discouraged_object_literal
+  - empty_collection_literal
+  - empty_count
+  - empty_string
+  - enum_case_associated_values_count
+  - expiring_todo
+  - explicit_init
+  - extension_access_modifier
+  - fallthrough
+  - fatal_error_message
+  - file_header
+  - first_where
+  - flatmap_over_map_reduce
+  - force_unwrapping
+  - identical_operands
+  - implicit_return
+  - joined_default_parameter
+  - last_where
+  - legacy_multiple
+  - literal_expression_end_indentation
+  - local_doc_comment
+  - lower_acl_than_parent
+  - multiline_arguments
+  - multiline_function_chains
+  - multiline_literal_brackets
+  - multiline_parameters
+  - nimble_operator
+  - no_extension_access_modifier
+  - number_separator
+  - object_literal
+  - operator_usage_whitespace
+  - optional_enum_case_matching
+  - overridden_super_call
+  - override_in_extension
+  - pattern_matching_keywords
+  - prefer_self_type_over_type_of_self
+  - prefer_zero_over_explicit_init
+  - private_action
+  - private_outlet
+  - prohibited_interface_builder
+  - prohibited_super_call
+  - quick_discouraged_call
+  - reduce_into
+  - redundant_nil_coalescing
+  - redundant_type_annotation
+  - single_test_class
+  - sorted_first_last
+  - sorted_imports
+  - static_operator
+  - strong_iboutlet
+  - switch_case_on_newline
+  - toggle_bool
+  - trailing_closure
+  - type_contents_order
+  - unneeded_parentheses_in_closure_argument
+  - untyped_error_in_catch
+  - vertical_parameter_alignment_on_call
+  - vertical_whitespace_closing_braces
+  - xct_specific_matcher
+  - yoda_condition
+
+# ── Disabled rules ──
+disabled_rules:
+  - todo              # we use // TODO(lumina): format — checked separately
+  - trailing_whitespace  # formatter handles this
+
+# ── Rule configurations ──
+line_length:
+  warning: 120
+  error: 160
+  ignores_comments: true
+  ignores_urls: true
+
+file_length:
+  warning: 400
+  error: 600
+
+type_body_length:
+  warning: 250
+  error: 350
+
+function_body_length:
+  warning: 40
+  error: 60
+
+cyclomatic_complexity:
+  warning: 10
+  error: 15
+
+nesting:
+  type_level:
+    warning: 2
+  function_level:
+    warning: 4
+
+identifier_name:
+  min_length:
+    warning: 2
+    error: 1
+  max_length:
+    warning: 50
+    error: 60
+  excluded:
+    - id
+    - x
+    - y
+    - z
+    - i
+    - j
+
+type_name:
+  min_length: 3
+  max_length:
+    warning: 50
+    error: 60
+
+force_cast: error
+force_try: error
+force_unwrapping: error
+
+# ── Custom rules ──
+custom_rules:
+  no_hex_color_literals:
+    name: "No Hex Color Literals"
+    message: "Use LuminaColors.* instead of hex literals. Add new colors to Design/Tokens/LuminaColors.swift."
+    regex: 'Color\(hex:\s*"#[0-9A-Fa-f]+'
+    severity: error
+
+  no_hardcoded_font_names:
+    name: "No Hardcoded Font Names"
+    message: "Use LuminaTypography.* instead of Font.custom() with string literals."
+    regex: 'Font\.custom\("(?!.*LuminaTypography)'
+    severity: warning
+
+  no_print_statements:
+    name: "No print() Statements"
+    message: "Remove print() before committing. Use os.Logger for debug output."
+    regex: '\bprint\s*\('
+    severity: warning
+
+  lumina_todo_format:
+    name: "TODO Format"
+    message: "Use // TODO(lumina): description format for trackable TODOs."
+    regex: '\/\/\s*TODO(?!\(lumina\))'
+    severity: warning
+
+  no_direct_revenuecat_calls_in_views:
+    name: "No Direct RevenueCat in Views"
+    message: "Access IAP via IAPManager, not Purchases.shared directly in views."
+    regex: 'Purchases\.shared\.'
+    severity: warning
+    included: ".*/Features/.*\\.swift"
+
+  no_magic_spacing_numbers:
+    name: "No Magic Spacing Numbers"
+    message: "Use LuminaSpacing.* constants. Add to Design/Tokens/LuminaSpacing.swift if needed."
+    regex: '(padding|spacing|frame[^)]*\.\s*(width|height))\s*:\s*(?!LuminaSpacing)[0-9]{2,}'
+    severity: warning
