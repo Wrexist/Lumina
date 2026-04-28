@@ -5,6 +5,19 @@
 
 ---
 
+## 🛠️ Claude Code Setup
+
+**[2026-04] .claude/settings.json permissions**
+Pre-approved bash patterns in `.claude/settings.json` `permissions.allow` array dramatically reduce permission prompts during development. Use glob patterns: `"Bash(xcodebuild -scheme Lumina*)"` not broad `"Bash(*)"`. Secrets guard hook fires on `git commit` to catch accidentally staged `.env`/`.xcconfig` files.
+
+**[2026-04] Custom slash commands**
+`.claude/commands/*.md` files become `/command-name` slash commands in Claude Code. Each file's content is the prompt — include the bash commands inline so Claude executes them. Best for: repeated workflows (build, lint, test), scaffolding templates, session-end checklists.
+
+**[2026-04] Stop hook for session end**
+The `Stop` hook in `settings.json` echoes an end-of-session checklist to the terminal on every Claude stop event. Useful reinforcement since CLAUDE.md session protocol is easy to skip. Hook runs shell commands — not AI instructions.
+
+---
+
 ## 🏗️ Architecture
 
 **[2026-04] Swift 6 strict concurrency with `@Observable`**

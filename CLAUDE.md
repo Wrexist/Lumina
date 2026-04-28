@@ -5,6 +5,27 @@
 
 ---
 
+## ⚡ Quick Context (read before anything else)
+
+| Item | Value |
+|---|---|
+| **Phase** | Bootstrap — documentation only, no Swift source files yet |
+| **Active branch** | `claude/optimize-config-setup-xfpK1` |
+| **Last updated** | 2026-04-28 |
+| **Blockers** | Font license · Swiss Eph license · ElevenLabs voice · Palm ML model |
+
+**Before writing any code:** confirm the Xcode project exists (`ls Lumina.xcodeproj`). If not, the first task is project initialization — see TASK.md Infrastructure section.
+
+**Custom slash commands available** (`.claude/commands/`):
+- `/build` — xcodebuild against iPhone 16 Pro sim
+- `/lint` — swiftlint strict, zero warnings policy
+- `/test` — full test suite
+- `/chart` — generate test ephemeris JSON from backend
+- `/new-feature <Name>` — scaffold a feature module
+- `/session-end` — end-of-session checklist + push
+
+---
+
 ## 🌙 What This Project Is
 
 **Lumina** is a premium iOS 26 astrology + AI palm reading app targeting the $5–6B and growing spiritual-wellness app category. The core thesis: every existing competitor (Co-Star, CHANI, Nebula, The Pattern) either fakes palm reading, hallucinates planetary positions, uses dark billing patterns, or all three. Lumina does none of those.
@@ -224,23 +245,29 @@ No Alamofire — use native `URLSession` with async/await actors. No RxSwift/Com
 ## 🗂️ Session Protocol
 
 ### At the Start of a Session
-1. Read `TASK.md` for current status and active work
-2. Read `LEARNINGS.md` for recent gotchas and decisions
-3. Read any relevant `docs/` file for the feature you're touching
-4. Ask for clarification on any ambiguity before writing code
+1. Check the Quick Context table at the top of this file — confirm active branch and phase
+2. Read `TASK.md` for current status and active work
+3. Read `LEARNINGS.md` for recent gotchas and decisions
+4. Run `git status` and `git log --oneline -5` to see what changed
+5. Read any relevant `docs/` file for the feature you're touching
+6. Ask for clarification on any ambiguity before writing code
 
 ### During a Session
+- Work on branch `claude/optimize-config-setup-xfpK1` — never commit to `main`
 - Commit frequently with conventional commit messages: `feat(palm-cv): add line segmentation overlay`
 - Document decisions in code comments using `// DECISION:` prefix
 - Flag any API key exposure immediately — check with `git status` before every commit
 - Use `// TODO(lumina):` tags for deferred work, not inline fixups
+- Use `/build`, `/lint`, `/test` slash commands to verify work before committing
 
 ### At the End of a Session
-1. Update `TASK.md` — mark completed, update in-progress, add blockers
-2. Update `LEARNINGS.md` — add any new gotchas, decisions, or patterns discovered
-3. Run `swiftlint lint --strict` and `xcodebuild build` — fix all warnings before committing
-4. Push to feature branch — never commit directly to `main`
-5. If RevenueCat entitlements changed, note in `LEARNINGS.md` under IAP section
+1. Run `/session-end` for the full automated checklist, or manually:
+2. Update `TASK.md` — mark completed `[x]`, in-progress `[~]`, add blockers
+3. Update `LEARNINGS.md` — append new gotchas with `[2026-04]` date tag
+4. Run `swiftlint lint --strict` — zero warnings before committing
+5. `git push -u origin claude/optimize-config-setup-xfpK1`
+6. If RevenueCat entitlements changed, note in `LEARNINGS.md` under IAP section
+7. Update the **Last updated** date in the Quick Context table above
 
 ---
 
