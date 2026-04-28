@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumina — Complete Development Roadmap</title>
+<style>
+:root {
+  --ink: #1A1A1F;
+  --parchment: #F5F0E6;
+  --parchment-dark: #EDE8DC;
+  --midnight: #0B1437;
+  --celestial: #3D5A8C;
+  --gold: #C9A96E;
+  --blush: #E5C8C2;
+  --sage: #9CA98C;
+  --white: #FFFFFF;
+  --surface: #F9F7F2;
+  --border: rgba(26,26,31,0.1);
+  --border-strong: rgba(26,26,31,0.2);
+
+  /* Phase colors */
+  --infra: #3266AD;
+  --feature: #7F77DD;
+  --ai: #1D9E75;
+  --launch: #BA7517;
+  --postlaunch: #D4537E;
+  --v2: #639922;
+
+  --shadow-sm: 0 1px 3px rgba(26,26,31,0.07), 0 1px 2px rgba(26,26,31,0.05);
+  --shadow-md: 0 4px 12px rgba(26,26,31,0.09), 0 2px 4px rgba(26,26,31,0.06);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Georgia', serif;
+  background: var(--parchment);
+  color: var(--ink);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ─── HEADER ─── */
+.site-header {
+  background: var(--midnight);
+  color: white;
+  padding: 3rem 2rem 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.site-header::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  border: 1px solid rgba(201,169,110,0.15);
+}
+.site-header::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; left: 40px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  border: 1px solid rgba(201,169,110,0.1);
+}
+.header-inner { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
+.header-eyebrow {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.75rem;
+}
+.header-title {
+  font-size: clamp(28px, 5vw, 48px);
+  font-style: italic;
+  font-weight: normal;
+  color: white;
+  line-height: 1.15;
+  margin-bottom: 0.5rem;
+}
+.header-sub {
+  font-size: 16px;
+  color: rgba(255,255,255,0.55);
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-style: normal;
+  margin-bottom: 2rem;
+}
+.header-stats {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+.hstat { }
+.hstat-n {
+  font-family: 'Courier New', monospace;
+  font-size: 28px;
+  font-style: normal;
+  color: var(--gold);
+  line-height: 1;
+}
+.hstat-l {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  margin-top: 3px;
+  font-style: normal;
+}
+
+/* ─── LAYOUT ─── */
+.main { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+/* ─── TIMELINE BAR ─── */
+.timeline-bar {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 4px;
+  margin-bottom: 2.5rem;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+.tbar-label {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--sage);
+  margin-bottom: 0.6rem;
+  grid-column: 1 / -1;
+}
+.tbar-phases { display: flex; gap: 3px; width: 100%; grid-column: 1 / -1; }
+.tbar-phase {
+  height: 8px;
+  border-radius: 4px;
+  transition: opacity .15s;
+  cursor: pointer;
+  position: relative;
+}
+.tbar-phase:hover { opacity: 0.75; }
+.tbar-tooltip {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: white;
+  font-size: 11px;
+  font-family: -apple-system, sans-serif;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  display: none;
+  z-index: 10;
+}
+.tbar-phase:hover .tbar-tooltip { display: block; }
+
+/* ─── FILTERS ─── */
+.filter-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  align-items: center;
+}
+.filter-label {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--sage);
+  margin-right: 4px;
+}
+.fbtn {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all .15s;
+  font-weight: 400;
+}
+.fbtn:hover { background: var(--parchment-dark); }
+.fbtn.active { background: var(--ink); color: white; border-color: var(--ink); }
+
+/* ─── PHASE CARDS ─── */
+.phases { display: flex; flex-direction: column; gap: 12px; }
+
+.phase-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .2s;
+}
+.phase-card:hover { box-shadow: var(--shadow-md); }
+
+.phase-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 1.1rem 1.5rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background .12s;
+}
+.phase-header:hover { background: var(--surface); }
+
+.phase-accent {
+  width: 4px;
+  height: 38px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.phase-num {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: var(--sage);
+  flex-shrink: 0;
+  width: 22px;
+}
+.phase-info { flex: 1; min-width: 0; }
+.phase-name {
+  font-size: 15px;
+  font-weight: normal;
+  font-style: italic;
+  color: var(--ink);
+}
+.phase-tagline {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  color: var(--sage);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.phase-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.meta-pill {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  color: var(--sage);
+  background: var(--surface);
+  white-space: nowrap;
+}
+.chevron {
+  font-size: 11px;
+  color: var(--sage);
+  transition: transform .2s;
+  flex-shrink: 0;
+}
+.chevron.open { transform: rotate(90deg); }
+
+/* ─── PHASE BODY ─── */
+.phase-body {
+  display: none;
+  border-top: 1px solid var(--border);
+}
+.phase-body.open { display: block; }
+
+.pb-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+@media (max-width: 680px) { .pb-inner { grid-template-columns: 1fr; } }
+
+.pb-col {
+  padding: 1.5rem;
+}
+.pb-col:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.pb-section { margin-bottom: 1.5rem; }
+.pb-section:last-child { margin-bottom: 0; }
+
+.pb-section-title {
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--sage);
+  margin-bottom: 0.75rem;
+}
+
+/* Tasks */
+.task-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.task-check {
+  width: 14px; height: 14px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 3px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.task-text { flex: 1; }
+.task-tag {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--sage);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-family: 'Courier New', monospace;
+}
+
+/* Criteria */
+.criteria-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.criteria-item {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+  color: rgba(26,26,31,0.7);
+  padding-left: 16px;
+  position: relative;
+  line-height: 1.4;
+}
+.criteria-item::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--celestial);
+  font-size: 11px;
+  top: 1px;
+}
+
+/* Tech notes */
+.tech-note {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12.5px;
+  color: rgba(26,26,31,0.65);
+  padding: 5px 0 5px 14px;
+  position: relative;
+  line-height: 1.45;
+  border-bottom: 1px solid var(--border);
+}
+.tech-note:last-child { border-bottom: none; }
+.tech-note::before {
+  content: '◆';
+  position: absolute;
+  left: 0;
+  font-size: 7px;
+  top: 9px;
+  color: var(--celestial);
+}
+
+/* Risks */
+.risk-block {
+  background: #FFF8ED;
+  border: 1px solid rgba(186,117,23,0.2);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+.risk-item {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12.5px;
+  color: #6B4710;
+  padding: 4px 0 4px 16px;
+  position: relative;
+  line-height: 1.4;
+  border-bottom: 1px solid rgba(186,117,23,0.1);
+}
+.risk-item:last-child { border-bottom: none; }
+.risk-item::before {
+  content: '⚑';
+  position: absolute;
+  left: 0;
+  font-size: 10px;
+  top: 5px;
+  color: var(--launch);
+}
+
+/* Cost table */
+.cost-table { width: 100%; border-collapse: collapse; }
+.cost-table td {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.cost-table tr:last-child td { border-bottom: none; font-weight: 500; }
+.cost-table td:last-child { text-align: right; font-family: 'Courier New', monospace; color: var(--ink); }
+
+/* Estimate banner */
+.est-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  margin-bottom: 1rem;
+}
+.est-n {
+  font-family: 'Courier New', monospace;
+  font-size: 20px;
+  color: var(--ink);
+}
+.est-l {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  color: var(--sage);
+}
+
+/* ─── COST SECTION ─── */
+.cost-section {
+  background: var(--midnight);
+  color: white;
+  border-radius: 14px;
+  padding: 2rem;
+  margin-top: 2rem;
+}
+.cost-section-title {
+  font-style: italic;
+  font-size: 22px;
+  color: white;
+  margin-bottom: 0.25rem;
+}
+.cost-section-sub {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 1.5rem;
+  font-style: normal;
+}
+.cost-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+@media (max-width: 640px) { .cost-grid { grid-template-columns: 1fr 1fr; } }
+.cost-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 1rem;
+}
+.cost-card-n {
+  font-family: 'Courier New', monospace;
+  font-size: 22px;
+  color: var(--gold);
+  margin-bottom: 3px;
+}
+.cost-card-l {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+  font-style: normal;
+}
+.cost-note {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  color: rgba(255,255,255,0.35);
+  margin-top: 1.25rem;
+  font-style: normal;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 1rem;
+}
+
+/* ─── LEGEND ─── */
+.legend-row {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  color: var(--sage);
+}
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-eyebrow">Lumina · iOS 26 · Complete Development Roadmap</div>
+    <h1 class="header-title">From zero to App Store.<br>Every task. Every stage.</h1>
+    <p class="header-sub">12 phases · 34 build weeks · 147 tracked tasks · 1 clear launch</p>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-n">12</div><div class="hstat-l">Phases</div></div>
+      <div class="hstat"><div class="hstat-n">34</div><div class="hstat-l">Build weeks</div></div>
+      <div class="hstat"><div class="hstat-n">147</div><div class="hstat-l">Tracked tasks</div></div>
+      <div class="hstat"><div class="hstat-n">~1,940</div><div class="hstat-l">RAG corpus chunks</div></div>
+      <div class="hstat"><div class="hstat-n">$9.99</div><div class="hstat-l">Monthly subscription</div></div>
+      <div class="hstat"><div class="hstat-n">$4.2k</div><div class="hstat-l">Monthly infra @ 10k MAU</div></div>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- Timeline bar -->
+  <div class="timeline-bar">
+    <div class="tbar-label">34-week timeline</div>
+    <div class="tbar-phases" id="tbar"></div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend-row">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--infra)"></div>Infrastructure</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--feature)"></div>Feature</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--ai)"></div>AI / CV</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--launch)"></div>Launch</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--postlaunch)"></div>Post-launch</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--v2)"></div>v2</div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-row">
+    <span class="filter-label">Filter</span>
+    <button class="fbtn active" onclick="setFilter('all',this)">All</button>
+    <button class="fbtn" onclick="setFilter('infra',this)">Infrastructure</button>
+    <button class="fbtn" onclick="setFilter('feature',this)">Features</button>
+    <button class="fbtn" onclick="setFilter('ai',this)">AI / CV</button>
+    <button class="fbtn" onclick="setFilter('launch',this)">Launch</button>
+    <button class="fbtn" onclick="setFilter('v2',this)">v2</button>
+  </div>
+
+  <!-- Phase cards -->
+  <div class="phases" id="phases-list"></div>
+
+  <!-- Cost breakdown -->
+  <div class="cost-section">
+    <div class="cost-section-title">Infrastructure cost at scale</div>
+    <div class="cost-section-sub">Monthly estimates at 10,000 paying subscribers</div>
+    <div class="cost-grid">
+      <div class="cost-card">
+        <div class="cost-card-n">$1,344</div>
+        <div class="cost-card-l">Claude AI (daily readings + palm + compat)</div>
+      </div>
+      <div class="cost-card">
+        <div class="cost-card-n">$22</div>
+        <div class="cost-card-l">ElevenLabs audio narration (Creator plan)</div>
+      </div>
+      <div class="cost-card">
+        <div class="cost-card-n">$25</div>
+        <div class="cost-card-l">Supabase Pro (pgvector + auth + storage)</div>
+      </div>
+      <div class="cost-card">
+        <div class="cost-card-n">$9</div>
+        <div class="cost-card-l">OneSignal push (Growth plan)</div>
+      </div>
+      <div class="cost-card">
+        <div class="cost-card-n">$7</div>
+        <div class="cost-card-l">Swiss Eph backend (Fly.io Hobby)</div>
+      </div>
+      <div class="cost-card">
+        <div class="cost-card-n">~$1,407</div>
+        <div class="cost-card-l">Total infra / month at 10k MAU</div>
+      </div>
+    </div>
+    <div class="cost-note">
+      Revenue at 10k subscribers × $9.99/month = $99,900/month gross → $79,920 after Apple 20% cut.<br>
+      Infrastructure is 1.76% of gross revenue. One-time costs: Swiss Eph Pro license CHF 1,550 (~$1,750), PP Editorial New font license (~$400), ElevenLabs voice clone (~$0 after Starter).
+    </div>
+  </div>
+
+</main>
+
+<script>
+const PHASES = [
+  {
+    id: 0, cat: 'infra', color: '#3266AD',
+    num: '00', name: 'Bootstrap',
+    weeks: 'Wk 1–2', wstart: 1, wend: 2,
+    tagline: 'Xcode · CI/CD · design system · secrets pipeline · Supabase',
+    est: '10 dev-days',
+    tasks: [
+      {t:'Initialize Xcode 17 project — SwiftUI app template, Swift 6 strict concurrency, iOS 26 deployment target, bundle ID com.lumina.app', c:'xcode'},
+      {t:'Add Swift Package Manager dependencies: RevenueCat 5.x, Supabase Swift 2.x, Lottie iOS 4.x, OneSignal XCFramework 5.x', c:'spm'},
+      {t:'Configure SwiftLint .swiftlint.yml — strict mode, custom rules blocking raw hex color literals, hardcoded font names, magic spacing numbers', c:'quality'},
+      {t:'Configure SwiftFormat .swiftformat — trailing commas, sorted imports, consistent blank lines between functions', c:'quality'},
+      {t:'Set up Config.xcconfig + scripts/inject_env.sh — secrets injection pipeline from .env.local into Xcode build', c:'security'},
+      {t:'GitHub Actions CI — 6-job workflow: SwiftLint, build + type-check, unit tests, Swift 6 concurrency audit (data races as errors), gitleaks, Node.js backend', c:'ci'},
+      {t:'Xcode Cloud setup — archive + TestFlight distribution workflow, signing certificates, provisioning profiles', c:'ci'},
+      {t:'Implement LuminaColors.swift — full brand palette (inkBlack #1A1A1F, parchment #F5F0E6, midnight #0B1437, celestial #3D5A8C, gold #C9A96E, blush #E5C8C2, sage #9CA98C) + dark mode adaptive variants', c:'design'},
+      {t:'Implement LuminaTypography.swift — PP Editorial New + Söhne + GT America Mono with ViewModifier helpers (luminaDisplayHero, luminaBody, luminaMono, luminaLabel)', c:'design'},
+      {t:'Implement LuminaSpacing.swift — 8pt grid system (xxs=4pt through xxxl=64pt), semantic aliases (cardPadding, screenHorizontal, sectionSpacing), corner radii', c:'design'},
+      {t:'Create full project folder structure: App/, Core/, Features/, Design/, Models/, Services/, Resources/ — with .gitkeep files and README stubs', c:'arch'},
+      {t:'Create placeholder stub actors for all Core services: EphemerisService, LuminaAIClient, IAPManager, PalmCVPipeline — with TODO comments', c:'arch'},
+      {t:'Install and register custom fonts: PP Editorial New (Regular + Italic + Bold), Söhne (Buch + Leicht), GT America Mono — add to Info.plist UIAppFonts', c:'design'},
+      {t:'Create Supabase project — enable pgvector extension, run schema migrations (user_profiles, corpus_chunks, match_corpus_chunks RLS function), configure Row Level Security policies', c:'backend'},
+    ],
+    criteria: [
+      'xcodebuild build passes with zero warnings on iPhone 16 Pro simulator',
+      'All 6 CI jobs green on first push to main branch',
+      'SwiftLint --strict produces zero violations on project files',
+      'All 3 custom font families render correctly in #Preview macro',
+      'scripts/inject_env.sh generates valid Config.xcconfig from .env.example',
+      'Supabase project live with pgvector active and RLS enabled on all tables',
+    ],
+    tech: [
+      'Swift 6 strict concurrency ON from day 1 — retrofitting later costs 3x the time',
+      'Use @Observable (iOS 17+) not @Published — never mix Combine and Observable in same project',
+      'SwiftData ModelContainer injected at app root in LuminaApp.swift, not at feature level',
+      'PP Editorial New requires paid font license from Production Type — confirm before design work',
+    ],
+    risks: [
+      'PP Editorial New font license ($400) required — order immediately, delivery can take days',
+      'Swiss Ephemeris Pro license (CHF 1,550) needed before Phase 1 backend build — order in Week 1',
+      'Xcode Cloud free tier limited — upgrade to paid plan if CI minutes exceeded',
+    ]
+  },
+  {
+    id: 1, cat: 'infra', color: '#3266AD',
+    num: '01', name: 'Core Infrastructure',
+    weeks: 'Wk 3–6', wstart: 3, wend: 6,
+    tagline: 'Swiss Eph backend · EphemerisService · RevenueCat · Palm CV pipeline · RAG corpus',
+    est: '16 dev-days',
+    tasks: [
+      {t:'Build Swiss Ephemeris Node.js microservice — Fastify + TypeScript + sweph npm (timotejroiko/sweph), /chart endpoint, /transits endpoint, /composite endpoint, /health endpoint', c:'backend'},
+      {t:'Ephemeris service — input validation (date range 1000CE–2500CE, coordinate bounds), error handling, bearer token auth, rate limiting (1k req/min per IP)', c:'backend'},
+      {t:'Deploy ephemeris service to Fly.io — HTTPS, auto-sleep on idle, health check pings, environment variables via fly secrets', c:'devops'},
+      {t:'Implement EphemerisService.swift actor — bearer auth, chart/transit/composite fetch, deterministic in-memory cache (cache key = birthDataHash + date + houseSystem)', c:'swift'},
+      {t:'Define all ephemeris domain models: Planet, HouseCusp, Aspect, ChartData, TransitData, BirthData, HouseSystem enum (Placidus/WholeSigns/Sidereal)', c:'swift'},
+      {t:'Implement Supabase auth client — Sign in with Apple (AuthenticationServices), email magic link, session observer on @MainActor, token refresh handling', c:'auth'},
+      {t:'Implement IAPManager.swift actor + PurchasesDelegate — isPremium entitlement, consumable tracking, error typed enum, purchase/restore/offering methods', c:'iap'},
+      {t:'RevenueCat project setup — link App Store Connect, create default offering (monthly + annual packages), mark annual as featured, configure all 6 products (2 subscriptions + 4 consumables)', c:'iap'},
+      {t:'Implement RAGRetriever.swift — Supabase pgvector cosine similarity search, transit-keyed query builder (e.g. "mercury square venus natal 3rd house"), top-3 chunk retrieval', c:'ai'},
+      {t:'Implement LuminaAIClient.swift actor — Anthropic API claude-opus-4-6 client, daily reading / palm narration / compatibility / Q&A generation endpoints, response parsing', c:'ai'},
+      {t:'Chunk and embed RAG corpus: Liz Greene Relating (~450 chunks), Steven Forrest The Inner Sky (~380), Robert Hand Planets in Transit (~820), Sue Tompkins Aspects in Astrology (~290) — ~1,940 total at 500 tokens each with 50-token overlap, embedded via text-embedding-3-small, stored in Supabase pgvector', c:'ai'},
+      {t:'Write all AI system prompt .txt files: daily_reading_system.txt, palm_reading_system.txt, compatibility_system.txt, ask_system.txt — stored in Core/AI/Prompts/, loaded via Bundle.main', c:'ai'},
+      {t:'Implement PalmCaptureSession.swift — AVCaptureSession wrapper, CMSampleBuffer pipeline to Vision, real-time lighting assessment via luminance metadata (red/amber/green threshold), front/rear camera toggle', c:'cv'},
+      {t:'Implement HandPoseDetector.swift — VNDetectHumanHandPoseRequest, 21 landmark extraction (wrist + 4×4 fingers + 4 thumb joints), palm bounding box, hand presence confidence score', c:'cv'},
+      {t:'Adapt/train palm line segmentation Core ML model — U-Net architecture on PolyU Palmprint + CASIA PalmprintV1 + augmented Kaggle dataset, target mIoU ≥ 0.88, 4-class output (life/heart/head/fate), convert to .mlpackage via coremltools 7.x with palettization + pruning to < 25MB', c:'cv'},
+      {t:'Implement LineSegmenter.swift — Core ML U-Net inference on 256×256 grayscale ROI cropped from Vision bounding box, output 4-channel binary mask, morphological closing post-processing', c:'cv'},
+      {t:'Implement PalmFeatureExtractor.swift — skeletonization of each line mask, connected-component extraction, geometric features: normalized length, mean curvature, branch count, endpoint positions relative to finger base landmarks', c:'cv'},
+      {t:'OneSignal SDK integration — init in AppDelegate, push token registration, 4 segments created: premium, free, eclipse-events, mercury-retrograde', c:'push'},
+      {t:'Write unit tests — EphemerisService (mock URLProtocol), IAPManager (mock Purchases), LuminaAIClient (mock network), PalmFeatureExtractor (sample feature vectors)', c:'test'},
+    ],
+    criteria: [
+      'Swiss Eph /chart returns correct sun/moon/rising for 5 test birth dates within ±1° of astro.com (verified manually)',
+      'EphemerisService actor returns ChartData in < 300ms from network, < 5ms from cache',
+      'IAPManager.isPremium updates correctly within 1s of sandbox purchase event in StoreKit testing',
+      'RAGRetriever returns contextually relevant chunks for 10 test transit queries (manual quality review: 8/10 must be relevant)',
+      'Palm CV pipeline processes test hand image: all 4 line masks detected, mIoU ≥ 0.88 on held-out test set',
+      'All unit test suites pass — zero failures on CI, coverage > 60% on Core services',
+    ],
+    tech: [
+      'Swiss Eph AGPL license: any network-exposed binary using it must be open-sourced under AGPL — buy Pro license before server commit',
+      'Core ML model: target < 25MB quantized using palettization (6-bit) + structured pruning in coremltools 7.x',
+      'pgvector HNSW index: add CREATE INDEX ON corpus_chunks USING hnsw (embedding vector_cosine_ops) after inserting all chunks',
+      'ElevenLabs audio should be generated in the Node.js backend (not iOS) to avoid key exposure in binary',
+      'Palm CV confidence threshold: reject captures with hand pose confidence < 0.85 — show retry guidance',
+    ],
+    risks: [
+      'Core ML model training requires GPU access and PolyU dataset license — parallel track starting in Week 1',
+      'RAG corpus requires legally obtained PDFs/ePubs of astrology books — do not scrape or violate copyright',
+      'revenueCat + StoreKit 2 sandbox testing requires physical device — simulator IAP is unreliable',
+    ]
+  },
+  {
+    id: 2, cat: 'feature', color: '#7F77DD',
+    num: '02', name: 'Onboarding + Paywall',
+    weeks: 'Wk 7–9', wstart: 7, wend: 9,
+    tagline: '7-screen onboarding · chart reveal animation · hard paywall · Supabase auth · deferred notification',
+    est: '12 dev-days',
+    tasks: [
+      {t:'Screen 1 — Brand promise: PP Editorial New italic headline on parchment background, single line "Your chart. Your palm. Actually you." Animated 0.8s fade-in. No skip button.', c:'ui'},
+      {t:'Screen 2 — Name + birth date: TextField (name, warm placeholder "What shall we call you"), DatePicker wheel style (birth date, max = today - 13 years), smooth validation states', c:'ui'},
+      {t:'Screen 3 — Birth time: wheel time picker + "I don\'t know — use noon" button equally prominent (same visual weight as time picker), explanatory copy, no shaming language', c:'ui'},
+      {t:'Screen 4 — Birth place: MapKit MKLocalSearch city autocomplete (debounced 300ms), time zone confirmation below selected city, offline graceful fallback to manual coordinate entry', c:'ui'},
+      {t:'Screen 5 — Motivation: 4 large tap targets (Love & Relationships, Career & Purpose, Self-Understanding, Pure Curiosity) with custom glyphs, selection animates with 0.2s spring, stores in UserDefaults for paywall copy personalization downstream', c:'ui'},
+      {t:'Screen 6 — Chart reveal: slow SVG zodiac wheel draw animation (2s easeInOut, draws house lines + planet glyphs sequentially) + Lottie star particle background + subtle audio chime (AudioServicesPlaySystemSound)', c:'ui'},
+      {t:'Screen 7 — Palm scan intro: optional, shows live camera preview with animated hand outline guidance overlay, "Skip for now" link prominently placed, lighting indicator', c:'ui'},
+      {t:'OnboardingViewModel @MainActor @Observable — state machine (currentStep, birthData draft, validation errors), persist completed BirthData + UserProfile to SwiftData on finish', c:'swift'},
+      {t:'NavigationStack with NavigationPath — resume at last completed step if app backgrounded/killed mid-onboarding, encode/decode path to UserDefaults', c:'swift'},
+      {t:'Hard paywall view — feature list personalized to motivation answer (Love: shows compatibility first; Career: shows year ahead first), $9.99/month + $59.99/year with "Save 50%" badge, 7-day trial prominently displayed, "Cancel any time in Settings → Apple ID" copy, RevenueCat paywall data fetch', c:'iap'},
+      {t:'Discount rescue paywall — fires ONCE per install on first decline only: "Still deciding? Here\'s 30% off your first month" — RevenueCat promo offer, not a new paywall session', c:'iap'},
+      {t:'Supabase Sign in with Apple flow — ASAuthorizationController, create/update user_profiles row on first sign-in, store Supabase session in Keychain via Supabase Swift', c:'auth'},
+      {t:'Deferred notification permission — NotificationPermissionView shown on first DailyReadingView appear (not during onboarding), contextual copy: "Get tomorrow\'s reading at 8am →"', c:'push'},
+      {t:'Onboarding analytics — log: screen_viewed (stepIndex), birth_time_known (bool), motivation_selected, paywall_shown, paywall_converted, paywall_declined, rescue_shown, rescue_converted', c:'analytics'},
+    ],
+    criteria: [
+      'Full onboarding (Screen 1 → paywall) completes in under 90 seconds on iPhone 14 (timed with Instruments)',
+      '"I don\'t know" birth time path completes without crash, chart loads without ASC/MC with badge',
+      'Chart reveal SVG animation plays at 60fps on iPhone 13 (oldest target device)',
+      'RevenueCat sandbox: 7-day trial starts, monthly subscription activates after trial',
+      'Rescue paywall fires exactly once per install on first paywall decline — verify with fresh app install',
+      'Sign in with Apple completes and user_profile created in Supabase within 5s',
+      'NavigationPath survives app kill and restore at correct step',
+    ],
+    tech: [
+      'MapKit geocoder requires active internet — show "Enter coordinates manually" fallback in airplane mode',
+      'Chart reveal Canvas precomputes all planet/house positions in a background Task before animation — never compute in the animation closure',
+      'Motivation type stored in UserDefaults before SwiftData profile is saved — paywall can read it before auth',
+      'Apple 3.1.2(c): never show "$0.33/day" framing even if mathematically accurate for $9.99/month',
+    ],
+    risks: [
+      'App Review rejects palm-reading onboarding as "fortune telling scam" — frame as "AI analysis" in copy, add entertainment disclaimer in App Store description',
+      'MapKit geocoder rate-limited without entitlement — add com.apple.developer.maps entitlement to provisioning profile',
+    ]
+  },
+  {
+    id: 3, cat: 'feature', color: '#7F77DD',
+    num: '03', name: 'Birth Chart',
+    weeks: 'Wk 10–12', wstart: 10, wend: 12,
+    tagline: 'Interactive Canvas wheel · planet detail sheets · house system toggle · share card generator',
+    est: '11 dev-days',
+    tasks: [
+      {t:'BirthChartView — NavigationStack root: interactive wheel occupies top 55% of screen, interpretations LazyVStack scrolls below (no full-screen modals for primary navigation)', c:'ui'},
+      {t:'Chart wheel Canvas renderer — custom Canvas + GraphicsContext: 12 house sector arcs, zodiac ring with 12 sign glyphs, 10 planet glyphs at correct ecliptic longitude, 5 aspect line types (conjunction/trine/square/opposition/sextile) with distinct colors, retro ℞ markers', c:'ui'},
+      {t:'Planet glyph hit-testing — compute bounding CGRect for each planet glyph in Canvas coordinate space, use simultaneous .gesture with DragGesture for 44pt touch target expansion', c:'swift'},
+      {t:'PlanetDetailView .sheet(item:) — planet name, sign, degree (°′ format), house number, retrograde badge, is-applying badge, 3–4 sentence RAG-grounded LLM interpretation fetched on first open and cached', c:'ui'},
+      {t:'House system picker — segmented control below wheel: Placidus (default) / Whole Signs / Sidereal — triggers new EphemerisService fetch + wheel redraw', c:'ui'},
+      {t:'BirthChartViewModel @MainActor @Observable — EphemerisService fetch + cache, planet interpretation cache (keyed by planet+sign+house), loading/error states, house system selection', c:'swift'},
+      {t:'Unknown birth time handling — when birthTime == nil: hide house cusp lines, grey out ASC/MC/IC/DC glyphs, show persistent informational banner "House positions need your birth time → Update"', c:'ux'},
+      {t:'Retrograde planet visual — dashed orbit ring around retrograde planet glyph on wheel', c:'ui'},
+      {t:'Aspect legend expandable card — below wheel, shows aspect type name + glyph + meaning + orb, collapses by default', c:'ui'},
+      {t:'Zodiac sign tap — tap sign glyph in zodiac ring → 3-sentence sign profile sheet (not LLM — static curated text)', c:'ui'},
+      {t:'Share card via ImageRenderer — chart wheel + user name + "☉ Sun in X · ☽ Moon in Y · ↑ Rising Z" — exports at 2× resolution for Instagram Stories (1080×1920) and standard square (1080×1080)', c:'swift'},
+      {t:'Deep-link inbound handler — lumina://chart/{base64BirthData} → parses BirthData, opens compatibility view with shared chart as "person B"', c:'swift'},
+    ],
+    criteria: [
+      'Chart wheel renders correct planet positions for 3 test birth dates (verified ±1° against astro.com)',
+      'All 10 planet tap targets respond correctly with right detail sheet on 44×44pt minimum area',
+      'House system toggle re-renders wheel in < 400ms (new EphemerisService fetch from cache)',
+      'Share card PNG exports at 2× without memory warning on iPhone 13 (< 100MB spike)',
+      'Unknown birth time: no crash, ASC/MC correctly hidden, banner shows with Update link',
+      'Deep-link round-trip: generate link on device A → open on device B → compatibility view opens correctly',
+    ],
+    tech: [
+      'Canvas rendering: all 12 houses + 10 planets + aspect lines in a single Canvas pass — do not use separate SwiftUI shapes per element',
+      'Pre-compute all zodiacal coordinates (in polar → Cartesian) in ViewModel Task before settin state — never in Canvas draw closure',
+      'Aspect lines: draw behind planet glyphs (render order: house arcs → zodiac ring → aspect lines → planet glyphs)',
+      'ImageRenderer requires @MainActor and synchronous render — wrap in MainActor.run inside a Task',
+    ],
+    risks: [
+      'Canvas hit-testing is manual — each planet needs a stored CGRect dictionary, updated on each render. Budget 2 extra days for this.',
+      'ImageRenderer crashes with EXC_BAD_ACCESS if view contains lazy-loaded content — pre-load all planet glyphs before export',
+    ]
+  },
+  {
+    id: 4, cat: 'ai', color: '#1D9E75',
+    num: '04', name: 'Daily Reading',
+    weeks: 'Wk 13–15', wstart: 13, wend: 15,
+    tagline: 'Transit-grounded Claude reading · RAG retrieval · ElevenLabs TTS · SwiftData cache · morning push',
+    est: '10 dev-days',
+    tasks: [
+      {t:'DailyReadingViewModel @MainActor — fetch TransitData + ChartData, call ContentGenerator, manage audio state (idle/loading/playing/paused), reading refresh throttle (1×/day/user enforced server-side)', c:'swift'},
+      {t:'ContentGenerator.swift — orchestrates: get transits → extract top 3 active aspects → RAGRetriever.retrieve() → build LLM prompt (chart JSON + RAG context) → call LuminaAIClient → parse ReadingContent', c:'swift'},
+      {t:'Reading generation: transits JSON + 3 RAG chunks + system prompt → claude-opus-4-6, max_tokens: 800, temp: 0.7 → ReadingContent { title, body, audioScript, transitKey }', c:'ai'},
+      {t:'ElevenLabs TTS — Node.js backend endpoint /generate-audio: receives audioScript, calls ElevenLabs API with brand voice ID, returns presigned URL to MP3 — iOS downloads and caches locally', c:'audio'},
+      {t:'Audio cache management — FileManager local cache directory, keyed by transitKey, TTL = 7 days, LRU eviction at 50MB', c:'swift'},
+      {t:'DailyReadingView — editorial card: date in GT Mono small-caps at top, mood glyph (custom SVG per dominant transit), PP Editorial New italic title, Söhne body text at 18pt, 1.5× line height', c:'ui'},
+      {t:'Audio playback bar — sticky bottom bar (above tab bar): ElevenLabs brand voice avatar circle, play/pause, 15s skip, scrub progress bar, dismiss button', c:'ui'},
+      {t:'"What\'s happening in your sky" — 3-card collapsible section below reading body: each card shows planet name, aspect type, plain-English 1-line summary', c:'ui'},
+      {t:'Reading cache — SwiftData DailyReading @Model: store date + transitKey + title + body + audioURL path, serve cached version instantly if transitKey matches today\'s', c:'swift'},
+      {t:'Share card — ImageRenderer: reading title + mood glyph + "Lumina" wordmark + date — for Instagram Stories/X', c:'swift'},
+      {t:'Skeleton loading state — Lottie constellation animation during generation (not spinner), approximate content height preserved to avoid layout jump', c:'ux'},
+      {t:'Offline graceful degradation — serve last cached reading, show "Updated [relative time]" badge, no error screen', c:'ux'},
+      {t:'OneSignal daily push — transit-specific copy (4–10 words, second-person, present-tense verb), 7:30–9:00 AM local time intelligent delivery, deeplink to reading tab, planet glyph notification image (+60% CTR)', c:'push'},
+    ],
+    criteria: [
+      'Reading body visibly references at least one of user\'s natal placements (not generic horoscope)',
+      'Reading generates in < 3s on 4G LTE (p95 across 20 test calls)',
+      'Audio narration downloads and plays without buffering stutter on 4G',
+      'Cached reading loads in < 50ms on repeat opens same day',
+      'Push notification fires at correct local time (±5 min) — verified with OneSignal delivery report',
+      'Offline state: cached reading visible, no crash, correct relative time shown',
+      'AI cost per reading < $0.01 verified in Anthropic usage dashboard',
+    ],
+    tech: [
+      'Never stream the LLM response — wait for complete ReadingContent before setting viewModel.reading = content (partial reads look broken)',
+      'ElevenLabs audio generation server-side: iOS binary must not contain ElevenLabs API key',
+      'TransitKey must be deterministic from BirthData + calendar date — no randomness, ensures cache consistency across devices',
+      'Reading regeneration server-side throttle prevents runaway AI costs — implement as Supabase edge function checking last_reading_date',
+    ],
+    risks: [
+      'RAG corpus quality is the primary lever for reading quality — manually review 30+ generated readings before launch',
+      'ElevenLabs quota: Starter plan = 30k chars/month (≈ 1 reading/day for ~800 users) — upgrade to Creator ($22/mo) before 1k users',
+    ]
+  },
+  {
+    id: 5, cat: 'ai', color: '#1D9E75',
+    num: '05', name: 'Palm Reading',
+    weeks: 'Wk 16–19', wstart: 16, wend: 19,
+    tagline: 'On-device Core ML segmentation · trace overlay · manual correction · AI narration · transparency modal',
+    est: '16 dev-days',
+    tasks: [
+      {t:'PalmScanView — full-screen AVCapture preview, animated hand outline SVG guide (dashed, pulses when no hand detected), real-time lighting indicator (red/amber/green traffic-light bar), palm fill percentage indicator', c:'ui'},
+      {t:'Real-time hand pose overlay — VNDetectHumanHandPoseRequest on each video frame (Vision on background queue), render 21 landmark dots when confidence > 0.85, wrist-to-middle-finger axis line', c:'cv'},
+      {t:'Auto-capture trigger — fires when: (1) hand pose confidence > 0.92, (2) palm fills 40–70% of frame, (3) lighting level ≥ 0.4 (0–1 normalized), (4) stable for 500ms — countdown animation before capture', c:'cv'},
+      {t:'Core ML inference — LineSegmenter actor: crop 256×256 grayscale ROI from Vision bounding box, run lumina_palm_v1 model, output 4-channel Float32 mask (life=0, heart=1, head=2, fate=3), threshold at 0.5', c:'cv'},
+      {t:'Line mask post-processing — per-channel: morphological closing (5×5 kernel) to fill gaps, Hilditch skeletonization, connected-component labeling, keep largest component per channel', c:'cv'},
+      {t:'Trace overlay view — Canvas renderer: life line (sage green), heart line (blush pink), head line (celestial blue), fate line (gold), rendered over captured image at actual pixel resolution', c:'ui'},
+      {t:'Manual correction UI — DragGesture handle points: each line has movable start/end endpoints + 1 midpoint control, dragging updates line Bezier path, "Looks right →" CTA to confirm', c:'ui'},
+      {t:'PalmFeatureExtractor — from skeletonized lines: normalized length (÷palm width), arc length vs chord curvature ratio, branch count, endpoint positions relative to 5 finger base landmarks (in % of palm height/width)', c:'cv'},
+      {t:'Palm narration generation — PalmFeatures JSON + ChartData summary → claude-opus-4-6 palm_reading_system prompt → PalmNarration { heartLine, headLine, lifeLine, fateLine, synthesis } — max_tokens: 600, temp: 0.4', c:'ai'},
+      {t:'PalmReadingView — 4 expandable accordion cards (heart / head / life / fate) each with line glyph, 2–3 sentence narration, then Synthesis card with chart-palm crossover callout', c:'ui'},
+      {t:'"How this works" transparency modal — shows actual 4-channel segmentation mask from this scan, explains what each feature measures, confirms palm photo never sent to server (on-device Core ML + feature vector only)', c:'ux'},
+      {t:'Palm reading SwiftData storage — PalmReading @Model: date, features (Data/Codable), reading text, traceImagePath (PNG saved to Documents/), thumbnail for history', c:'swift'},
+      {t:'History view — LazyVStack of past scans: date, trace thumbnail, first line of synthesis, tap to re-open full reading', c:'ui'},
+      {t:'Free tier enforcement — IAPManager.isPremium check + SwiftData count of scans this calendar month — show "1 free scan used" badge, upgrade prompt on second attempt', c:'iap'},
+      {t:'Capture failure states — specific error messages per failure mode: LowLighting, HandNotDetected, HandTooSmall, HandObscured — each with retry guidance illustration', c:'ux'},
+    ],
+    criteria: [
+      'Line detection succeeds on ≥ 80% of test captures in standard indoor office lighting (test set: 20 diverse hands)',
+      'End-to-end time: capture trigger → all 4 reading cards displayed < 4s on iPhone 13',
+      'Trace overlay pixel-aligned with captured image (no drift or offset)',
+      'Manual correction drag handles respond at 60fps, commit to correct geometry',
+      '"How this works" modal shows actual (not placeholder) segmentation mask from current scan',
+      'Network traffic confirmed: no palm photo bytes in outbound requests (Proxyman/Charles)',
+      'Free tier: scan #2 correctly shows paywall — scan #1 succeeds, reading shown, upgrade prompt on #2',
+    ],
+    tech: [
+      'Core ML inference on Vision framework queue (background), deliver result back to @MainActor via MainActor.run',
+      'Trace overlay: store capture resolution in PalmCaptureSession, scale overlay Canvas to match exactly — pixel alignment is critical',
+      'Transparency modal: save the actual Float32 mask as a normalized grayscale UIImage for display — generate at capture time, not on demand',
+      'Palm image cleared from memory immediately after Core ML inference (set CMSampleBuffer reference to nil)',
+    ],
+    risks: [
+      'Core ML model mIoU < 0.88 on diverse skin tones — build balanced test set across 6 Fitzpatrick scale levels',
+      'Lighting failures will be top user complaint — budget 3 days for lighting guidance UX polish',
+      'Apple may flag palm-reading app under "fortune telling" category — copy must clearly state AI analysis + entertainment framing',
+    ]
+  },
+  {
+    id: 6, cat: 'feature', color: '#7F77DD',
+    num: '06', name: 'Compatibility',
+    weeks: 'Wk 20–23', wstart: 20, wend: 23,
+    tagline: 'Synastry bi-wheel · composite chart · 5 narrative dimensions · contact import · Crush Report IAP',
+    est: '14 dev-days',
+    tasks: [
+      {t:'CompatibilityView entry — "Add a person" CTA with 3 add paths: contact import (CNContactStore), manual entry form, QR code deep-link scan — presented as action sheet', c:'ui'},
+      {t:'Contact import — CNContactStore permission, filter contacts with CNBirthdayDateComponentsKey, privacy prompt copy "to compare birth charts with friends", handle permission denied gracefully', c:'swift'},
+      {t:'Manual friend entry form — name + birth date (required) + birth time (optional) + birth city (optional) — SwiftUI form with validation', c:'ui'},
+      {t:'Friend @Model SwiftData — name, birthDate, birthTime?, birthLat?, birthLon?, birthCity?, importSource (contacts/manual/deeplink), compatibilityScore (cached, nullable)', c:'swift'},
+      {t:'Swiss Eph backend /synastry endpoint — accepts two BirthData objects, returns synastry aspects (person A planets aspecting person B planets) + bi-wheel JSON', c:'backend'},
+      {t:'Swiss Eph backend /composite endpoint — midpoint composite chart from two birth dates', c:'backend'},
+      {t:'Synastry bi-wheel Canvas renderer — outer ring (person A natal), inner ring (person B natal), inter-chart aspect lines with aspect type colors, house overlay for person A', c:'ui'},
+      {t:'CompatibilityViewModel @MainActor — synastry fetch, composite fetch, LLM report generation, score computation, loading/error orchestration', c:'swift'},
+      {t:'Compatibility score algorithm — weighted aspect scoring: trine +8, sextile +5, conjunction ±4 (sign-dependent), square -6, opposition -3 to +3 (tension-creative axis), normalize 0–100', c:'swift'},
+      {t:'Score label mapping — 80–100: "Magnetic", 65–79: "Harmonious", 45–64: "Stimulating", 0–44: "Challenging" — non-judgmental framing for each', c:'swift'},
+      {t:'LLM compatibility report — 5 narrative dimensions via claude-opus-4-6: Emotional Resonance, Communication Style, Physical Chemistry, Long-Term Compatibility, Growth Edge — each 60–100 words', c:'ai'},
+      {t:'Compatibility result view — score badge (large, colored by label), label, 5 expandable dimension cards, synastry bi-wheel below fold', c:'ui'},
+      {t:'Share card — "I\'m X% compatible with [first name]" + compatibility label + Lumina glyph — 1080×1080 and 1080×1920 formats', c:'swift'},
+      {t:'Crush Report IAP ($4.99 consumable) — unlocks: Davison chart (Swiss Eph backend), transits-to-composite today, "timing windows" analysis (LLM-generated peak periods over next 12 months)', c:'iap'},
+      {t:'Friend graph list view — contacts list with compatibility % badge, sort by (score/name/recent), search by name, pull-to-refresh recalculates cached scores', c:'ui'},
+    ],
+    criteria: [
+      'Synastry bi-wheel renders correct inter-chart aspects for 3 test pairs (verified against astrodienst.com)',
+      'Compatibility score is deterministic — same two people always produce same score regardless of order',
+      'All 5 narrative dimensions present in report, each > 50 words',
+      'Contact import displays correct contacts in < 2s on list of 500 contacts',
+      'Crush Report IAP unlocks Davison + timing windows within 5s of sandbox purchase',
+      'Share card renders correctly in iOS share sheet preview at both dimensions',
+    ],
+    tech: [
+      'Synastry and composite endpoints must be added to Swiss Eph Node.js service in Phase 1 (stub, implement in Phase 6)',
+      'Store Friend records ONLY in SwiftData — never sync to server (privacy-sensitive relationship data)',
+      'Bi-wheel Canvas renderer: outer ring at 90% radius, inner ring at 65% radius, inter-chart lines connect the two rings',
+      'Compatibility score seeded deterministically from both birthDate values — same result regardless of A/B order',
+    ],
+    risks: [
+      'Contact permission rejection rate ~40% on iOS — contextual copy and timing (after showing value) critical',
+      'Bi-wheel Canvas renderer is the most complex drawing in the app — allocate 3 dedicated days',
+    ]
+  },
+  {
+    id: 7, cat: 'feature', color: '#7F77DD',
+    num: '07', name: 'Human Design',
+    weeks: 'Wk 24–26', wstart: 24, wend: 26,
+    tagline: 'Bodygraph SVG · Type/Profile/Authority cards · HD glossary · astrology crossover callouts',
+    est: '10 dev-days',
+    tasks: [
+      {t:'Human Design calculation — port Swift wrapper around open-source HD bodygraph logic (gates, channels, defined/undefined centers, type, profile, authority, variable) from community implementations (e.g. hdkit-style)', c:'swift'},
+      {t:'BodygraphData model — type (5 types), profile (12 profiles 1/3 through 6/2), authority (7 types), definedCenters ([CenterID]), openCenters ([CenterID]), channels ([ChannelID]), activatedGates ([GateID]), splitDefinition', c:'swift'},
+      {t:'Bodygraph SVG renderer — 9 center geometric shapes (Head/Ajna: triangles; Throat: square; G/Heart: diamond; Sacral/Root: squares; Solar Plexus/Spleen: triangles), channel lines, gate numbers at channel endpoints', c:'ui'},
+      {t:'Center fill logic — defined: solid fill per HD center color (Head=purple, Ajna=yellow, Throat=brown, G=yellow, Heart=red, Sacral=red, Solar Plexus=yellow, Spleen=yellow, Root=red), undefined: hollow white with color stroke', c:'swift'},
+      {t:'Split definition rendering — visual gap in channels that split the definition (single/split/triple split/quadruple split bodygraphs)', c:'ui'},
+      {t:'Type card — 5 types with editorial description: strategy, signature, not-self theme, aura type — 3 sentences, plain English, zero unexplained HD terminology', c:'ui'},
+      {t:'Profile card — 12 profiles: life theme narrative + "your role in the world" framing — 2 sentences per profile', c:'ui'},
+      {t:'Authority card — 7 authority types: plain-English "how you make aligned decisions" — specific to user\'s type (e.g. Emotional: "Sleep on it; feel through the wave before committing")', c:'ui'},
+      {t:'Center detail sheets — tap any defined center: center name + "what this center governs" + "when defined, you consistently..." — 2–3 sentences, no jargon', c:'ui'},
+      {t:'HD glossary sheet — complete A–Z glossary of all HD terms used anywhere in the app, NavigationLink from every bolded term, searchable', c:'ux'},
+      {t:'Astrology-HD crossover callouts — algorithmic detection: when HD gate aligns with natal planet within 1° (e.g. "Your Gate 58 aligns with your natal Pluto in the 8th"), surface as highlighted callout card', c:'ai'},
+      {t:'HumanDesignViewModel @MainActor — compute BodygraphData from UserProfile.birthData, cache in SwiftData HumanDesignProfile @Model', c:'swift'},
+      {t:'Premium gate — type + profile accessible free, full bodygraph + authority + centers + crossover callouts locked behind Premium', c:'iap'},
+    ],
+    criteria: [
+      'Bodygraph renders correct type/profile/authority for 5 test birth dates (verified against mybodygraph.com)',
+      'All 9 centers render with correct defined/undefined state and correct HD color',
+      'Type/Profile/Authority cards contain zero unexplained HD jargon (team review)',
+      'HD glossary accessible via NavigationLink from all bolded terms in all HD cards',
+      'Premium gate shows correct gated state and upgrade prompt for non-subscribers',
+    ],
+    tech: [
+      'Human Design calculation: Ra Uru Hu\'s specific algorithms are publicly documented in community; use open reimplementations',
+      'HD center colors are part of the tradition — use standard HD palette inside bodygraph only, not Lumina brand palette',
+      'Bodygraph SVG uses absolute pixel positions (400×600 canonical layout) — scale with GeometryReader at render time',
+    ],
+    risks: [
+      'Human Design calculation edge cases (variable lines, PHS, Incarnation Cross) — test 50+ birth dates against myBodyGraph',
+      'HD content copyright: Ra Uru Hu\'s specific textual descriptions are IP of Jovian Archive — write all copy independently',
+    ]
+  },
+  {
+    id: 8, cat: 'feature', color: '#7F77DD',
+    num: '08', name: 'Journal',
+    weeks: 'Wk 27–28', wstart: 27, wend: 28,
+    tagline: 'Transit-tied prompts · SwiftData · calendar history · longitudinal pattern detection',
+    est: '7 dev-days',
+    tasks: [
+      {t:'JournalPromptGenerator — LuminaAIClient call: active transit key → 1-sentence reflective prompt question, cached per transit key, pre-generated in background on app open', c:'ai'},
+      {t:'JournalEntryView — full-screen writing surface, transit prompt displayed above text editor (dismissable), Söhne 18pt body, auto-save every keystroke debounced 1s via async Task + sleep', c:'ui'},
+      {t:'JournalEntry @Model — id: UUID, date: Date, prompt: String, body: String, transitKey: String, mood: JournalMood? (optional emoji), wordCount: Int (computed)', c:'swift'},
+      {t:'Calendar history view — FSCalendar-style grid or custom LazyVGrid month calendar, day cells show entry dot (filled circle for > 100 words, ring for shorter), tap day → entry detail', c:'ui'},
+      {t:'Entry detail view — read-only with date header, transit context card ("The sky on this day: [transit description]"), full entry text, mood display', c:'ui'},
+      {t:'Word count — subtle live counter at bottom edge, no gamification: no streaks, no achievement banners, no celebration animations (premium signal = anti-gamification)', c:'ux'},
+      {t:'Journal search — SwiftData FetchDescriptor with NSPredicate containing text search on body + prompt, filtered by optional DateInterval, sorted by date descending', c:'swift'},
+      {t:'Pattern detection — after 30th entry: async LLM analysis batch: send last 30 entry transit keys + 3-word body summaries → claude-opus-4-6 → "3 emotional patterns I notice in your transits" — shown as monthly insight card', c:'ai'},
+      {t:'Monthly pattern view — Premium feature: collapsible card at top of journal history showing transit-emotion patterns for the month, tap to expand full analysis', c:'ui'},
+      {t:'Journal premium gate — first 3 entries free (to demonstrate value), entry #4 shows paywall', c:'iap'},
+    ],
+    criteria: [
+      'Journal prompt generates within 1s (cached TransitKey → prompt, no network call if cached)',
+      'Entries auto-save: no data loss on app kill during typing (verified with force-quit test)',
+      'Calendar renders 12 months of history without lag (profile with Instruments if needed)',
+      'Pattern detection fires after 30th entry, analysis card appears on next journal open',
+      'Search returns results in < 100ms for 500 entries (SwiftData NSPredicate benchmark)',
+    ],
+    tech: [
+      'Auto-save: .onChange(of: entryText) → Task { try await Task.sleep(nanoseconds: 1_000_000_000); save() } — cancel previous task on new change',
+      'Journal entries contain sensitive personal reflection — emphasize local-only storage in privacy policy and on-screen',
+      'Pattern detection LLM batch call: send transit keys + 3-word summaries only (not full entry text) for privacy',
+    ],
+    risks: [
+      'Journal entries are highly personal — any server logging of entry content would be a serious privacy violation (none should occur)',
+    ]
+  },
+  {
+    id: 9, cat: 'feature', color: '#7F77DD',
+    num: '09', name: 'Friends + Social',
+    weeks: 'Wk 29–30', wstart: 29, wend: 30,
+    tagline: 'Friend graph · QR deep-links · share cards · chart comparison threads',
+    est: '6 dev-days',
+    tasks: [
+      {t:'FriendsListView — LazyVStack contact list: name, "☉ Sun · ☽ Moon · ↑ Rising" badges, compatibility % pill, last-updated timestamp, "Add" FAB', c:'ui'},
+      {t:'Add friend action sheet — 3 paths: (1) From Contacts (CNContactStore), (2) Enter manually, (3) Scan their QR code', c:'ui'},
+      {t:'QR code generator — encode BirthData as lumina://share/{base64url-encoded JSON} deep-link, render via CoreImage CIQRCodeGenerator, display in full-screen share modal with "Screenshot to share" instruction', c:'swift'},
+      {t:'QR code scanner — AVCaptureMetadataOutput for QR detection, parse lumina:// URL scheme, validate BirthData payload, create Friend record with importSource = .deepLink', c:'swift'},
+      {t:'Chart comparison view — side-by-side: "You" column (sun/moon/rising) vs "Them" column, compatibility score badge, 3-line narrative summary, "See full compatibility report →" CTA', c:'ui'},
+      {t:'Share card system v2 — consolidate all 4 share card types (chart, compatibility, palm, reading) into ShareCardGenerator.swift with consistent Lumina branding, 1080×1080 and 1080×1920 outputs', c:'swift'},
+      {t:'Friend discovery (opt-in) — "Allow friends to find me" Settings toggle: when on, hashed phone number stored in Supabase user_profiles for cross-user matching, default off', c:'swift'},
+      {t:'Friend-added push notification — opt-in: "Notify me when someone adds me as a friend" — OneSignal triggered notification via Supabase edge function on friend_connections insert', c:'push'},
+      {t:'Privacy controls — "Discoverable by friends" toggle, "Delete my friend data" action (removes hashed phone from Supabase), clear UI for what each toggle controls', c:'ux'},
+    ],
+    criteria: [
+      'QR round-trip: generate on device A → scan on device B → Friend record created with correct BirthData',
+      'All 4 share card types render correctly in iOS share sheet preview at 1080×1080',
+      'Friend discovery opt-in: hashed phone stored only when toggle is on, removed immediately when toggled off',
+      'Friend list loads instantly (SwiftData, no network) even with 100 friends',
+    ],
+    tech: [
+      'Store Friend records only in SwiftData — do NOT sync to Supabase (privacy)',
+      'QR payload: encode BirthData only (name + date + time? + place) — never user ID or auth tokens',
+      'Phone hashing: CryptoKit SHA256(canonicalized phone number) — E.164 format before hashing',
+    ],
+    risks: [
+      'Friend discovery requires Supabase edge function and matching logic — scoped to Phase 9, not Phase 1',
+    ]
+  },
+  {
+    id: 10, cat: 'launch', color: '#BA7517',
+    num: '10', name: 'Polish + App Store Launch',
+    weeks: 'Wk 31–34', wstart: 31, wend: 34,
+    tagline: 'Accessibility · performance · screenshots · privacy policy · App Review · TestFlight · press kit',
+    est: '14 dev-days',
+    tasks: [
+      {t:'VoiceOver full audit — every View navigable by VoiceOver, all images have .accessibilityLabel, all interactive elements have .accessibilityHint, custom actions for chart interactions', c:'a11y'},
+      {t:'Dynamic Type audit — test all 8 type sizes including 3 Accessibility sizes, fix any truncation or overlap in primary reading flow', c:'a11y'},
+      {t:'Reduce Motion — wrap all parallax and Lottie animations in withAnimation(.default.speed(0)) when UIAccessibility.isReduceMotionEnabled, use simple fades instead', c:'a11y'},
+      {t:'Color contrast audit — all text meets WCAG 2.1 AA (4.5:1 for body, 3:1 for large text) — use Xcode Accessibility Inspector', c:'a11y'},
+      {t:'Performance: Instruments Time Profiler — cold launch < 1.5s on iPhone 13 (oldest supported), identify and defer any synchronous work in LuminaApp.init()', c:'perf'},
+      {t:'Performance: Instruments Allocations — peak memory < 150MB during palm CV capture on iPhone 13 (camera + Core ML + overlay simultaneously)', c:'perf'},
+      {t:'Performance: Instruments Energy Log — ensure background work stops on app backgrounded (cancel all Tasks, stop camera session, stop motion updates)', c:'perf'},
+      {t:'Scroll performance — profile all LazyVStack and List views at 500+ items, fix any janky frame drops', c:'perf'},
+      {t:'App Store screenshots — design + capture 6.9in (iPhone 16 Pro Max) and 6.5in (iPhone 15 Plus) screenshots for all 10 App Store slots — custom designed, not raw simulator screenshots', c:'aso'},
+      {t:'App Store preview video — 30-second landscape/portrait walkthrough: brand promise screen → chart reveal → palm scan → daily reading audio → compatibility', c:'aso'},
+      {t:'App Store metadata — Title: "Lumina: Astrology & Palm Reading", Subtitle: "Birth Chart, Human Design, AI", Keywords: birth chart, astrology app, palm reading, human design, daily horoscope, compatibility, birth chart app, astrology birth chart', c:'aso'},
+      {t:'Privacy policy — comprehensive: data collected (birth data, palm features NOT photos, journal entries local-only, push tokens), AI provider disclosure (Anthropic), audio provider (ElevenLabs), backend (Supabase), hosted at lumina.app/privacy', c:'legal'},
+      {t:'Terms of service — entertainment disclaimer (not medical, psychological, or financial advice), subscription terms (7-day trial, auto-renewal, cancel anytime), hosted at lumina.app/terms', c:'legal'},
+      {t:'App Store Connect Privacy Nutrition Label — fill in all Data Types accurately: Name (used, linked to user), Birth Date (used, linked), Location (birth place, linked), Usage Data (analytics, linked) — NO lies, it will fail review', c:'legal'},
+      {t:'TestFlight beta — 100 external testers across 3 cohorts: (1) astrology enthusiasts, (2) skeptics, (3) tech early adopters — 2-week beta, structured feedback form per feature', c:'qa'},
+      {t:'Beta feedback triage — P0 (crash/data loss), P1 (feature broken), P2 (UX friction), P3 (nice-to-have) — fix all P0 and P1 before App Store submission', c:'qa'},
+      {t:'App Review submission prep — read all applicable guidelines: 3.1.2(c) subscriptions, 5.1.1 data collection, 4.3 spam, 1.1.6 harmful content — pre-review checklist', c:'appstore'},
+      {t:'Press kit — lumina.app/press: app name, tagline, 50/170/500-word descriptions, hi-res screenshots, brand marks (SVG + PNG), founder bio, launch date', c:'marketing'},
+      {t:'Launch day checklist — App Store page live, product hunt scheduled, social posts drafted (X, Instagram, TikTok), press email list sent, RevenueCat pricing confirmed in production', c:'marketing'},
+    ],
+    criteria: [
+      'VoiceOver: zero unlabeled interactive elements in all 8 features (Accessibility Inspector scan)',
+      'Dynamic Type: no text truncation at Accessibility XL on any primary screen',
+      'Cold launch < 1.5s on iPhone 13 (Instruments Time Profiler, 5 cold starts averaged)',
+      'Peak memory < 150MB during simultaneous camera + Core ML + overlay on iPhone 13',
+      'App Store first submission passes Review — no binary rejection (target: < 2 attempts)',
+      'TestFlight beta: ≥ 80% complete onboarding, ≥ 40% scan their palm, ≥ 60% open daily reading',
+    ],
+    tech: [
+      'App Review: App Reviewer WILL test palm reading — ensure it works first try with good lighting in Cupertino office conditions',
+      'Screenshot design: shoot on physical device with real app state — simulator font rendering differs from device',
+      'Run gitleaks on final commit before submission — one accidentally committed API key will cause binary rejection',
+    ],
+    risks: [
+      'App Review "fortune telling" rejection: frame all copy as "AI analysis" + "for entertainment" — see Apple Guideline 1.1.6',
+      'Screenshot design requires real app state — start in Week 29 in parallel with polish',
+      'App Review can take 1–7 days — schedule submission in Week 33 to have buffer before Week 34 launch date',
+    ]
+  },
+  {
+    id: 11, cat: 'v2', color: '#639922',
+    num: '11', name: 'Post-Launch + v2',
+    weeks: 'Month 9–18', wstart: 35, wend: 60,
+    tagline: 'Analytics · retention · Gene Keys · Vedic · social feed · Watch app · live reader marketplace',
+    est: '24+ dev-weeks',
+    tasks: [
+      {t:'Amplitude (or Mixpanel) analytics — instrument all key events: reading_opened, palm_scanned, chart_tapped, compatibility_viewed, paywall_shown/converted, push_opened, session_length', c:'analytics'},
+      {t:'RevenueCat paywall A/B testing — 3-tier vs 2-tier price ladder, annual badge placement variants, headline copy variants by motivation type', c:'growth'},
+      {t:'Retention push sequences — OneSignal journeys: D1 ("Check if your moon sign changed tonight"), D7 ("Your week ahead has a theme"), D30 ("A month of your sky — ready?") — personalized to motivation type', c:'growth'},
+      {t:'IAP ladder activation — launch Year Ahead ($11.99), Career Forecast ($7.99), Ask the Stars ($2.99) with in-app contextual prompts', c:'iap'},
+      {t:'Gene Keys hologenetic profile — 64 Gene Keys synthesis from HD gates: Life\'s Work, Evolution, Radiance, Purpose keys from birth data', c:'v2'},
+      {t:'Vedic/Jyotish mode — sidereal Lahiri ayanamsha, Vedic house system (Whole Signs sidereal), nakshatra display ring on chart wheel, Vedic compatibility (Guna Milan)', c:'v2'},
+      {t:'Weekly audio "week ahead" — Sunday 7AM push + ElevenLabs narrated 7-day transit forecast (3–5 minutes), download to device for offline', c:'v2'},
+      {t:'Social feed — opt-in friends-only: post reading reactions (tap glyph response), share journal reflections (excerpt only), react with planetary emojis, no algorithmic amplification', c:'v2'},
+      {t:'Apple Watch complication — watchOS 10+ target in Xcode, WidgetKit complication: daily transit glyph + one-line reading on watch face (Modular Large + Graphic Circular)', c:'v2'},
+      {t:'iMessage extension — ShareExtension target, renders compatibility card inline in Messages thread via MSMessagesAppViewController', c:'v2'},
+      {t:'Live reader marketplace (Sanctuary-style) — vetted astrologers/tarot/HD readers, iMessage-style chat, Stripe Connect payouts at ~$2.99/min, reader application + review flow', c:'v2'},
+      {t:'Android app assessment — evaluate React Native (code share with potential web) vs Kotlin Multiplatform Mobile after iOS MRR hits $50k/month', c:'v2'},
+    ],
+    criteria: [
+      'D7 retention > 35% (top-quartile per RevenueCat Health & Fitness benchmark)',
+      'Month-1 premium conversion > 4% (top-quartile per RevenueCat 2023 report)',
+      'IAP ladder: > 5% of premium users purchase a consumable in first 30 days',
+      'Weekly audio: ≥ 50% of premium users play within 24h of Sunday delivery',
+    ],
+    tech: [
+      'Gene Keys: Richard Rudd\'s specific text is copyrighted — write all descriptions independently or license',
+      'Watch complication: add watchOS target in Phase 0 as stub (empty WKExtension) to avoid retroactive code restructuring',
+      'Live reader marketplace: Stripe Connect onboarding + KYC + payout infrastructure = 6+ weeks dedicated — do NOT underestimate',
+    ],
+    risks: [
+      'Live reader marketplace is a separate product-line complexity — scope carefully, consider deferring to Month 15+',
+      'Android only worth building after iOS MRR validates ($50k+/month), otherwise split focus kills both',
+    ]
+  }
+];
+
+function buildTimeline() {
+  const bar = document.getElementById('tbar');
+  const totalWeeks = 34;
+  PHASES.slice(0, 11).forEach(p => {
+    const w = Math.min(p.wend, 34) - p.wstart + 1;
+    const pct = (w / totalWeeks * 100).toFixed(1);
+    const div = document.createElement('div');
+    div.className = 'tbar-phase';
+    div.style.cssText = `background:${p.color};flex:${w};`;
+    div.innerHTML = `<div class="tbar-tooltip">${p.name} (wk ${p.wstart}–${Math.min(p.wend, 34)})</div>`;
+    div.onclick = () => {
+      const el = document.getElementById('phase-' + p.id);
+      if (el) { el.scrollIntoView({behavior: 'smooth', block: 'start'}); togglePhase(p.id); }
+    };
+    bar.appendChild(div);
+  });
+}
+
+function buildPhases(filter) {
+  const list = document.getElementById('phases-list');
+  list.innerHTML = '';
+  const show = filter === 'all' ? PHASES : PHASES.filter(p => p.cat === filter);
+  show.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'phase-card';
+    card.id = 'phase-' + p.id;
+    card.dataset.cat = p.cat;
+    card.innerHTML = `
+      <div class="phase-header" onclick="togglePhase(${p.id})">
+        <div class="phase-accent" style="background:${p.color}"></div>
+        <div class="phase-num">${p.num}</div>
+        <div class="phase-info">
+          <div class="phase-name">${p.name}</div>
+          <div class="phase-tagline">${p.tagline}</div>
+        </div>
+        <div class="phase-meta">
+          <span class="meta-pill">${p.weeks}</span>
+          <span class="meta-pill">${p.tasks.length} tasks</span>
+          <span class="meta-pill">${p.est}</span>
+        </div>
+        <span class="chevron" id="chev-${p.id}">▶</span>
+      </div>
+      <div class="phase-body" id="body-${p.id}">
+        <div class="pb-inner">
+          <div class="pb-col">
+            <div class="pb-section">
+              <div class="pb-section-title">All tasks</div>
+              <ul class="task-list">
+                ${p.tasks.map(t => `
+                  <li class="task-item">
+                    <div class="task-check"></div>
+                    <span class="task-text">${t.t}</span>
+                    <span class="task-tag">${t.c}</span>
+                  </li>`).join('')}
+              </ul>
+            </div>
+          </div>
+          <div class="pb-col">
+            <div class="pb-section">
+              <div class="pb-section-title">Acceptance criteria</div>
+              <ul class="criteria-list">
+                ${p.criteria.map(c => `<li class="criteria-item">${c}</li>`).join('')}
+              </ul>
+            </div>
+            <div class="pb-section">
+              <div class="pb-section-title">Technical notes</div>
+              ${p.tech.map(t => `<div class="tech-note">${t}</div>`).join('')}
+            </div>
+            <div class="pb-section">
+              <div class="pb-section-title">Risk flags</div>
+              <div class="risk-block">
+                ${p.risks.map(r => `<div class="risk-item">${r}</div>`).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+function togglePhase(id) {
+  const body = document.getElementById('body-' + id);
+  const chev = document.getElementById('chev-' + id);
+  const isOpen = body.classList.toggle('open');
+  chev.classList.toggle('open', isOpen);
+  chev.textContent = isOpen ? '▼' : '▶';
+}
+
+function setFilter(cat, btn) {
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildPhases(cat);
+}
+
+buildTimeline();
+buildPhases('all');
+</script>
+</body>
+</html>
