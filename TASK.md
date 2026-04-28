@@ -113,7 +113,10 @@
 
 ## ✅ Completed
 
-*(Nothing yet — project in bootstrap phase)*
+- [x] Set up `.claude/settings.json` — bash permissions, Stop hook checklist, PreToolUse secrets guard
+- [x] Create `.claude/commands/` — `/build`, `/lint`, `/test`, `/chart`, `/new-feature`, `/session-end`
+- [x] Update `CLAUDE.md` — Quick Context table, active branch, optimized session protocol
+- [x] Configure `.swiftlint.yml` — strict mode (pre-existing)
 
 ---
 

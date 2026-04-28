@@ -1,0 +1,57 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git fetch origin*)",
+      "Bash(git push -u origin*)",
+      "Bash(git add *)",
+      "Bash(git commit*)",
+      "Bash(find . *)",
+      "Bash(grep *)",
+      "Bash(ls*)",
+      "Bash(cat *)",
+      "Bash(swiftlint lint*)",
+      "Bash(swiftlint --strict*)",
+      "Bash(xcodebuild -scheme Lumina*)",
+      "Bash(xcodebuild -scheme LuminaTests*)",
+      "Bash(xcodebuild test*)",
+      "Bash(xcodebuild build*)",
+      "Bash(xcrun*)",
+      "Bash(xcpretty*)",
+      "Bash(npm run*)",
+      "Bash(npm install*)",
+      "Bash(node *)",
+      "Bash(python scripts/*)",
+      "Bash(source .venv/bin/activate*)",
+      "Bash(mkdir -p *)"
+    ],
+    "deny": []
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '\n╔══════════════════════════════════════════╗\n║     LUMINA SESSION END CHECKLIST         ║\n╠══════════════════════════════════════════╣\n║  [ ] Update TASK.md — mark completed,   ║\n║      update in-progress, add blockers   ║\n║  [ ] Update LEARNINGS.md — new gotchas  ║\n║  [ ] swiftlint lint --strict (no warns) ║\n║  [ ] git push to feature branch         ║\n║  [ ] NEVER push directly to main        ║\n╚══════════════════════════════════════════╝'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'git commit'; then git status --short | grep -E '\\.(env|xcconfig|pem|key|p12|cer)' && echo 'WARNING: Possible secrets file staged for commit!' || true; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
