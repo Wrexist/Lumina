@@ -15,7 +15,7 @@
 - [x] Configure SwiftLint `.swiftlint.yml` — strict mode (added `excluded:` for design-token files)
 - [x] Configure SwiftFormat `.swiftformat`
 - [x] Set up GitHub Actions CI workflow (type-check + lint + test) — `.github/workflows/ci.yml` runs on `macos-14`
-- [ ] Set up Xcode Cloud for TestFlight distribution
+- [ ] Set up TestFlight distribution via GitHub Actions + fastlane (Xcode Cloud is impractical without a local Mac to drive its setup) — needs Apple Developer Program enrollment, App Store Connect API key, signing P12, provisioning profile
 - [!] Create Supabase project — auth, user_profiles table, pgvector extension — needs human account credentials
 
 ### Design System

@@ -12,12 +12,10 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
-    SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
-    SWIFT_UPCOMING_FEATURE_INTERNAL_IMPORTS_BY_DEFAULT: YES
     ENABLE_USER_SCRIPT_SANDBOXING: YES
-    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
-    GCC_TREAT_WARNINGS_AS_ERRORS: YES
     CLANG_ENABLE_MODULES: YES
+    # Warnings-as-errors and upcoming-features are applied per-target below
+    # so they only gate our own code, not SPM dependency builds.
 
 configs:
   Debug: debug
@@ -78,6 +76,10 @@ targets:
         IPHONEOS_DEPLOYMENT_TARGET: "26.0"
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Tighten only on our own code; SPM dep builds are unaffected.
+        SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+        GCC_TREAT_WARNINGS_AS_ERRORS: YES
+        SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
     dependencies:
       - package: RevenueCat
         product: RevenueCat

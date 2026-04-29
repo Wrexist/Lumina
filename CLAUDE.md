@@ -9,20 +9,19 @@
 
 | Item | Value |
 |---|---|
-| **Phase** | Bootstrap — Xcode scaffolding committed; run `xcodegen generate` to materialize `Lumina.xcodeproj` |
+| **Phase** | Bootstrap — Xcode scaffolding committed; CI builds on every push |
 | **Active branch** | `claude/initial-app-setup-hQvKZ` |
 | **Last updated** | 2026-04-29 |
-| **Blockers** | Font license · Swiss Eph license · ElevenLabs voice · Palm ML model · Supabase project |
+| **Dev environment** | **No local macOS** — CI on `macos-15`/Xcode-latest is the only build/test loop |
+| **Blockers** | Font license · Swiss Eph license · ElevenLabs voice · Palm ML model · Supabase project · TestFlight signing |
 
-**Before writing any code:** the project is generated from `project.yml` via XcodeGen. If `Lumina.xcodeproj` does not exist locally, run `brew install xcodegen && bash scripts/inject_env.sh && xcodegen generate`. SPM resolves on first Xcode open.
+**No-Mac workflow.** This developer has no macOS machine, so every iOS verification happens through GitHub Actions:
 
-**Custom slash commands available** (`.claude/commands/`):
-- `/build` — xcodebuild against iPhone 16 Pro sim
-- `/lint` — swiftlint strict, zero warnings policy
-- `/test` — full test suite
-- `/chart` — generate test ephemeris JSON from backend
-- `/new-feature <Name>` — scaffold a feature module
-- `/session-end` — end-of-session checklist + push
+1. Edit Swift / `project.yml` / config locally on Linux.
+2. `git push` to a `claude/**` branch — workflow `.github/workflows/ci.yml` runs `xcodegen generate → swiftlint → xcodebuild build → xcodebuild test` on `macos-15`.
+3. Read CI logs (via the GitHub MCP or the Actions UI) to verify; iterate.
+4. There is **no `xcodebuild` available locally** — the `/build`, `/test`, `/lint`, `/chart` slash commands and most macOS-only docs apply only when run on a Mac. Outside that, treat them as documentation of what CI does.
+5. To actually run the app on a phone, ship via CI → TestFlight (planned milestone — needs Apple Developer signing artifacts).
 
 ---
 
@@ -258,13 +257,13 @@ No Alamofire — use native `URLSession` with async/await actors. No RxSwift/Com
 - Document decisions in code comments using `// DECISION:` prefix
 - Flag any API key exposure immediately — check with `git status` before every commit
 - Use `// TODO(lumina):` tags for deferred work, not inline fixups
-- Use `/build`, `/lint`, `/test` slash commands to verify work before committing
+- **No local macOS:** push to a `claude/**` branch and read CI logs to verify — `/build`, `/lint`, `/test` only work on a Mac. Where possible, validate Swift mentally against `.swiftlint.yml` rules, parse `project.yml` with `python3 -c 'import yaml'` after edits, and `bash -n` any shell scripts.
 
 ### At the End of a Session
 1. Run `/session-end` for the full automated checklist, or manually:
 2. Update `TASK.md` — mark completed `[x]`, in-progress `[~]`, add blockers
 3. Update `LEARNINGS.md` — append new gotchas with `[2026-04]` date tag
-4. Run `swiftlint lint --strict` — zero warnings before committing
+4. CI runs `swiftlint lint --strict` on push — let it gate the merge
 5. `git push -u origin claude/initial-app-setup-hQvKZ`
 6. If RevenueCat entitlements changed, note in `LEARNINGS.md` under IAP section
 7. Update the **Last updated** date in the Quick Context table above

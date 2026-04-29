@@ -189,5 +189,12 @@ Initially used `s/m/l` but `identifier_name` errors on single-character names (e
 **[2026-04-29] Active branch is `claude/initial-app-setup-hQvKZ`**
 CLAUDE.md previously listed `claude/optimize-config-setup-xfpK1` (now merged into main). All bootstrap work lives on `claude/initial-app-setup-hQvKZ`.
 
-**[2026-04-29] CI runs on macos-14 with Xcode 17**
-GitHub Actions workflow at `.github/workflows/ci.yml` runs xcodegen → swiftlint → swiftformat → xcodebuild build → xcodebuild test against the `iPhone 16 Pro` simulator. Distribution-section guidance still applies long-term: split fast lint/type-check (GH Actions) from full archive+TestFlight (Xcode Cloud). For now the single workflow covers both.
+**[2026-04-29] CI runs on macos-15 with latest-stable Xcode**
+GitHub Actions workflow at `.github/workflows/ci.yml` runs xcodegen → swiftlint → swiftformat (non-blocking) → xcodebuild build → xcodebuild test against the `iPhone 16 Pro` simulator. Uses `maxim-lobanov/setup-xcode@v1` with `xcode-version: latest-stable` so the workflow doesn't break when Xcode point releases ship; and `xcbeautify --renderer github-actions` for native log folding. Originally pinned Xcode 17 path on macos-14 — fragile against runner image churn.
+
+**[2026-04-29] No-Mac dev — CI is the only build/test loop**
+Developer has no local macOS, so every Swift change rides CI to be verified. Implications:
+- Don't put aggressive build-fail flags (warnings-as-errors, upcoming features) on the project base — scope them to the `Lumina` target so SPM dependency builds aren't tripped by their own emitted warnings.
+- The `/build`, `/test`, `/lint`, `/chart` slash commands document what CI runs; they aren't usable locally.
+- `swiftformat --lint` is `continue-on-error: true` until a baseline format pass is committed; currently I have no way to run swiftformat locally so it would otherwise gate every PR.
+- Distribution to a real device requires GitHub Actions → fastlane → TestFlight (no Xcode Cloud — its setup wizard practically requires a Mac). Tracked as a milestone in TASK.md once an Apple Developer account + signing artifacts exist.
