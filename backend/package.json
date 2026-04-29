@@ -1,0 +1,29 @@
+{
+  "name": "lumina-ephemeris",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lumina self-hosted ephemeris microservice — computes birth charts from astronomy-engine (will swap to Swiss Ephemeris once licensed).",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file-if-exists=.env --experimental-strip-types src/server.ts",
+    "start": "node --env-file-if-exists=.env --experimental-strip-types src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "chart": "node --experimental-strip-types scripts/chart-cli.ts"
+  },
+  "dependencies": {
+    "astronomy-engine": "^2.1.19",
+    "fastify": "^5.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "pino-pretty": "^11.2.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
