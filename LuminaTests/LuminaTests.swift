@@ -68,7 +68,13 @@ final class LuminaTests: XCTestCase {
             { "planet": "Sun",     "longitude": 84.15,  "latitude": 0.0,   "isRetrograde": false },
             { "planet": "Moon",    "longitude": 345.64, "latitude": 3.15,  "isRetrograde": false },
             { "planet": "Mercury", "longitude": 65.73,  "latitude": -1.66, "isRetrograde": false }
-          ]
+          ],
+          "houses": {
+            "system": "placidus",
+            "ascendant": 192.01,
+            "midheaven": 106.73,
+            "cusps": [192.01, 220.5, 252.7, 286.73, 320.5, 350.0, 12.01, 40.5, 72.7, 106.73, 140.5, 170.0]
+          }
         }
         """.utf8)
 
@@ -100,6 +106,25 @@ final class LuminaTests: XCTestCase {
         XCTAssertEqual(chart.planets.count, 3)
         XCTAssertEqual(chart.planets.first?.planet, "Sun")
         XCTAssertEqual(chart.planets.first?.longitude ?? 0, 84.15, accuracy: 0.001)
+        XCTAssertNotNil(chart.houses)
+        XCTAssertEqual(chart.houses?.system, .placidus)
+        XCTAssertEqual(chart.houses?.cusps.count, 12)
+        XCTAssertEqual(chart.houses?.ascendant ?? 0, 192.01, accuracy: 0.001)
+    }
+
+    func testNatalChartDecodesNullHouses() throws {
+        let json = Data("""
+        {
+          "calculatedAt": "2026-04-29T15:40:12Z",
+          "houseSystem": "placidus",
+          "planets": [],
+          "houses": null
+        }
+        """.utf8)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let chart = try decoder.decode(NatalChart.self, from: json)
+        XCTAssertNil(chart.houses)
     }
 
     func testEphemerisServiceSurfacesHTTPErrors() async {

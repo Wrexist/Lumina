@@ -119,7 +119,10 @@ describe("POST /chart", () => {
       payload,
     });
     expect(response.statusCode).toBe(200);
-    expect(response.json().planets).toHaveLength(10);
+    const chart = response.json();
+    expect(chart.planets).toHaveLength(10);
+    // Without a birth time, houses are meaningless — backend returns null.
+    expect(chart.houses).toBeNull();
   });
 
   test("accepts a payload with birthTime explicitly null (iOS path)", async () => {
@@ -130,6 +133,24 @@ describe("POST /chart", () => {
       payload: { ...sampleBirthData, birthTime: null },
     });
     expect(response.statusCode).toBe(200);
-    expect(response.json().planets).toHaveLength(10);
+    const chart = response.json();
+    expect(chart.planets).toHaveLength(10);
+    expect(chart.houses).toBeNull();
+  });
+
+  test("returns Placidus houses when birthTime is provided", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/chart",
+      headers: { "x-lumina-secret": TEST_SECRET },
+      payload: sampleBirthData,
+    });
+    expect(response.statusCode).toBe(200);
+    const chart = response.json();
+    expect(chart.houses).not.toBeNull();
+    expect(chart.houses.system).toBe("placidus");
+    expect(chart.houses.cusps).toHaveLength(12);
+    expect(chart.houses.cusps[0]).toBeCloseTo(chart.houses.ascendant, 6);
+    expect(chart.houses.cusps[9]).toBeCloseTo(chart.houses.midheaven, 6);
   });
 });

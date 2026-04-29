@@ -35,7 +35,8 @@
 ### Backend (Node.js Swiss Ephemeris service)
 - [x] **[2026-04-29]** Fastify 5 + TS 5 scaffold; `astronomy-engine` for planet positions; zod request validation; X-Lumina-Secret auth; vitest (7 tests including missing-/null-`birthTime` paths); `npm run chart` CLI; runs on `node --experimental-strip-types` (no bundler). Live `/health` and `/chart` smoke-tested locally.
 - [x] **[2026-04-29]** Wire `EphemerisService.chart()` in iOS to actually POST to the backend
-- [ ] House calculations (Placidus / Whole Sign / Sidereal)
+- [x] **[2026-04-29]** House calculations — Placidus iterative cusps + closed-form Asc/MC + whole-sign fallback for |lat| ≥ 66.5°. Six new vitest cases. iOS `NatalChart.HouseCusps` model + decode test.
+- [ ] Sidereal house variant (subtract Lahiri ayanamsha from tropical longitudes)
 - [ ] Aspects (sextile/square/trine/opposition/conjunction with orbs)
 - [ ] Transits & progressions
 - [ ] Swap `astronomy-engine` → `swisseph` once Swiss Ephemeris Pro license clears

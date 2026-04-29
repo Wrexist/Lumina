@@ -31,10 +31,23 @@ export const PlanetPositionSchema = z.object({
 
 export type PlanetPosition = z.infer<typeof PlanetPositionSchema>;
 
+/** Mirrors `NatalChart.HouseCusps` in Swift. */
+export const HouseCuspsSchema = z.object({
+  system: HouseSystemSchema,
+  ascendant: z.number(),
+  midheaven: z.number(),
+  /** 12 cusps, index 0 == house 1 == ascendant. */
+  cusps: z.array(z.number()).length(12),
+});
+
+export type HouseCusps = z.infer<typeof HouseCuspsSchema>;
+
 export const NatalChartSchema = z.object({
   calculatedAt: z.string().datetime({ offset: true }),
   houseSystem: HouseSystemSchema,
   planets: z.array(PlanetPositionSchema),
+  /** Optional — null when the birth time is unknown (chart is sun-noon). */
+  houses: HouseCuspsSchema.nullable(),
 });
 
 export type NatalChart = z.infer<typeof NatalChartSchema>;

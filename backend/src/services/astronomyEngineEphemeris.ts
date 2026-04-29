@@ -1,5 +1,6 @@
 import { Body, Ecliptic, GeoVector } from "astronomy-engine";
-import type { BirthData, NatalChart, PlanetPosition } from "../types.ts";
+import { placidusHouses } from "../lib/houses.ts";
+import type { BirthData, HouseCusps, NatalChart, PlanetPosition } from "../types.ts";
 import type { EphemerisService } from "./ephemeris.ts";
 
 interface PlanetSpec {
@@ -39,12 +40,12 @@ export class AstronomyEngineEphemeris implements EphemerisService {
   async chart(birthData: BirthData): Promise<NatalChart> {
     const instant = effectiveInstant(birthData);
     const planets = PLANETS.map((spec) => positionAt(spec, instant));
+    const houses = housesFor(birthData, instant);
     return {
       calculatedAt: new Date().toISOString(),
-      // Houses aren't computed yet — declared as Placidus to match the
-      // app's default; this field is informational until houses ship.
-      houseSystem: "placidus",
+      houseSystem: houses?.system ?? "placidus",
       planets,
+      houses,
     };
   }
 }
@@ -53,6 +54,12 @@ function effectiveInstant(birthData: BirthData): Date {
   // If birthTime is null we use noon UT on the birth date — see LEARNINGS.md.
   const source = birthData.birthTime ?? noonUTOf(birthData.birthDate);
   return new Date(source);
+}
+
+function housesFor(birthData: BirthData, instant: Date): HouseCusps | null {
+  // Without a real birth time, houses, Asc, and MC are meaningless.
+  if (birthData.birthTime == null) return null;
+  return placidusHouses(instant, birthData.latitude, birthData.longitude);
 }
 
 function noonUTOf(isoDate: string): string {
