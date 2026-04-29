@@ -7,16 +7,16 @@ import Foundation
 /// backend's `birthTime: z.string().datetime().nullable()` schema accepts
 /// it; Swift's default `Encodable` would otherwise omit the key.
 struct BirthData: Codable, Hashable, Sendable {
+    enum CodingKeys: String, CodingKey {
+        case birthDate, birthTime, placeName, latitude, longitude, timeZoneIdentifier
+    }
+
     let birthDate: Date
     let birthTime: Date?
     let placeName: String
     let latitude: Double
     let longitude: Double
     let timeZoneIdentifier: String
-
-    enum CodingKeys: String, CodingKey {
-        case birthDate, birthTime, placeName, latitude, longitude, timeZoneIdentifier
-    }
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)

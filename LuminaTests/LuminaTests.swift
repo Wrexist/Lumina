@@ -1,7 +1,21 @@
-import XCTest
 @testable import Lumina
+import XCTest
 
 final class LuminaTests: XCTestCase {
+    private static let sampleBirthData: BirthData = {
+        let formatter = ISO8601DateFormatter()
+        let birthDate = formatter.date(from: "1990-06-15T00:00:00Z") ?? Date()
+        let birthTime = formatter.date(from: "1990-06-15T12:30:00Z") ?? Date()
+        return BirthData(
+            birthDate: birthDate,
+            birthTime: birthTime,
+            placeName: "Stockholm",
+            latitude: 59.3293,
+            longitude: 18.0686,
+            timeZoneIdentifier: "Europe/Stockholm"
+        )
+    }()
+
     func testSpacingTokensAreOnEightPointGrid() {
         XCTAssertEqual(LuminaSpacing.xs, 4)
         XCTAssertEqual(LuminaSpacing.sm, 8)
@@ -46,7 +60,7 @@ final class LuminaTests: XCTestCase {
     }
 
     func testEphemerisServiceRoundTripDecodesNatalChart() async throws {
-        let chartJSON = """
+        let chartJSON = Data("""
         {
           "calculatedAt": "2026-04-29T15:40:12.600Z",
           "houseSystem": "placidus",
@@ -56,7 +70,7 @@ final class LuminaTests: XCTestCase {
             { "planet": "Mercury", "longitude": 65.73,  "latitude": -1.66, "isRetrograde": false }
           ]
         }
-        """.data(using: .utf8) ?? Data()
+        """.utf8)
 
         MockURLProtocol.handler = { request in
             XCTAssertEqual(request.httpMethod, "POST")
@@ -112,22 +126,6 @@ final class LuminaTests: XCTestCase {
         }
     }
 
-    // MARK: - helpers
-
-    private static let sampleBirthData: BirthData = {
-        let formatter = ISO8601DateFormatter()
-        let birthDate = formatter.date(from: "1990-06-15T00:00:00Z") ?? Date()
-        let birthTime = formatter.date(from: "1990-06-15T12:30:00Z") ?? Date()
-        return BirthData(
-            birthDate: birthDate,
-            birthTime: birthTime,
-            placeName: "Stockholm",
-            latitude: 59.3293,
-            longitude: 18.0686,
-            timeZoneIdentifier: "Europe/Stockholm"
-        )
-    }()
-
     private func stringify(_ data: Data) -> String {
         String(data: data, encoding: .utf8) ?? ""
     }
@@ -135,7 +133,7 @@ final class LuminaTests: XCTestCase {
 
 // MARK: - URL protocol mock
 
-final class MockURLProtocol: URLProtocol, @unchecked Sendable {
+class MockURLProtocol: URLProtocol, @unchecked Sendable {
     typealias Handler = @Sendable (URLRequest) throws -> (HTTPURLResponse, Data)
 
     nonisolated(unsafe) static var handler: Handler?
@@ -196,7 +194,7 @@ extension URLRequest {
         stream.open()
         defer { stream.close() }
         var data = Data()
-        let bufferSize = 4096
+        let bufferSize = 4_096
         let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
         defer { buffer.deallocate() }
         while stream.hasBytesAvailable {

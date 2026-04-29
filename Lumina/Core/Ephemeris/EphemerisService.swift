@@ -15,6 +15,35 @@ actor EphemerisService {
         case decoding(message: String)
     }
 
+    private static let chartEncoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        return encoder
+    }()
+
+    private static let chartDecoder: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let raw = try container.decode(String.self)
+            if let date = Self.withFractionalSeconds.date(from: raw) { return date }
+            if let date = Self.withoutFractionalSeconds.date(from: raw) { return date }
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Expected ISO 8601 date, got \"\(raw)\""
+            )
+        }
+        return decoder
+    }()
+
+    private static let withFractionalSeconds: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
+    private static let withoutFractionalSeconds = ISO8601DateFormatter()
+
     private let logger = Logger(subsystem: "app.lumina.ios", category: "Ephemeris")
     private let session: URLSession
     private let baseURL: URL?
@@ -60,33 +89,4 @@ actor EphemerisService {
         request.httpBody = try Self.chartEncoder.encode(birthData)
         return request
     }
-
-    private static let chartEncoder: JSONEncoder = {
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        return encoder
-    }()
-
-    private static let chartDecoder: JSONDecoder = {
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .custom { decoder in
-            let container = try decoder.singleValueContainer()
-            let raw = try container.decode(String.self)
-            if let date = withFractionalSeconds.date(from: raw) { return date }
-            if let date = withoutFractionalSeconds.date(from: raw) { return date }
-            throw DecodingError.dataCorruptedError(
-                in: container,
-                debugDescription: "Expected ISO 8601 date, got \"\(raw)\""
-            )
-        }
-        return decoder
-    }()
-
-    private static let withFractionalSeconds: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
-    private static let withoutFractionalSeconds = ISO8601DateFormatter()
 }
