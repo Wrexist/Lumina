@@ -31,6 +31,29 @@ export const PlanetPositionSchema = z.object({
 
 export type PlanetPosition = z.infer<typeof PlanetPositionSchema>;
 
+export const AspectTypeSchema = z.enum([
+  "conjunction",
+  "sextile",
+  "square",
+  "trine",
+  "opposition",
+]);
+
+export type AspectType = z.infer<typeof AspectTypeSchema>;
+
+/** Mirrors `NatalChart.Aspect` in Swift. */
+export const AspectSchema = z.object({
+  planet1: z.string(),
+  planet2: z.string(),
+  type: AspectTypeSchema,
+  /** Exact aspect angle in degrees (0, 60, 90, 120, 180). */
+  exactAngle: z.number(),
+  /** Absolute deviation from the exact aspect angle, in degrees. */
+  orb: z.number().nonnegative(),
+});
+
+export type Aspect = z.infer<typeof AspectSchema>;
+
 /** Mirrors `NatalChart.HouseCusps` in Swift. */
 export const HouseCuspsSchema = z.object({
   system: HouseSystemSchema,
@@ -46,7 +69,9 @@ export const NatalChartSchema = z.object({
   calculatedAt: z.string().datetime({ offset: true }),
   houseSystem: HouseSystemSchema,
   planets: z.array(PlanetPositionSchema),
-  /** Optional — null when the birth time is unknown (chart is sun-noon). */
+  /** Major aspects between natal planet pairs, sorted ascending by orb. */
+  aspects: z.array(AspectSchema),
+  /** Null when the birth time is unknown (chart is sun-noon). */
   houses: HouseCuspsSchema.nullable(),
 });
 

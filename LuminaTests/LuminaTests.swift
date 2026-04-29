@@ -69,6 +69,9 @@ final class LuminaTests: XCTestCase {
             { "planet": "Moon",    "longitude": 345.64, "latitude": 3.15,  "isRetrograde": false },
             { "planet": "Mercury", "longitude": 65.73,  "latitude": -1.66, "isRetrograde": false }
           ],
+          "aspects": [
+            { "planet1": "Sun", "planet2": "Moon", "type": "square", "exactAngle": 90, "orb": 5.6 }
+          ],
           "houses": {
             "system": "placidus",
             "ascendant": 192.01,
@@ -110,6 +113,9 @@ final class LuminaTests: XCTestCase {
         XCTAssertEqual(chart.houses?.system, .placidus)
         XCTAssertEqual(chart.houses?.cusps.count, 12)
         XCTAssertEqual(chart.houses?.ascendant ?? 0, 192.01, accuracy: 0.001)
+        XCTAssertEqual(chart.aspects.count, 1)
+        XCTAssertEqual(chart.aspects.first?.type, .square)
+        XCTAssertEqual(chart.aspects.first?.orb ?? 0, 5.6, accuracy: 0.001)
     }
 
     func testNatalChartDecodesNullHouses() throws {
@@ -118,6 +124,7 @@ final class LuminaTests: XCTestCase {
           "calculatedAt": "2026-04-29T15:40:12Z",
           "houseSystem": "placidus",
           "planets": [],
+          "aspects": [],
           "houses": null
         }
         """.utf8)
@@ -125,6 +132,7 @@ final class LuminaTests: XCTestCase {
         decoder.dateDecodingStrategy = .iso8601
         let chart = try decoder.decode(NatalChart.self, from: json)
         XCTAssertNil(chart.houses)
+        XCTAssertEqual(chart.aspects, [])
     }
 
     func testEphemerisServiceSurfacesHTTPErrors() async {

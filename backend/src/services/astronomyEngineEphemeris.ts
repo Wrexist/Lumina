@@ -1,4 +1,5 @@
 import { Body, Ecliptic, GeoVector } from "astronomy-engine";
+import { computeAspects } from "../lib/aspects.ts";
 import { placidusHouses } from "../lib/houses.ts";
 import type { BirthData, HouseCusps, NatalChart, PlanetPosition } from "../types.ts";
 import type { EphemerisService } from "./ephemeris.ts";
@@ -41,10 +42,12 @@ export class AstronomyEngineEphemeris implements EphemerisService {
     const instant = effectiveInstant(birthData);
     const planets = PLANETS.map((spec) => positionAt(spec, instant));
     const houses = housesFor(birthData, instant);
+    const aspects = computeAspects(planets);
     return {
       calculatedAt: new Date().toISOString(),
       houseSystem: houses?.system ?? "placidus",
       planets,
+      aspects,
       houses,
     };
   }

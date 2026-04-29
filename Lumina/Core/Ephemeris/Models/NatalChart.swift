@@ -19,9 +19,21 @@ struct NatalChart: Codable, Hashable, Sendable {
         let cusps: [Double]
     }
 
+    /// One of the five major Ptolemaic aspects between two natal planets.
+    /// `exactAngle` is the canonical aspect angle (0, 60, 90, 120, 180);
+    /// `orb` is the absolute deviation from that exact angle.
+    struct Aspect: Codable, Hashable, Sendable {
+        let planet1: String
+        let planet2: String
+        let type: AspectType
+        let exactAngle: Double
+        let orb: Double
+    }
+
     let calculatedAt: Date
     let houseSystem: HouseSystem
     let planets: [PlanetPosition]
+    let aspects: [Aspect]
     let houses: HouseCusps?
 }
 
@@ -30,4 +42,13 @@ enum HouseSystem: String, Codable, Sendable, CaseIterable {
     case placidus
     case wholeSign
     case sidereal
+}
+
+/// The five major Ptolemaic aspects.
+enum AspectType: String, Codable, Sendable, CaseIterable {
+    case conjunction
+    case sextile
+    case square
+    case trine
+    case opposition
 }
