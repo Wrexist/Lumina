@@ -209,6 +209,10 @@ The backend uses `astronomy-engine` (pure JS, MIT) instead of `swisseph` (C++ No
 **[2026-04-29] astronomy-engine API quirk: EclipticLongitude is heliocentric**
 `EclipticLongitude(Body.Sun, time)` throws "Cannot calculate heliocentric longitude of the Sun" because the function returns heliocentric, not geocentric, longitude. For the geocentric ecliptic position used by astrology, the right call is `Ecliptic(GeoVector(body, time, true)).elon` for ALL bodies including Sun and Moon. The retrograde flag is computed by sampling longitude one hour earlier and signing the delta.
 
+**[2026-04-29] iOS ↔ backend JSON contract has two quirks**
+- The backend writes `calculatedAt` via `new Date().toISOString()` which always includes fractional seconds (`...12.600Z`). Swift's default `JSONDecoder.DateDecodingStrategy.iso8601` rejects fractional seconds. Fix: a custom strategy that tries `[.withInternetDateTime, .withFractionalSeconds]` first, then plain `withInternetDateTime`. Lives in `EphemerisService.swift` as `chartDecoder`.
+- The zod schema declares `birthTime` as `.nullable()`, which requires the key to be present. Swift's default `Encodable` for `Date?` *omits* the key when nil. The fix is twofold: the iOS `BirthData` overrides `encode(to:)` to always emit `birthTime` (as JSON `null` when nil), AND the zod schema adds `.optional()` so omitted-key payloads from the CLI / future clients still validate.
+
 **[2026-04-29] Drop tsx, use Node 22 `--experimental-strip-types`**
 Originally used `tsx` for dev/CLI. tsx loads astronomy-engine's CJS entry, where named imports (`import { Body }`) silently fail because the CJS module's static analysis can't detect named exports. Vitest happens to load the ESM entry so its test pass — divergent runtime behavior between tools. Fix: drop `tsx`, run `.ts` files directly with `node --experimental-strip-types` (Node 22.6+). Required:
 - `tsconfig.json`: `"allowImportingTsExtensions": true`, `"noEmit": true`, `"rewriteRelativeImportExtensions": true`

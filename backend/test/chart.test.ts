@@ -109,4 +109,27 @@ describe("POST /chart", () => {
     expect(sun.longitude).toBeGreaterThan(60);
     expect(sun.longitude).toBeLessThan(95);
   });
+
+  test("accepts a payload that omits birthTime (CLI / unknown-time path)", async () => {
+    const { birthTime: _omit, ...payload } = sampleBirthData;
+    const response = await app.inject({
+      method: "POST",
+      url: "/chart",
+      headers: { "x-lumina-secret": TEST_SECRET },
+      payload,
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().planets).toHaveLength(10);
+  });
+
+  test("accepts a payload with birthTime explicitly null (iOS path)", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/chart",
+      headers: { "x-lumina-secret": TEST_SECRET },
+      payload: { ...sampleBirthData, birthTime: null },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().planets).toHaveLength(10);
+  });
 });

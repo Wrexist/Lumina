@@ -28,13 +28,13 @@
 - [ ] Create `LuminaTextField` component
 
 ### Core Services
-- [~] `EphemerisService.swift` — actor wrapping Swiss Eph Node API — actor + Info.plist plumbing in place; HTTP body `// TODO(lumina)`. **Backend now exists at `/backend` and answers POST /chart** — wire this up next.
+- [x] **[2026-04-29]** `EphemerisService.swift` — actor wrapping Swiss Eph Node API. Real `URLSession` POST to `{baseURL}/chart` with `X-Lumina-Secret` header, structured `ServiceError` cases, lenient ISO 8601 decoder for the backend's fractional-second `calculatedAt`. Round-trip tested via `URLProtocol` mock.
 - [~] `LuminaAIClient.swift` — actor wrapping Anthropic API — actor + key plumbing in place; HTTP body `// TODO(lumina)`
 - [~] `IAPManager.swift` — RevenueCat actor, entitlement check helper — actor + `Entitlement` enum in place; SDK calls `// TODO(lumina)`
 
 ### Backend (Node.js Swiss Ephemeris service)
-- [x] **[2026-04-29]** Fastify 5 + TS 5 scaffold; `astronomy-engine` for planet positions; zod request validation; X-Lumina-Secret auth; vitest (5 tests); `npm run chart` CLI; runs on `node --experimental-strip-types` (no bundler). Live `/health` and `/chart` smoke-tested locally.
-- [ ] Wire `EphemerisService.chart()` in iOS to actually POST to the backend
+- [x] **[2026-04-29]** Fastify 5 + TS 5 scaffold; `astronomy-engine` for planet positions; zod request validation; X-Lumina-Secret auth; vitest (7 tests including missing-/null-`birthTime` paths); `npm run chart` CLI; runs on `node --experimental-strip-types` (no bundler). Live `/health` and `/chart` smoke-tested locally.
+- [x] **[2026-04-29]** Wire `EphemerisService.chart()` in iOS to actually POST to the backend
 - [ ] House calculations (Placidus / Whole Sign / Sidereal)
 - [ ] Aspects (sextile/square/trine/opposition/conjunction with orbs)
 - [ ] Transits & progressions

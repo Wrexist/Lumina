@@ -6,7 +6,10 @@ import { z } from "zod";
  */
 export const BirthDataSchema = z.object({
   birthDate: z.string().datetime({ offset: true }),
-  birthTime: z.string().datetime({ offset: true }).nullable(),
+  // The iOS encoder always emits this key (null when no birth time is
+  // captured). Older clients and ad-hoc CLI callers may omit the key
+  // entirely, so accept both via `.nullable().optional()`.
+  birthTime: z.string().datetime({ offset: true }).nullable().optional(),
   placeName: z.string().min(1).max(200),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
