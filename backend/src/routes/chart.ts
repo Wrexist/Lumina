@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
-import { BirthDataSchema } from "../types.ts";
+import { ChartRequestSchema } from "../types.ts";
 import type { EphemerisService } from "../services/ephemeris.ts";
 import type { Config } from "../config.ts";
 
@@ -22,7 +22,7 @@ export const chartRoutes: FastifyPluginAsync<ChartRouteOptions> = async (
   });
 
   app.post("/chart", async (request, reply) => {
-    const parsed = BirthDataSchema.safeParse(request.body);
+    const parsed = ChartRequestSchema.safeParse(request.body);
     if (!parsed.success) {
       reply.code(400);
       return {
@@ -30,7 +30,8 @@ export const chartRoutes: FastifyPluginAsync<ChartRouteOptions> = async (
         issues: parsed.error.issues,
       };
     }
-    const chart = await opts.ephemeris.chart(parsed.data);
+    const { houseSystem, ...birthData } = parsed.data;
+    const chart = await opts.ephemeris.chart(birthData, { houseSystem });
     return chart;
   });
 };

@@ -199,13 +199,43 @@ function diurnalSemiArc(latitudeDeg: number, declinationDeg: number): number {
 
 function wholeSignFallback({ ramc, latitude, obliquity }: PlacidusInputs): HouseCusps {
   const asc = ascendant({ ramc, latitude, obliquity });
-  const ascSignStart = Math.floor(asc / THIRTY_DEGREES) * THIRTY_DEGREES;
+  return wholeSignHouses(asc, midheaven(ramc, obliquity));
+}
+
+/**
+ * Whole-Sign houses anchored on a given ascendant. The first cusp is the
+ * 0° boundary of the ascendant's sign; subsequent cusps step by 30°.
+ *
+ * Used both as the polar Placidus fallback (where the iterative solver
+ * fails) and as the Vedic / sidereal house default.
+ */
+export function wholeSignHouses(ascendantDeg: number, midheavenDeg: number): HouseCusps {
+  const ascSignStart = Math.floor(ascendantDeg / THIRTY_DEGREES) * THIRTY_DEGREES;
   const cusps = Array.from({ length: 12 }, (_, i) => norm(ascSignStart + i * THIRTY_DEGREES));
   return {
     system: "wholeSign",
-    ascendant: asc,
-    midheaven: midheaven(ramc, obliquity),
+    ascendant: ascendantDeg,
+    midheaven: midheavenDeg,
     cusps,
+  };
+}
+
+/**
+ * Compute just the tropical Ascendant + Midheaven for a given instant
+ * and observer location. Used by the sidereal pipeline, which needs the
+ * angles in tropical coordinates before subtracting the ayanamsha.
+ */
+export function tropicalAngles(
+  utcInstant: Date,
+  latitude: number,
+  longitude: number,
+): { readonly ascendant: number; readonly midheaven: number } {
+  const jd = julianDay(utcInstant);
+  const obliquity = meanObliquity(jd);
+  const ramc = rightAscensionOfMidheaven(jd, longitude);
+  return {
+    ascendant: ascendant({ ramc, latitude, obliquity }),
+    midheaven: midheaven(ramc, obliquity),
   };
 }
 

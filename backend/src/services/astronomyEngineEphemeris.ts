@@ -1,8 +1,9 @@
 import { Body, Ecliptic, GeoVector } from "astronomy-engine";
 import { computeAspects } from "../lib/aspects.ts";
-import { placidusHouses } from "../lib/houses.ts";
-import type { BirthData, HouseCusps, NatalChart, PlanetPosition } from "../types.ts";
-import type { EphemerisService } from "./ephemeris.ts";
+import { placidusHouses, tropicalAngles, wholeSignHouses } from "../lib/houses.ts";
+import { lahiriAyanamsha, tropicalToSidereal } from "../lib/sidereal.ts";
+import type { BirthData, HouseCusps, HouseSystem, NatalChart, PlanetPosition } from "../types.ts";
+import type { ChartOptions, EphemerisService } from "./ephemeris.ts";
 
 interface PlanetSpec {
   readonly body: Body;
@@ -38,14 +39,19 @@ const RETROGRADE_PROBE_MS = 60 * 60 * 1000; // one hour earlier
  * interface is the only seam callers depend on.
  */
 export class AstronomyEngineEphemeris implements EphemerisService {
-  async chart(birthData: BirthData): Promise<NatalChart> {
+  async chart(birthData: BirthData, options: ChartOptions = {}): Promise<NatalChart> {
+    const houseSystem: HouseSystem = options.houseSystem ?? "placidus";
     const instant = effectiveInstant(birthData);
-    const planets = PLANETS.map((spec) => positionAt(spec, instant));
-    const houses = housesFor(birthData, instant);
+    const tropicalPlanets = PLANETS.map((spec) => positionAt(spec, instant));
+    const ayanamsha = houseSystem === "sidereal" ? lahiriAyanamsha(instant) : 0;
+    const planets = ayanamsha === 0
+      ? tropicalPlanets
+      : tropicalPlanets.map((p) => ({ ...p, longitude: tropicalToSidereal(p.longitude, ayanamsha) }));
+    const houses = housesFor(birthData, instant, houseSystem, ayanamsha);
     const aspects = computeAspects(planets);
     return {
       calculatedAt: new Date().toISOString(),
-      houseSystem: houses?.system ?? "placidus",
+      houseSystem,
       planets,
       aspects,
       houses,
@@ -59,10 +65,25 @@ function effectiveInstant(birthData: BirthData): Date {
   return new Date(source);
 }
 
-function housesFor(birthData: BirthData, instant: Date): HouseCusps | null {
+function housesFor(
+  birthData: BirthData,
+  instant: Date,
+  houseSystem: HouseSystem,
+  ayanamsha: number,
+): HouseCusps | null {
   // Without a real birth time, houses, Asc, and MC are meaningless.
   if (birthData.birthTime == null) return null;
-  return placidusHouses(instant, birthData.latitude, birthData.longitude);
+  if (houseSystem === "placidus") {
+    return placidusHouses(instant, birthData.latitude, birthData.longitude);
+  }
+  // For wholeSign and sidereal we anchor on the (tropical) ascendant and
+  // step in 30° increments. For sidereal we additionally subtract the
+  // Lahiri ayanamsha from both Asc and MC before deriving the cusps.
+  const tropical = tropicalAngles(instant, birthData.latitude, birthData.longitude);
+  const asc = ayanamsha === 0 ? tropical.ascendant : tropicalToSidereal(tropical.ascendant, ayanamsha);
+  const mc = ayanamsha === 0 ? tropical.midheaven : tropicalToSidereal(tropical.midheaven, ayanamsha);
+  const houses = wholeSignHouses(asc, mc);
+  return { ...houses, system: houseSystem };
 }
 
 function noonUTOf(isoDate: string): string {

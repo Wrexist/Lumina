@@ -21,6 +21,17 @@ export type BirthData = z.infer<typeof BirthDataSchema>;
 export const HouseSystemSchema = z.enum(["placidus", "wholeSign", "sidereal"]);
 export type HouseSystem = z.infer<typeof HouseSystemSchema>;
 
+/**
+ * Wire format for `POST /chart`: birth data plus an optional house-system
+ * choice. Defaults to `placidus`. The Swift iOS client encodes this as a
+ * flat object — `BirthData` fields plus `houseSystem`.
+ */
+export const ChartRequestSchema = BirthDataSchema.extend({
+  houseSystem: HouseSystemSchema.optional(),
+});
+
+export type ChartRequest = z.infer<typeof ChartRequestSchema>;
+
 /** Mirrors `NatalChart.PlanetPosition` in Swift. */
 export const PlanetPositionSchema = z.object({
   planet: z.string(),

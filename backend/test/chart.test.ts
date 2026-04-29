@@ -153,4 +153,48 @@ describe("POST /chart", () => {
     expect(chart.houses.cusps[0]).toBeCloseTo(chart.houses.ascendant, 6);
     expect(chart.houses.cusps[9]).toBeCloseTo(chart.houses.midheaven, 6);
   });
+
+  test("houseSystem=sidereal subtracts Lahiri ayanamsha from longitudes", async () => {
+    const tropicalRes = await app.inject({
+      method: "POST",
+      url: "/chart",
+      headers: { "x-lumina-secret": TEST_SECRET },
+      payload: sampleBirthData,
+    });
+    const siderealRes = await app.inject({
+      method: "POST",
+      url: "/chart",
+      headers: { "x-lumina-secret": TEST_SECRET },
+      payload: { ...sampleBirthData, houseSystem: "sidereal" },
+    });
+    expect(siderealRes.statusCode).toBe(200);
+    const sidereal = siderealRes.json();
+    expect(sidereal.houseSystem).toBe("sidereal");
+    expect(sidereal.houses.system).toBe("sidereal");
+    expect(sidereal.houses.cusps).toHaveLength(12);
+    const tSun = tropicalRes.json().planets.find((p: { planet: string }) => p.planet === "Sun").longitude;
+    const sSun = sidereal.planets.find((p: { planet: string }) => p.planet === "Sun").longitude;
+    // 1990 Lahiri ayanamsha is ~23.7° — tropical Sun (24° Gemini) → sidereal Sun (0° Gemini).
+    const offset = (tSun - sSun + 360) % 360;
+    expect(offset).toBeGreaterThan(23.65);
+    expect(offset).toBeLessThan(23.78);
+  });
+
+  test("houseSystem=wholeSign keeps tropical longitudes but uses whole-sign cusps", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/chart",
+      headers: { "x-lumina-secret": TEST_SECRET },
+      payload: { ...sampleBirthData, houseSystem: "wholeSign" },
+    });
+    expect(response.statusCode).toBe(200);
+    const chart = response.json();
+    expect(chart.houseSystem).toBe("wholeSign");
+    expect(chart.houses.system).toBe("wholeSign");
+    // Whole-sign cusps are exact 30° boundaries; tropical longitudes match Placidus run.
+    for (let i = 0; i < 12; i += 1) {
+      const cusp = chart.houses.cusps[i];
+      expect(cusp % 30).toBeCloseTo(0, 6);
+    }
+  });
 });

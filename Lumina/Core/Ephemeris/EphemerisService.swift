@@ -15,6 +15,26 @@ actor EphemerisService {
         case decoding(message: String)
     }
 
+    private struct ChartRequestBody: Encodable {
+        enum Keys: String, CodingKey {
+            case birthDate, birthTime, placeName, latitude, longitude, timeZoneIdentifier, houseSystem
+        }
+
+        let birthData: BirthData
+        let houseSystem: HouseSystem?
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: Keys.self)
+            try container.encode(birthData.birthDate, forKey: .birthDate)
+            try container.encode(birthData.birthTime, forKey: .birthTime)
+            try container.encode(birthData.placeName, forKey: .placeName)
+            try container.encode(birthData.latitude, forKey: .latitude)
+            try container.encode(birthData.longitude, forKey: .longitude)
+            try container.encode(birthData.timeZoneIdentifier, forKey: .timeZoneIdentifier)
+            try container.encodeIfPresent(houseSystem, forKey: .houseSystem)
+        }
+    }
+
     private static let chartEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -64,11 +84,12 @@ actor EphemerisService {
         self.apiSecret = apiSecret
     }
 
-    func chart(for birthData: BirthData) async throws -> NatalChart {
+    func chart(for birthData: BirthData, houseSystem: HouseSystem? = nil) async throws -> NatalChart {
         guard let baseURL, let apiSecret, !apiSecret.isEmpty else {
             throw ServiceError.missingConfiguration
         }
-        let request = try makeChartRequest(baseURL: baseURL, apiSecret: apiSecret, birthData: birthData)
+        let body = ChartRequestBody(birthData: birthData, houseSystem: houseSystem)
+        let request = try makeChartRequest(baseURL: baseURL, apiSecret: apiSecret, body: body)
         logger.debug("chart requested for \(birthData.placeName, privacy: .public)")
 
         let (data, response) = try await session.data(for: request)
@@ -80,13 +101,13 @@ actor EphemerisService {
         return try Self.chartDecoder.decode(NatalChart.self, from: data)
     }
 
-    private func makeChartRequest(baseURL: URL, apiSecret: String, birthData: BirthData) throws -> URLRequest {
+    private func makeChartRequest(baseURL: URL, apiSecret: String, body: ChartRequestBody) throws -> URLRequest {
         var request = URLRequest(url: baseURL.appendingPathComponent("chart"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
-        request.httpBody = try Self.chartEncoder.encode(birthData)
+        request.httpBody = try Self.chartEncoder.encode(body)
         return request
     }
 }

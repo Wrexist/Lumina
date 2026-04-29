@@ -16,6 +16,27 @@ final class LuminaTests: XCTestCase {
         )
     }()
 
+    private static let sampleChartJSON = Data("""
+    {
+      "calculatedAt": "2026-04-29T15:40:12.600Z",
+      "houseSystem": "placidus",
+      "planets": [
+        { "planet": "Sun",     "longitude": 84.15,  "latitude": 0.0,   "isRetrograde": false },
+        { "planet": "Moon",    "longitude": 345.64, "latitude": 3.15,  "isRetrograde": false },
+        { "planet": "Mercury", "longitude": 65.73,  "latitude": -1.66, "isRetrograde": false }
+      ],
+      "aspects": [
+        { "planet1": "Sun", "planet2": "Moon", "type": "square", "exactAngle": 90, "orb": 5.6 }
+      ],
+      "houses": {
+        "system": "placidus",
+        "ascendant": 192.01,
+        "midheaven": 106.73,
+        "cusps": [192.01, 220.5, 252.7, 286.73, 320.5, 350.0, 12.01, 40.5, 72.7, 106.73, 140.5, 170.0]
+      }
+    }
+    """.utf8)
+
     func testSpacingTokensAreOnEightPointGrid() {
         XCTAssertEqual(LuminaSpacing.xs, 4)
         XCTAssertEqual(LuminaSpacing.sm, 8)
@@ -60,42 +81,14 @@ final class LuminaTests: XCTestCase {
     }
 
     func testEphemerisServiceRoundTripDecodesNatalChart() async throws {
-        let chartJSON = Data("""
-        {
-          "calculatedAt": "2026-04-29T15:40:12.600Z",
-          "houseSystem": "placidus",
-          "planets": [
-            { "planet": "Sun",     "longitude": 84.15,  "latitude": 0.0,   "isRetrograde": false },
-            { "planet": "Moon",    "longitude": 345.64, "latitude": 3.15,  "isRetrograde": false },
-            { "planet": "Mercury", "longitude": 65.73,  "latitude": -1.66, "isRetrograde": false }
-          ],
-          "aspects": [
-            { "planet1": "Sun", "planet2": "Moon", "type": "square", "exactAngle": 90, "orb": 5.6 }
-          ],
-          "houses": {
-            "system": "placidus",
-            "ascendant": 192.01,
-            "midheaven": 106.73,
-            "cusps": [192.01, 220.5, 252.7, 286.73, 320.5, 350.0, 12.01, 40.5, 72.7, 106.73, 140.5, 170.0]
-          }
-        }
-        """.utf8)
-
         MockURLProtocol.handler = { request in
-            XCTAssertEqual(request.httpMethod, "POST")
-            XCTAssertEqual(request.url?.absoluteString, "https://eph.test.lumina/chart")
-            XCTAssertEqual(request.value(forHTTPHeaderField: "X-Lumina-Secret"), "test-secret")
-            XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
-            let body = request.bodyData() ?? Data()
-            let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any]
-            XCTAssertEqual(json?["placeName"] as? String, "Stockholm")
-            XCTAssertNotNil(json?["birthTime"], "birthTime key must always be present")
+            try assertChartRequestShape(request)
             let response = try makeHTTPResponse(
                 url: request.url ?? URL(fileURLWithPath: "/"),
                 statusCode: 200,
                 headers: ["Content-Type": "application/json"]
             )
-            return (response, chartJSON)
+            return (response, Self.sampleChartJSON)
         }
 
         let service = EphemerisService(
@@ -200,6 +193,17 @@ class MockURLProtocol: URLProtocol, @unchecked Sendable {
 
 private enum MockResponseError: Error {
     case couldNotConstructResponse
+}
+
+private func assertChartRequestShape(_ request: URLRequest) throws {
+    XCTAssertEqual(request.httpMethod, "POST")
+    XCTAssertEqual(request.url?.absoluteString, "https://eph.test.lumina/chart")
+    XCTAssertEqual(request.value(forHTTPHeaderField: "X-Lumina-Secret"), "test-secret")
+    XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+    let body = request.bodyData() ?? Data()
+    let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any]
+    XCTAssertEqual(json?["placeName"] as? String, "Stockholm")
+    XCTAssertNotNil(json?["birthTime"], "birthTime key must always be present")
 }
 
 private func makeHTTPResponse(

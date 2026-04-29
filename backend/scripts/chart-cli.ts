@@ -3,14 +3,15 @@
  *
  * Usage:
  *   npm run chart -- --date 1990-06-15 --time 14:30 --tz Europe/Stockholm \
- *                   [--lat 59.3293] [--lon 18.0686] [--place "Stockholm"]
+ *                   [--lat 59.3293] [--lon 18.0686] [--place "Stockholm"] \
+ *                   [--system placidus|wholeSign|sidereal]
  *
  * Defaults match the placeholder in `.claude/commands/chart.md`. Output is
  * pretty-printed JSON on stdout.
  */
 import { parseArgs } from "node:util";
 import { AstronomyEngineEphemeris } from "../src/services/astronomyEngineEphemeris.ts";
-import { BirthDataSchema } from "../src/types.ts";
+import { BirthDataSchema, HouseSystemSchema } from "../src/types.ts";
 
 const { values } = parseArgs({
   options: {
@@ -20,6 +21,7 @@ const { values } = parseArgs({
     lat: { type: "string", default: "59.3293" },
     lon: { type: "string", default: "18.0686" },
     place: { type: "string", default: "Stockholm, Sweden" },
+    system: { type: "string", default: "placidus" },
   },
 });
 
@@ -39,5 +41,6 @@ const birthData = BirthDataSchema.parse({
 });
 
 const ephemeris = new AstronomyEngineEphemeris();
-const chart = await ephemeris.chart(birthData);
+const houseSystem = HouseSystemSchema.parse(values.system);
+const chart = await ephemeris.chart(birthData, { houseSystem });
 process.stdout.write(`${JSON.stringify(chart, null, 2)}\n`);
