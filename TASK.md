@@ -9,28 +9,28 @@
 ## 🔥 Active Sprint — Project Bootstrap
 
 ### Infrastructure
-- [ ] Initialize Xcode 17 project (SwiftUI, Swift 6, iOS 26 deployment target)
-- [ ] Configure Swift Package Manager dependencies (RevenueCat, Supabase, Lottie, OneSignal)
-- [ ] Set up `Config.xcconfig` + `scripts/inject_env.sh` for secrets injection
-- [ ] Configure SwiftLint `.swiftlint.yml` — strict mode
-- [ ] Configure SwiftFormat `.swiftformat`
-- [ ] Set up GitHub Actions CI workflow (type-check + lint + test)
+- [~] Initialize Xcode 17 project (SwiftUI, Swift 6, iOS 26 deployment target) — `project.yml` written; user must run `xcodegen generate` on macOS to materialize `Lumina.xcodeproj`
+- [x] Configure Swift Package Manager dependencies (RevenueCat, Supabase, Lottie, OneSignal) — declared in `project.yml`; resolved on first Xcode open
+- [x] Set up `project.xcconfig` + `scripts/inject_env.sh` for secrets injection
+- [x] Configure SwiftLint `.swiftlint.yml` — strict mode (added `excluded:` for design-token files)
+- [x] Configure SwiftFormat `.swiftformat`
+- [x] Set up GitHub Actions CI workflow (type-check + lint + test) — `.github/workflows/ci.yml` runs on `macos-14`
 - [ ] Set up Xcode Cloud for TestFlight distribution
-- [ ] Create Supabase project — auth, user_profiles table, pgvector extension
+- [!] Create Supabase project — auth, user_profiles table, pgvector extension — needs human account credentials
 
 ### Design System
-- [ ] Create `LuminaColors.swift` with full brand palette
-- [ ] Create `LuminaTypography.swift` — PP Editorial New + Söhne + GT America Mono
-- [ ] Create `LuminaSpacing.swift` — 8pt grid constants
-- [ ] Install and register custom fonts in `Info.plist`
+- [x] Create `LuminaColors.swift` with full brand palette
+- [~] Create `LuminaTypography.swift` — PP Editorial New + Söhne + GT America Mono — token file written, falls back to system fonts until license clears (see Blockers)
+- [x] Create `LuminaSpacing.swift` — 8pt grid constants (`xs/sm/md/lg/xl/xxl`)
+- [!] Install and register custom fonts in `Info.plist` — gated on font license
 - [ ] Create `LuminaButton` component (primary, secondary, ghost variants)
 - [ ] Create `LuminaCard` component with glass effect
 - [ ] Create `LuminaTextField` component
 
 ### Core Services
-- [ ] `EphemerisService.swift` — actor wrapping Swiss Eph Node API
-- [ ] `LuminaAIClient.swift` — actor wrapping Anthropic API (claude-opus-4-6)
-- [ ] `IAPManager.swift` — RevenueCat actor, entitlement check helper
+- [~] `EphemerisService.swift` — actor wrapping Swiss Eph Node API — actor + Info.plist plumbing in place; HTTP body `// TODO(lumina)`
+- [~] `LuminaAIClient.swift` — actor wrapping Anthropic API — actor + key plumbing in place; HTTP body `// TODO(lumina)`
+- [~] `IAPManager.swift` — RevenueCat actor, entitlement check helper — actor + `Entitlement` enum in place; SDK calls `// TODO(lumina)`
 - [ ] `HandPoseDetector.swift` — VNDetectHumanHandPoseRequest wrapper
 - [ ] Supabase client singleton + auth session observer
 
@@ -117,6 +117,7 @@
 - [x] Create `.claude/commands/` — `/build`, `/lint`, `/test`, `/chart`, `/new-feature`, `/session-end`
 - [x] Update `CLAUDE.md` — Quick Context table, active branch, optimized session protocol
 - [x] Configure `.swiftlint.yml` — strict mode (pre-existing)
+- [x] **[2026-04-29]** Phase 0 bootstrap — `project.yml`, design tokens, service-actor stubs, `RootView` splash, CI workflow, secrets injection. Branch `claude/initial-app-setup-hQvKZ`.
 
 ---
 

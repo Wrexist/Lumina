@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios:
+    name: iOS — generate · build · lint · test
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+      REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
+      ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SWISS_EPH_SERVICE_URL: ${{ secrets.SWISS_EPH_SERVICE_URL }}
+      SWISS_EPH_API_SECRET: ${{ secrets.SWISS_EPH_API_SECRET }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 17
+        run: sudo xcode-select -s /Applications/Xcode_17.0.app/Contents/Developer
+
+      - name: Install xcodegen, swiftlint, swiftformat
+        run: brew install xcodegen swiftlint swiftformat
+
+      - name: Inject env -> secrets/Config.xcconfig
+        run: bash scripts/inject_env.sh
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Lint (strict)
+        run: swiftlint lint --strict
+
+      - name: Format check
+        run: swiftformat --lint .
+
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -scheme Lumina \
+            -destination "platform=iOS Simulator,name=iPhone 16 Pro" \
+            -skipPackagePluginValidation \
+            build | xcpretty
+
+      - name: Test
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -scheme Lumina \
+            -destination "platform=iOS Simulator,name=iPhone 16 Pro" \
+            -skipPackagePluginValidation | xcpretty

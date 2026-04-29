@@ -1,0 +1,136 @@
+name: Lumina
+options:
+  bundleIdPrefix: app.lumina
+  deploymentTarget:
+    iOS: "26.0"
+  developmentLanguage: en
+  xcodeVersion: "17.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY: YES
+    SWIFT_UPCOMING_FEATURE_INTERNAL_IMPORTS_BY_DEFAULT: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+    GCC_TREAT_WARNINGS_AS_ERRORS: YES
+    CLANG_ENABLE_MODULES: YES
+
+configs:
+  Debug: debug
+  Release: release
+
+configFiles:
+  Debug: project.xcconfig
+  Release: project.xcconfig
+
+packages:
+  RevenueCat:
+    url: https://github.com/RevenueCat/purchases-ios
+    from: 5.0.0
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    from: 2.0.0
+  OneSignal:
+    url: https://github.com/OneSignal/OneSignal-XCFramework
+    from: 5.0.0
+  Lottie:
+    url: https://github.com/airbnb/lottie-ios
+    from: 4.0.0
+
+targets:
+  Lumina:
+    type: application
+    platform: iOS
+    sources:
+      - path: Lumina
+    resources:
+      - path: Lumina/Resources/Fonts
+        optional: true
+    info:
+      path: Lumina/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Lumina
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        ITSAppUsesNonExemptEncryption: false
+        LuminaAnthropicAPIKey: $(ANTHROPIC_API_KEY)
+        LuminaElevenLabsAPIKey: $(ELEVENLABS_API_KEY)
+        LuminaElevenLabsVoiceID: $(ELEVENLABS_VOICE_ID)
+        LuminaRevenueCatAPIKeyIOS: $(REVENUECAT_API_KEY_IOS)
+        LuminaOneSignalAppID: $(ONESIGNAL_APP_ID)
+        LuminaSupabaseURL: $(SUPABASE_URL)
+        LuminaSupabaseAnonKey: $(SUPABASE_ANON_KEY)
+        LuminaSwissEphServiceURL: $(SWISS_EPH_SERVICE_URL)
+        LuminaSwissEphAPISecret: $(SWISS_EPH_API_SECRET)
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.lumina.ios
+        TARGETED_DEVICE_FAMILY: "1"
+        IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - package: RevenueCat
+        product: RevenueCat
+      - package: Supabase
+        product: Supabase
+      - package: OneSignal
+        product: OneSignalFramework
+      - package: Lottie
+        product: Lottie
+    preBuildScripts:
+      - name: Inject env -> secrets/Config.xcconfig
+        script: |
+          if [ -f "${SRCROOT}/scripts/inject_env.sh" ]; then
+            bash "${SRCROOT}/scripts/inject_env.sh" || exit 1
+          fi
+        basedOnDependencyAnalysis: false
+
+  LuminaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: LuminaTests
+    dependencies:
+      - target: Lumina
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.lumina.ios.tests
+        IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+
+schemes:
+  Lumina:
+    build:
+      targets:
+        Lumina: all
+        LuminaTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - LuminaTests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+
+  LuminaTests:
+    build:
+      targets:
+        LuminaTests: [test]
+    test:
+      config: Debug
+      targets:
+        - LuminaTests
