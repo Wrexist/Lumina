@@ -28,9 +28,20 @@
 - [ ] Create `LuminaTextField` component
 
 ### Core Services
-- [~] `EphemerisService.swift` — actor wrapping Swiss Eph Node API — actor + Info.plist plumbing in place; HTTP body `// TODO(lumina)`
+- [~] `EphemerisService.swift` — actor wrapping Swiss Eph Node API — actor + Info.plist plumbing in place; HTTP body `// TODO(lumina)`. **Backend now exists at `/backend` and answers POST /chart** — wire this up next.
 - [~] `LuminaAIClient.swift` — actor wrapping Anthropic API — actor + key plumbing in place; HTTP body `// TODO(lumina)`
 - [~] `IAPManager.swift` — RevenueCat actor, entitlement check helper — actor + `Entitlement` enum in place; SDK calls `// TODO(lumina)`
+
+### Backend (Node.js Swiss Ephemeris service)
+- [x] **[2026-04-29]** Fastify 5 + TS 5 scaffold; `astronomy-engine` for planet positions; zod request validation; X-Lumina-Secret auth; vitest (5 tests); `npm run chart` CLI; runs on `node --experimental-strip-types` (no bundler). Live `/health` and `/chart` smoke-tested locally.
+- [ ] Wire `EphemerisService.chart()` in iOS to actually POST to the backend
+- [ ] House calculations (Placidus / Whole Sign / Sidereal)
+- [ ] Aspects (sextile/square/trine/opposition/conjunction with orbs)
+- [ ] Transits & progressions
+- [ ] Swap `astronomy-engine` → `swisseph` once Swiss Ephemeris Pro license clears
+- [ ] Production deploy (Fly.io: Dockerfile, healthcheck, secrets)
+- [ ] In-memory LRU cache for repeated birth-data queries
+- [ ] Rate limiting (Fastify plugin, key on X-Lumina-Secret)
 - [ ] `HandPoseDetector.swift` — VNDetectHumanHandPoseRequest wrapper
 - [ ] Supabase client singleton + auth session observer
 

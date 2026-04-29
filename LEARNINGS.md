@@ -198,3 +198,20 @@ Developer has no local macOS, so every Swift change rides CI to be verified. Imp
 - The `/build`, `/test`, `/lint`, `/chart` slash commands document what CI runs; they aren't usable locally.
 - `swiftformat --lint` is `continue-on-error: true` until a baseline format pass is committed; currently I have no way to run swiftformat locally so it would otherwise gate every PR.
 - Distribution to a real device requires GitHub Actions → fastlane → TestFlight (no Xcode Cloud — its setup wizard practically requires a Mac). Tracked as a milestone in TASK.md once an Apple Developer account + signing artifacts exist.
+
+---
+
+## 🔮 Ephemeris backend
+
+**[2026-04-29] astronomy-engine, not swisseph, for v0**
+The backend uses `astronomy-engine` (pure JS, MIT) instead of `swisseph` (C++ Node binding). Reasons: zero native build tools required (Linux dev box has no `python3`/`make`/`g++`); Swiss Ephemeris Pro `.se1` files are licensed (CHF 1,550, blocked in TASK.md). Drift between `astronomy-engine`'s J2000 ecliptic and tropical-of-date is < 0.5° for births in the last 30 years — within astrological tolerance. The `EphemerisService` interface is the only seam callers depend on; swap is a one-line change once licensed.
+
+**[2026-04-29] astronomy-engine API quirk: EclipticLongitude is heliocentric**
+`EclipticLongitude(Body.Sun, time)` throws "Cannot calculate heliocentric longitude of the Sun" because the function returns heliocentric, not geocentric, longitude. For the geocentric ecliptic position used by astrology, the right call is `Ecliptic(GeoVector(body, time, true)).elon` for ALL bodies including Sun and Moon. The retrograde flag is computed by sampling longitude one hour earlier and signing the delta.
+
+**[2026-04-29] Drop tsx, use Node 22 `--experimental-strip-types`**
+Originally used `tsx` for dev/CLI. tsx loads astronomy-engine's CJS entry, where named imports (`import { Body }`) silently fail because the CJS module's static analysis can't detect named exports. Vitest happens to load the ESM entry so its test pass — divergent runtime behavior between tools. Fix: drop `tsx`, run `.ts` files directly with `node --experimental-strip-types` (Node 22.6+). Required:
+- `tsconfig.json`: `"allowImportingTsExtensions": true`, `"noEmit": true`, `"rewriteRelativeImportExtensions": true`
+- All relative imports use `.ts` extension explicitly (not `.js`)
+- npm scripts use `node --watch --env-file-if-exists=.env --experimental-strip-types src/server.ts`
+This eliminates one dev dep, removes a class of CJS/ESM resolution bugs, and matches where Node TS support is heading (Node 23+ enables strip-types by default).
