@@ -89,13 +89,11 @@ targets:
         product: OneSignalFramework
       - package: Lottie
         product: Lottie
-    preBuildScripts:
-      - name: Inject env -> secrets/Config.xcconfig
-        script: |
-          if [ -f "${SRCROOT}/scripts/inject_env.sh" ]; then
-            bash "${SRCROOT}/scripts/inject_env.sh" || exit 1
-          fi
-        basedOnDependencyAnalysis: false
+    # NOTE: a pre-build script that ran scripts/inject_env.sh used to live
+    # here, but it tripped Xcode's User Script Sandboxing on macos-15 with
+    # exit 65. CI runs the script before xcodebuild as a regular step, and
+    # local developers should re-run `bash scripts/inject_env.sh` whenever
+    # they change `.env.local`.
 
   LuminaTests:
     type: bundle.unit-test

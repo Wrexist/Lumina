@@ -65,8 +65,8 @@ jobs:
       - name: Print Xcode version
         run: xcodebuild -version
 
-      - name: Install xcodegen, swiftlint, swiftformat, xcbeautify
-        run: brew install xcodegen swiftlint swiftformat xcbeautify
+      - name: Install xcodegen, swiftlint, xcbeautify
+        run: brew install xcodegen swiftlint xcbeautify
 
       - name: Inject env -> secrets/Config.xcconfig
         run: bash scripts/inject_env.sh
@@ -76,10 +76,6 @@ jobs:
 
       - name: Lint (strict)
         run: swiftlint lint --strict
-
-      - name: Format check (non-blocking until baseline settles)
-        run: swiftformat --lint .
-        continue-on-error: true
 
       - name: List available simulators
         run: xcrun simctl list devices available
