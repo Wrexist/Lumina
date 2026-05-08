@@ -153,12 +153,14 @@ custom_rules:
     message: "Use LuminaColors.* instead of hex literals. Add new colors to Design/Tokens/LuminaColors.swift."
     regex: 'Color\(hex:\s*"#[0-9A-Fa-f]+'
     severity: error
+    excluded: ".*/Design/Tokens/LuminaColors\\.swift"
 
   no_hardcoded_font_names:
     name: "No Hardcoded Font Names"
     message: "Use LuminaTypography.* instead of Font.custom() with string literals."
     regex: 'Font\.custom\("(?!.*LuminaTypography)'
     severity: warning
+    excluded: ".*/Design/Tokens/LuminaTypography\\.swift"
 
   no_print_statements:
     name: "No print() Statements"
@@ -184,3 +186,4 @@ custom_rules:
     message: "Use LuminaSpacing.* constants. Add to Design/Tokens/LuminaSpacing.swift if needed."
     regex: '(padding|spacing|frame[^)]*\.\s*(width|height))\s*:\s*(?!LuminaSpacing)[0-9]{2,}'
     severity: warning
+    excluded: ".*/Design/Tokens/LuminaSpacing\\.swift"

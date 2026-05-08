@@ -1,0 +1,11 @@
+// project.xcconfig — committed base config.
+//
+// Secrets are injected at build time by `scripts/inject_env.sh`, which writes
+// `secrets/Config.xcconfig` from `.env.local`. That file is gitignored.
+// `#include?` only includes the file if it exists, so XcodeGen and CI succeed
+// even before secrets are populated.
+//
+// All real values live in the included file. Anything declared here would
+// override the include because xcconfig uses last-assignment-wins.
+
+#include? "secrets/Config.xcconfig"

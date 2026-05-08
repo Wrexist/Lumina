@@ -6,11 +6,19 @@
 .env
 .env.local
 .env.*.local
-secrets/
+# Ignore secrets/ contents but keep the directory itself via .gitkeep.
+# (`secrets/` excludes the directory entirely, which would prevent the
+# negation below from un-ignoring anything inside it.)
+secrets/*
+!secrets/.gitkeep
+# Only the non-secret base xcconfig is committed.
 *.xcconfig
-!project.xcconfig        # only the non-secret base config is committed
+!project.xcconfig
 
 # ── Xcode ──
+# XcodeGen output — regenerate via `xcodegen generate`
+Lumina.xcodeproj/
+Lumina/Resources/Info.plist
 # Build artifacts
 build/
 DerivedData/

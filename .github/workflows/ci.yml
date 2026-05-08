@@ -1,0 +1,105 @@
+name: ci
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend — typecheck · test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install
+        run: npm ci || npm install
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+  ios:
+    name: iOS — generate · build · lint · test
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+      REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
+      ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SWISS_EPH_SERVICE_URL: ${{ secrets.SWISS_EPH_SERVICE_URL }}
+      SWISS_EPH_API_SECRET: ${{ secrets.SWISS_EPH_API_SECRET }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Print Xcode version
+        run: xcodebuild -version
+
+      - name: Install xcodegen, swiftlint, swiftformat, xcbeautify
+        run: brew install xcodegen swiftlint swiftformat xcbeautify
+
+      - name: Inject env -> secrets/Config.xcconfig
+        run: bash scripts/inject_env.sh
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Lint (strict)
+        run: swiftlint lint --strict
+
+      - name: Format check (non-blocking until baseline settles)
+        run: swiftformat --lint .
+        continue-on-error: true
+
+      - name: List available simulators
+        run: xcrun simctl list devices available
+
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -scheme Lumina \
+            -destination "platform=iOS Simulator,name=iPhone 16 Pro" \
+            -skipPackagePluginValidation \
+            -derivedDataPath build/DerivedData \
+            build 2>&1 | xcbeautify --renderer github-actions
+
+      - name: Test
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -scheme Lumina \
+            -destination "platform=iOS Simulator,name=iPhone 16 Pro" \
+            -skipPackagePluginValidation \
+            -derivedDataPath build/DerivedData \
+            2>&1 | xcbeautify --renderer github-actions

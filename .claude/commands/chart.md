@@ -1,16 +1,21 @@
-Generate a test ephemeris chart JSON from the local Swiss Ephemeris backend.
+Generate a test ephemeris chart JSON from the local backend.
 
-Usage: /chart [--date "YYYY-MM-DD"] [--time "HH:MM"] [--place "City, Country"]
+Usage: /chart [--date "YYYY-MM-DD"] [--time "HH:MM"] [--tz "IANA/Zone"] [--place "City"] [--lat N] [--lon N]
 
-Default test case (if no args given): 1990-06-15, 14:30, Stockholm Sweden
+Default test case (no args): 1990-06-15, 14:30, Europe/Stockholm, Stockholm Sweden.
 
 ```bash
-cd backend && npm run chart -- --date "$ARGUMENTS_DATE" --time "$ARGUMENTS_TIME" --place "$ARGUMENTS_PLACE"
+cd backend && npm run chart -- \
+  --date "${ARGUMENTS_DATE:-1990-06-15}" \
+  --time "${ARGUMENTS_TIME:-14:30}" \
+  --tz "${ARGUMENTS_TZ:-Europe/Stockholm}" \
+  --place "${ARGUMENTS_PLACE:-Stockholm, Sweden}"
 ```
 
-If the backend is not running, start it first:
+This calls the ephemeris service directly (no server boot needed). Output is `NatalChart` JSON: `calculatedAt`, `houseSystem`, and `planets[]` with longitude/latitude/isRetrograde for the ten major bodies. Houses, aspects, and transits are not yet implemented — see `backend/README.md` § "What's intentionally not here yet".
+
+To exercise the HTTP path instead (auth, validation, route handler), boot the server:
+
 ```bash
-cd backend && npm run dev
+cd backend && npm run dev   # http://127.0.0.1:3001
 ```
-
-The backend must be running on :3001. Output is structured JSON with planets, houses, and aspects — pipe to Claude for interpretation testing.

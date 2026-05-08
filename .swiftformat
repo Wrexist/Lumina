@@ -1,0 +1,22 @@
+# SwiftFormat — kept consistent with .swiftlint.yml limits.
+# Run: `swiftformat .`
+
+--swiftversion 6.0
+--maxwidth 120
+--indent 4
+--allman false
+--commas always
+--trimwhitespace always
+--semicolons never
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--closingparen balanced
+--ifdef no-indent
+--self remove
+--patternlet inline
+--stripunusedargs closure-only
+--header ignore
+
+# Excluded paths — match .swiftlint.yml
+--exclude .build,DerivedData,Packages,Lumina/Resources,secrets
