@@ -63,10 +63,34 @@ npm run test:watch
 
 Tests inject HTTP requests via `app.inject`, no real port binding.
 
+## Deploy (Fly.io)
+
+The backend ships as a Docker image to Fly.io. CI deploys on every push to
+`main` via `.github/workflows/ci.yml`'s `deploy-backend` job.
+
+One-time setup:
+
+```bash
+# 1. Install flyctl: https://fly.io/docs/flyctl/install/
+flyctl auth login
+
+# 2. Create the app + machines (uses the committed fly.toml as-is)
+cd backend && flyctl launch --no-deploy --copy-config
+
+# 3. Generate a runtime API secret and set it as a Fly secret
+flyctl secrets set LUMINA_API_SECRET=$(openssl rand -hex 32)
+
+# 4. Generate a deploy token and add it as a GitHub repo secret named
+#    FLY_API_TOKEN
+flyctl tokens create deploy
+```
+
+After that, `git push origin main` deploys automatically. To deploy from a
+local machine: `cd backend && flyctl deploy --remote-only`.
+
 ## What's intentionally **not** here yet
 
-- Houses (Placidus / Whole Sign / Sidereal) — next iteration
-- Aspects, transits, progressions
+- Progressions, eclipses, lunar phases
 - Production deploy (Fly.io setup, Dockerfile, healthcheck wiring)
 - Caching (Redis or in-memory LRU for repeat birth-data queries)
 - Rate limiting

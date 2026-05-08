@@ -1,0 +1,14 @@
+node_modules
+.env
+.env.local
+.env.*.local
+*.log
+coverage
+test
+scripts
+dist
+.git
+.github
+README.md
+tsconfig.json
+.nvmrc

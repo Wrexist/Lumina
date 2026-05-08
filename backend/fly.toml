@@ -1,0 +1,40 @@
+# fly.toml — Lumina ephemeris service.
+#
+# One-time setup (on a machine with flyctl installed):
+#   flyctl auth login
+#   cd backend && flyctl launch --no-deploy --copy-config
+#   flyctl secrets set LUMINA_API_SECRET=$(openssl rand -hex 32)
+#   flyctl tokens create deploy   # paste output into GitHub repo secret FLY_API_TOKEN
+#
+# After that, every push to main auto-deploys via .github/workflows/ci.yml.
+
+app = "lumina-eph"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  HOST = "0.0.0.0"
+  PORT = "3001"
+  LOG_LEVEL = "info"
+
+[http_service]
+  internal_port = 3001
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/health"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "256mb"
