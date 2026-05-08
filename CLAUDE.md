@@ -9,11 +9,12 @@
 
 | Item | Value |
 |---|---|
-| **Phase** | Bootstrap — Xcode scaffolding committed; CI builds on every push |
-| **Active branch** | `claude/initial-app-setup-hQvKZ` |
-| **Last updated** | 2026-04-29 |
+| **Phase** | Phase 1 — Navigation Shell + Design System v2 (active sprint per `ROADMAP.md`) |
+| **Active branch** | `claude/roadmap-navigation-improvements-yqxV2` |
+| **Last updated** | 2026-05-08 |
 | **Dev environment** | **No local macOS** — CI on `macos-15`/Xcode-latest is the only build/test loop |
 | **Blockers** | Font license · Swiss Eph license · ElevenLabs voice · Palm ML model · Supabase project · TestFlight signing |
+| **Spec docs** | `ROADMAP.md` (16-phase plan) · `docs/NAVIGATION.md` (IA + UX clarity charter — read before any view PR) |
 
 **No-Mac workflow.** This developer has no macOS machine, so every iOS verification happens through GitHub Actions:
 
@@ -252,7 +253,7 @@ No Alamofire — use native `URLSession` with async/await actors. No RxSwift/Com
 6. Ask for clarification on any ambiguity before writing code
 
 ### During a Session
-- Work on branch `claude/initial-app-setup-hQvKZ` — never commit to `main`
+- Work on branch `claude/roadmap-navigation-improvements-yqxV2` — never commit to `main`
 - Commit frequently with conventional commit messages: `feat(palm-cv): add line segmentation overlay`
 - Document decisions in code comments using `// DECISION:` prefix
 - Flag any API key exposure immediately — check with `git status` before every commit
@@ -264,7 +265,7 @@ No Alamofire — use native `URLSession` with async/await actors. No RxSwift/Com
 2. Update `TASK.md` — mark completed `[x]`, in-progress `[~]`, add blockers
 3. Update `LEARNINGS.md` — append new gotchas with `[2026-04]` date tag
 4. CI runs `swiftlint lint --strict` on push — let it gate the merge
-5. `git push -u origin claude/initial-app-setup-hQvKZ`
+5. `git push -u origin claude/roadmap-navigation-improvements-yqxV2`
 6. If RevenueCat entitlements changed, note in `LEARNINGS.md` under IAP section
 7. Update the **Last updated** date in the Quick Context table above
 

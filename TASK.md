@@ -3,134 +3,327 @@
 > Updated at the end of every Claude Code session.
 > Format: `[STATUS] Task description — notes`
 > Statuses: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
+> See `ROADMAP.md` for the full 16-phase plan and `docs/NAVIGATION.md` for IA & UX rules.
 
 ---
 
-## 🔥 Active Sprint — Project Bootstrap
+## 🔥 Active Sprint — Phase 1: Navigation Shell + Design System v2
 
-### Infrastructure
-- [~] Initialize Xcode 17 project (SwiftUI, Swift 6, iOS 26 deployment target) — `project.yml` written; user must run `xcodegen generate` on macOS to materialize `Lumina.xcodeproj`
-- [x] Configure Swift Package Manager dependencies (RevenueCat, Supabase, Lottie, OneSignal) — declared in `project.yml`; resolved on first Xcode open
-- [x] Set up `project.xcconfig` + `scripts/inject_env.sh` for secrets injection
-- [x] Configure SwiftLint `.swiftlint.yml` — strict mode (added `excluded:` for design-token files)
-- [x] Configure SwiftFormat `.swiftformat`
-- [x] Set up GitHub Actions CI workflow (type-check + lint + test) — `.github/workflows/ci.yml` runs on `macos-14`
-- [ ] Set up TestFlight distribution via GitHub Actions + fastlane (Xcode Cloud is impractical without a local Mac to drive its setup) — needs Apple Developer Program enrollment, App Store Connect API key, signing P12, provisioning profile
-- [!] Create Supabase project — auth, user_profiles table, pgvector extension — needs human account credentials
+> Branch: `claude/roadmap-navigation-improvements-yqxV2`
+> Goal: ship the empty 5-tab shell, design-system v2 components, and routing primitives so every feature phase can plug in without reinventing navigation.
 
-### Design System
-- [x] Create `LuminaColors.swift` with full brand palette
-- [~] Create `LuminaTypography.swift` — PP Editorial New + Söhne + GT America Mono — token file written, falls back to system fonts until license clears (see Blockers)
-- [x] Create `LuminaSpacing.swift` — 8pt grid constants (`xs/sm/md/lg/xl/xxl`)
-- [!] Install and register custom fonts in `Info.plist` — gated on font license
-- [ ] Create `LuminaButton` component (primary, secondary, ghost variants)
-- [ ] Create `LuminaCard` component with glass effect
-- [ ] Create `LuminaTextField` component
+### Routing & app state
+- [~] `AppRouter.swift` — `@Observable` root state machine — initial scaffold landed on this branch; persistence via `@AppStorage` still pending
+- [~] `LuminaTab` enum + raw values matching deep-link slugs — initial scaffold landed
+- [~] `MainTabsView.swift` — `TabView` selection bound to `AppRouter` — initial scaffold landed
+- [~] `LuminaDeepLink` enum + `URL` parser — initial scaffold landed; full case coverage + tests pending
+- [ ] Per-tab `NavigationStack` with typed `NavigationPath`
+- [ ] Persist last-selected tab + nav path across launches via `@AppStorage`
 
-### Core Services
-- [x] **[2026-04-29]** `EphemerisService.swift` — actor wrapping Swiss Eph Node API. Real `URLSession` POST to `{baseURL}/chart` with `X-Lumina-Secret` header, structured `ServiceError` cases, lenient ISO 8601 decoder for the backend's fractional-second `calculatedAt`. Round-trip tested via `URLProtocol` mock.
-- [~] `LuminaAIClient.swift` — actor wrapping Anthropic API — actor + key plumbing in place; HTTP body `// TODO(lumina)`
-- [~] `IAPManager.swift` — RevenueCat actor, entitlement check helper — actor + `Entitlement` enum in place; SDK calls `// TODO(lumina)`
+### Design system v2 components
+- [~] `LuminaButton` (primary / secondary / ghost / destructive variants) — initial scaffold landed
+- [~] `LuminaCard` with `.glassBackgroundEffect()` — initial scaffold landed
+- [~] `LuminaTextField` — initial scaffold landed; inline error treatment pending
+- [~] `LuminaEmptyState(icon, title, body, primaryCTA)` — initial scaffold landed
+- [~] `LuminaErrorState(error: LuminaError)` — initial scaffold landed
+- [~] `LuminaSkeleton` shimmer — initial scaffold landed
+- [~] `LuminaBadge` for "Premium" / "Beta" / "New" — initial scaffold landed
+- [~] `GlossaryLink("term")` view modifier + `GlossaryStore` — initial scaffold landed; full corpus pending
+- [ ] `LuminaSegmentedControl` (house-system / chart-mode picker)
+- [ ] `LuminaConfirmationDialog` wrapper for destructive actions
+- [ ] `LuminaShadows` token set (subtle / card / elevated)
+- [ ] `LuminaRadii` token set + SwiftLint rule blocking raw `.cornerRadius(...)` literals
 
-### Backend (Node.js Swiss Ephemeris service)
-- [x] **[2026-04-29]** Fastify 5 + TS 5 scaffold; `astronomy-engine` for planet positions; zod request validation; X-Lumina-Secret auth; vitest (7 tests including missing-/null-`birthTime` paths); `npm run chart` CLI; runs on `node --experimental-strip-types` (no bundler). Live `/health` and `/chart` smoke-tested locally.
-- [x] **[2026-04-29]** Wire `EphemerisService.chart()` in iOS to actually POST to the backend
-- [x] **[2026-04-29]** House calculations — Placidus iterative cusps + closed-form Asc/MC + whole-sign fallback for |lat| ≥ 66.5°. Six new vitest cases. iOS `NatalChart.HouseCusps` model + decode test.
-- [x] **[2026-04-29]** Aspects (sextile/square/trine/opposition/conjunction with 8°/6°/4° orbs, +2° for Sun/Moon involvement). Eight new vitest cases. iOS `NatalChart.Aspect` model.
-- [ ] Sidereal house variant (subtract Lahiri ayanamsha from tropical longitudes)
-- [ ] Aspects (sextile/square/trine/opposition/conjunction with orbs)
-- [ ] Transits & progressions
-- [ ] Swap `astronomy-engine` → `swisseph` once Swiss Ephemeris Pro license clears
-- [ ] Production deploy (Fly.io: Dockerfile, healthcheck, secrets)
-- [ ] In-memory LRU cache for repeated birth-data queries
-- [ ] Rate limiting (Fastify plugin, key on X-Lumina-Secret)
-- [ ] `HandPoseDetector.swift` — VNDetectHumanHandPoseRequest wrapper
-- [ ] Supabase client singleton + auth session observer
+### Errors & plumbing
+- [~] `LuminaError.swift` sum type with `userTitle` / `userBody` / `recoverySuggestion` / `analyticsKey` — initial scaffold landed
+- [ ] Error-mapping extension on `EphemerisService.ServiceError`
+- [ ] Error-mapping extension on `LuminaAIClient.ClientError`
+- [ ] `AppLock.swift` — Face ID gate for the Reflect tab (opt-in)
+- [ ] `Haptics.swift` — light / medium / heavy / success wrappers honoring Reduce Motion + Reduce Haptics
 
-### Onboarding Flow (7 screens)
-- [ ] Screen 1: Brand promise (single serif sentence on parchment)
-- [ ] Screen 2: Name + birth date (DatePicker)
-- [ ] Screen 3: Birth time (wheel picker with "I don't know → use noon" option)
-- [ ] Screen 4: Birth place (city autocomplete — MapKit / GeoCoder)
-- [ ] Screen 5: Motivation tap (4 options — personalizes paywall copy downstream)
-- [ ] Screen 6: Chart reveal animation (slow SVG wheel draw + Lottie)
-- [ ] Screen 7: Palm scan intro (optional, skip available)
-- [ ] Hard paywall screen (post-onboarding, $9.99/$59.99 with 7-day trial)
-- [ ] RevenueCat paywall integration
-- [ ] Notification permission request (deferred until AFTER paywall decision)
+### SwiftLint
+- [ ] Custom rule `lumina_no_dead_end_list` — flag `LazyVStack` / `List` / `ForEach` over a model collection without an empty branch
+- [ ] Custom rule `lumina_no_modal_on_modal` — flag `.sheet` inside another `.sheet` content closure
+- [ ] Custom rule `lumina_no_raw_corner_radius` — flag `.cornerRadius(...)` outside `Design/Tokens/`
 
-### Birth Chart Feature
-- [ ] `ChartCalculator.swift` — fetch from EphemerisService, parse response
-- [ ] Interactive birth chart wheel (custom Canvas/SwiftUI drawing)
-- [ ] Planet/house tap → side sheet with plain-English interpretation
-- [ ] House system toggle (Placidus default, Whole Sign, Sidereal)
-- [ ] Share card generation (chart wheel PNG export)
+### Project hygiene
+- [ ] Add `Lumina.xcodeproj/` to `.gitignore` explicitly (currently relies on convention)
+- [ ] Coverage reporter target so PR diffs surface % delta
 
-### Daily Reading Feature
-- [ ] `ContentGenerator.swift` — transit JSON → Claude prompt → reading
-- [ ] `RAGRetriever.swift` — Supabase pgvector similarity search
-- [ ] Daily reading view (editorial card layout)
-- [ ] ElevenLabs audio playback (optional narration)
-- [ ] Reading caching (SwiftData — invalidate on new transits)
+---
 
-### Palm Reading Feature
-- [ ] `PalmCaptureSession.swift` — AVCapture live preview
-- [ ] `HandPoseDetector.swift` — wrist/palm landmark detection
-- [ ] Capture guidance UI (hand outline overlay, "move hand into frame")
-- [ ] `LineSegmenter.swift` — Core ML U-Net inference
-- [ ] Trace overlay view (renders segmented lines on captured image)
-- [ ] Manual correction UI (drag handles on line endpoints)
-- [ ] Palm feature extraction + Claude narration
+## 📋 Backlog — Phase 2: Onboarding v2
+
+- [ ] 8 onboarding screen views in `Features/Onboarding/Screens/`
+- [ ] `OnboardingProgressBar` (8 dots, no labels)
+- [ ] `OnboardingState` SwiftData model + resume-on-kill persistence
+- [ ] Inline debounced validation on every field
+- [ ] "Why we ask" link on every sensitive field
+- [ ] MapKit city autocomplete + manual lat/lon fallback
+- [ ] Soft post-onboarding paywall offer (not a hard wall) with explicit "Continue free"
+- [ ] Discount rescue paywall (once per install)
+- [ ] Sign in with Apple (deferred to after first chart reveal)
+- [ ] Deferred notification permission (after first daily reading)
+- [ ] 14 onboarding analytics events
+- [ ] "Update birth info" Settings surface that reuses these forms
+
+---
+
+## 📋 Backlog — Phase 3: Today
+
+- [ ] `TodayView` — hero card + transit summary + quick-actions row
+- [ ] `DailyReadingViewModel`
+- [ ] `ContentGenerator.swift` (transits → RAG → claude-opus-4-6)
+- [ ] ElevenLabs TTS via Node `/generate-audio`
+- [ ] Audio cache (FileManager, 7-day TTL, 50MB LRU)
+- [ ] Daily reading SwiftData cache (invalidate at midnight)
+- [ ] Quick-actions horizontal scroller
+- [ ] Empty + offline + error states
+- [ ] Server-side daily-reading throttle (Supabase edge function)
+- [ ] OneSignal daily push 7:30–9:00 AM local
+- [ ] "Why this reading?" transparency sheet showing transit JSON + 3 RAG snippets
+
+---
+
+## 📋 Backlog — Phase 4: Birth Chart
+
+- [ ] `BirthChartView` layout (wheel 55% / interpretations below)
+- [ ] Chart wheel `Canvas` renderer (single-pass, 60fps)
+- [ ] Glyph hit-testing dictionary (44pt touch targets)
+- [ ] `PlanetDetailView` `.sheet(item:)`
+- [ ] House system `LuminaSegmentedControl`
+- [ ] Unknown-birth-time graceful state
+- [ ] Retrograde dashed-orbit ring
+- [ ] Aspect legend expandable card
+- [ ] Zodiac sign profile sheet
+- [ ] Share card via `ImageRenderer`
+- [ ] Deep-link `lumina://chart/planet/<name>` handler
+- [ ] Big 3 (Sun / Moon / Rising) band at top of Chart tab
+- [ ] "Read my chart aloud" Premium narration (90s audio)
+
+---
+
+## 📋 Backlog — Phase 5: Daily Reading + Audio
+
+- [ ] Audio playback bar (sticky)
+- [ ] Background audio + `MPNowPlayingInfoCenter` artwork
+- [ ] AirPlay 2 / CarPlay support
+- [ ] "Pin reading" Premium feature → Library
+- [ ] Reading reactions (this was you / off / not today)
+
+---
+
+## 📋 Backlog — Phase 6: Palm Reading
+
+- [ ] `PalmScanView` with hand outline guide + lighting indicator
+- [ ] Real-time hand pose overlay
+- [ ] Auto-capture trigger
+- [ ] `LineSegmenter` Core ML actor
+- [ ] Mask post-processing (morph close + Hilditch skeletonization)
+- [ ] Trace-overlay Canvas
+- [ ] Manual correction handles
+- [ ] `PalmFeatureExtractor`
+- [ ] Palm narration via claude-opus-4-6
+- [ ] `PalmReadingView` (4 accordion cards + synthesis)
 - [ ] "How this works" transparency modal
+- [ ] SwiftData `PalmReading` storage
+- [ ] History view
+- [ ] Free-tier scan gating
+- [ ] Pre-capture practice run animation
+- [ ] Both-hands flow
+- [ ] Skip-without-narration path
 
 ---
 
-## 📋 Backlog
+## 📋 Backlog — Phase 7: Compatibility (People tab)
 
-### Compatibility
-- [ ] Contact import with privacy permission flow
-- [ ] Synastry chart (bi-wheel) generation
-- [ ] Composite chart calculation
-- [ ] Compatibility narrative view (percentage + 5 dimensions)
-- [ ] Crush Report IAP ($4.99) — deep dive consumable
+- [ ] `CompatibilityView` entry (3 add paths)
+- [ ] Contact import via `CNContactStore`
+- [ ] Manual friend entry form
+- [ ] `Friend @Model`
+- [ ] Backend `/synastry` endpoint
+- [ ] Backend `/composite` endpoint
+- [ ] Backend `/davison` endpoint
+- [ ] Synastry bi-wheel `Canvas` renderer
+- [ ] Compatibility score (deterministic)
+- [ ] LLM 5-dimension report
+- [ ] Compatibility result view
+- [ ] Share card
+- [ ] Crush Report IAP $4.99
+- [ ] Friend graph list
+- [ ] "Don't know their time?" path
+- [ ] Privacy disclosure card
+- [ ] Encrypted Supabase friends backup (Premium)
 
-### Human Design
-- [ ] Bodygraph SVG render from birth data
-- [ ] Type / Profile / Authority plain-English cards
-- [ ] Defined/undefined center interpretations
+---
 
-### Journal
-- [ ] Daily prompt generation (tied to active transit)
-- [ ] Journal entry SwiftData model
-- [ ] Calendar/history view
-- [ ] Pattern detection (after 30+ entries)
+## 📋 Backlog — Phase 8: Human Design (lives in Chart tab)
 
-### Friends
-- [ ] Friend profile via contact import
+- [ ] HD Swift wrapper (gates / channels / centers / type / profile / authority)
+- [ ] `BodygraphData` model
+- [ ] Bodygraph SVG renderer
+- [ ] Center fill states (defined / undefined / split)
+- [ ] Type / Profile / Authority cards (zero jargon)
+- [ ] Center detail sheets
+- [ ] HD glossary integration with `GlossaryLink`
+- [ ] Astrology-HD crossover callouts
+- [ ] `HumanDesignViewModel`
+- [ ] Premium gate (type + profile free)
+
+---
+
+## 📋 Backlog — Phase 9: Reflect (Journal)
+
+- [ ] `JournalPromptGenerator`
+- [ ] `JournalEntryView` with debounced auto-save
+- [ ] `JournalEntry @Model` (encrypted at rest)
+- [ ] Calendar history view
+- [ ] Entry detail view
+- [ ] Word counter (no streaks)
+- [ ] `FetchDescriptor` search
+- [ ] Pattern detection after 30th entry
+- [ ] Monthly pattern view (Premium)
+- [ ] Premium gate (3 free, then paywall)
+- [ ] Face ID lock toggle
+- [ ] Markdown export (Premium)
+- [ ] Sensitive-prompt softer alternative path
+
+---
+
+## 📋 Backlog — Phase 10: People (Friends)
+
+- [ ] `FriendsListView`
+- [ ] QR code generator + scanner
 - [ ] Chart comparison view
-- [ ] Deep-link share card (birth chart PNG + compatibility score)
+- [ ] `ShareCardGenerator.swift` (consolidates 4 share-card types)
+- [ ] Friend discovery opt-in (hashed phone, default OFF)
+- [ ] Friend-added push notification
+- [ ] Privacy controls
+- [ ] Group reading Premium feature
+- [ ] Soft-delete with 5s undo
 
-### IAP Ladder
-- [ ] Year Ahead ($11.99 consumable) — 12-month transit forecast
-- [ ] Career Forecast ($7.99 consumable)
-- [ ] Ask the Stars ($2.99 — 10 Claude credits)
-- [ ] Discount-rescue paywall (30% off, first decline only)
+---
 
-### Notifications
-- [ ] OneSignal integration + token registration
-- [ ] Daily morning push (7:30–9:00 AM local, 4–10 word blunt copy)
-- [ ] Weekly "week ahead" Sunday push
-- [ ] Event-triggered: eclipse, retrograde, ingress (cap at 5/week)
+## 📋 Backlog — Phase 11: Notifications + Engagement
+
+- [ ] OneSignal SDK integration + token registration + 4 segments
+- [ ] Daily morning push
+- [ ] Weekly "week ahead" Sunday push (Premium)
+- [ ] Event-triggered pushes (eclipse, retrograde, ingress) capped at 5/week
+- [ ] Settings: granular toggles per push type
+- [ ] "No weekend notifications" toggle
+- [ ] Quiet hours (default 9pm–7am)
+
+---
+
+## 📋 Backlog — Phase 12: Settings, Account, Privacy Dashboard
+
+- [ ] `SettingsView` with all 5 sections
+- [ ] `EditBirthInfoView` (reuses onboarding forms)
+- [ ] Manage subscription deep link
+- [ ] Restore purchases action + toast
+- [ ] Sign out flow
+- [ ] `PrivacyDashboardView` ("what we know / what we don't")
+- [ ] Export-my-data → JSON archive via `.fileExporter`
+- [ ] Delete-account flow (3-step + 30-day grace + local wipe)
+- [ ] Help & FAQ view
+- [ ] Send feedback via `MFMailComposeViewController`
+- [ ] Open-source acknowledgements view
+
+---
+
+## 📋 Backlog — Phase 13: Search, Glossary, Help Center
+
+- [ ] `GlossaryStore` — 200+ entries in `Resources/Glossary.json`
+- [ ] CI script ensuring every astrological term in shipped UI is wrapped in `GlossaryLink`
+- [ ] `SearchView` (pull-down on Today)
+- [ ] Search analytics (top-100 queries)
+- [ ] Help threading (12 root topics, 25 articles)
+
+---
+
+## 📋 Backlog — Phase 14: Accessibility, Localization, Performance
+
+- [ ] VoiceOver audit pass — zero unlabeled interactive elements
+- [ ] Dynamic Type audit — Accessibility XL clean across all primary screens
+- [ ] Reduce Motion audit — every animation has crossfade fallback
+- [ ] Color contrast audit (WCAG 2.1 AA)
+- [ ] Instruments Time Profiler — cold launch < 1.5s on iPhone 13
+- [ ] Instruments Allocations — peak memory < 150MB during palm CV
+- [ ] Instruments Energy Log — clean background suspension
+- [ ] 500-item LazyVStack scroll perf at 60fps
+- [ ] Localization scaffold via String Catalogs (`.xcstrings`) — EN + ES at launch
+- [ ] RTL audit
+- [ ] Voice Control test pass
+- [ ] Crash reporting integration (Sentry or Apple Diagnostics)
+- [ ] Memory leak gate (Instruments Leaks zero on TestFlight cut)
+- [ ] Battery test (≤ 8% drain in 30min active use on iPhone 13)
+
+---
+
+## 📋 Backlog — Phase 15: Beta + Compliance + 1.0.0
+
+- [ ] App Store screenshots (6.9in + 6.5in, all 10 slots)
+- [ ] App Store preview video
+- [ ] App Store metadata (title / subtitle / description / keywords)
+- [ ] Privacy policy at lumina.app/privacy
+- [ ] Terms of service at lumina.app/terms
+- [ ] App Store Connect Privacy Nutrition Label
+- [ ] `PrivacyInfo.xcprivacy` manifest
+- [ ] TestFlight beta with 100 external testers
+- [ ] Beta feedback triage (P0/P1 fixed pre-submission)
+- [ ] Pre-submission compliance review (3.1.2(c), 5.1.1, 4.3, 1.1.6, 1.4.4)
+- [ ] Press kit at lumina.app/press
+- [ ] Launch checklist
+- [ ] gitleaks final pass
+- [ ] First-week support rota staffed
+
+---
+
+## 📋 Backlog — Cross-cutting (parallel to phases)
+
+### Backend
+- [x] **[2026-04-29]** Fastify + TS scaffold; astronomy-engine; `/chart`; vitest
+- [x] **[2026-04-29]** Wire `EphemerisService.chart()` to backend
+- [x] **[2026-04-29]** Placidus iterative cusps + closed-form Asc/MC + whole-sign fallback
+- [x] **[2026-04-29]** 5 Ptolemaic aspects with orbs
+- [x] **[2026-04-29]** Sidereal house variant via Lahiri ayanamsha
+- [ ] Transits & progressions endpoints
+- [ ] `/synastry`, `/composite`, `/davison` endpoints
+- [ ] Swap `astronomy-engine` → `swisseph` once Pro license clears
+- [ ] Production deploy to Fly.io (Dockerfile, healthcheck, secrets, auto-sleep)
+- [ ] In-memory LRU cache (key on birth-data hash)
+- [ ] Rate limiting (Fastify plugin keyed on `X-Lumina-Secret`)
+- [ ] ElevenLabs `/generate-audio` endpoint
+- [ ] RAG corpus chunking + embedding pipeline (~1,940 chunks)
+- [ ] pgvector HNSW index post-insert
+- [ ] Edge function for daily-reading throttle
+
+### SwiftData migrations
+- [ ] `SchemaMigrationPlan` from version 1 onward (no shipping without one)
+- [ ] Encryption at rest for `JournalEntry` (CryptoKit + Keychain)
+
+### Test strategy
+- [ ] Snapshot test harness (3 sizes × 2 schemes per shipped View)
+- [ ] Integration test: `/chart` against astro.com 5 fixed dates per CI run
+- [ ] `docs/QA_SCRIPTS.md` with 15 manual flows that block release
+
+### Observability
+- [ ] Crash reporting
+- [ ] Custom analytics (≤ 60 events)
+- [ ] Backend health dashboard
+- [ ] AI cost dashboard with daily anomaly alerts
 
 ---
 
 ## ✅ Completed
 
-- [x] Set up `.claude/settings.json` — bash permissions, Stop hook checklist, PreToolUse secrets guard
-- [x] Create `.claude/commands/` — `/build`, `/lint`, `/test`, `/chart`, `/new-feature`, `/session-end`
-- [x] Update `CLAUDE.md` — Quick Context table, active branch, optimized session protocol
-- [x] Configure `.swiftlint.yml` — strict mode (pre-existing)
-- [x] **[2026-04-29]** Phase 0 bootstrap — `project.yml`, design tokens, service-actor stubs, `RootView` splash, CI workflow, secrets injection. Branch `claude/initial-app-setup-hQvKZ`.
+- [x] **[2026-04-29]** Phase 0 bootstrap — `project.yml`, design tokens, service-actor stubs, `RootView` splash, CI workflow, secrets injection
+- [x] **[2026-04-29]** SwiftLint strict + custom rules for hex / fonts / magic spacing
+- [x] **[2026-04-29]** Backend Fastify + TS ephemeris MVP (Placidus + Whole-Sign + Sidereal + 5 aspects + tests)
+- [x] **[2026-04-29]** iOS `EphemerisService` actor with HTTP round-trip + decode tests
+- [x] **[2026-05-08]** New 16-phase ROADMAP.md cut, navigation IA spec at `docs/NAVIGATION.md`, branch `claude/roadmap-navigation-improvements-yqxV2`
+- [x] **[2026-05-08]** Phase 1 starter scaffolding landed: `AppRouter`, `LuminaTab`, `LuminaDeepLink`, `MainTabsView`, design-system v2 components (`LuminaButton`, `LuminaCard`, `LuminaTextField`, `LuminaSegmentedControl`, `LuminaSkeleton`, `LuminaEmptyState`, `LuminaErrorState`, `LuminaBadge`, `LuminaError`, `GlossaryLink`/`GlossaryStore`)
 
 ---
 
@@ -138,8 +331,10 @@
 
 | Blocker | Impact | Owner |
 |---|---|---|
-| PP Editorial New font license — confirm purchase | Design system blocked | — |
-| Swiss Ephemeris Pro license (CHF 1,550) — purchase + server setup | Daily reading blocked | — |
-| ElevenLabs voice ID — record brand voice | Audio reading blocked | — |
-| Custom palm U-Net model — train on PolyU/CASIA data or find pre-trained | Palm CV blocked | — |
-| Supabase RAG corpus — curate + embed (Liz Greene, Steven Forrest, Robert Hand) | AI readings blocked | — |
+| PP Editorial New font license — confirm purchase | Type system locked to fallback | — |
+| Swiss Ephemeris Pro license (CHF 1,550) | Cannot swap from astronomy-engine | — |
+| ElevenLabs voice ID — record brand voice session | Phase 5 audio blocked | — |
+| Custom palm U-Net Core ML model — train on PolyU/CASIA | Phase 6 blocked | — |
+| Supabase project credentials | Auth + RAG corpus blocked | — |
+| Apple Developer enrollment + signing artifacts | TestFlight + App Store launch blocked | — |
+| Legal review of fortune-telling framing copy | App Review risk | — |

@@ -48,6 +48,8 @@ targets:
     resources:
       - path: Lumina/Resources/Fonts
         optional: true
+      - path: Lumina/Resources/Glossary.json
+        optional: true
     info:
       path: Lumina/Resources/Info.plist
       properties:
