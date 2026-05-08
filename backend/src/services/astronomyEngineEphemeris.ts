@@ -38,11 +38,20 @@ const RETROGRADE_PROBE_MS = 60 * 60 * 1000; // one hour earlier
  * Swiss Ephemeris Pro license is procured. The `EphemerisService`
  * interface is the only seam callers depend on.
  */
+/**
+ * Compute geocentric ecliptic positions for the ten major bodies at a
+ * given UTC instant. Used both for the natal `chart()` path and for the
+ * `/transits` endpoint (which compares now-positions to natal positions).
+ */
+export function planetsAt(instant: Date): PlanetPosition[] {
+  return PLANETS.map((spec) => positionAt(spec, instant));
+}
+
 export class AstronomyEngineEphemeris implements EphemerisService {
   async chart(birthData: BirthData, options: ChartOptions = {}): Promise<NatalChart> {
     const houseSystem: HouseSystem = options.houseSystem ?? "placidus";
     const instant = effectiveInstant(birthData);
-    const tropicalPlanets = PLANETS.map((spec) => positionAt(spec, instant));
+    const tropicalPlanets = planetsAt(instant);
     const ayanamsha = houseSystem === "sidereal" ? lahiriAyanamsha(instant) : 0;
     const planets = ayanamsha === 0
       ? tropicalPlanets

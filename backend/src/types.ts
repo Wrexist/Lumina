@@ -87,3 +87,35 @@ export const NatalChartSchema = z.object({
 });
 
 export type NatalChart = z.infer<typeof NatalChartSchema>;
+
+/** A single transit-to-natal aspect. */
+export const TransitAspectSchema = z.object({
+  transitingPlanet: z.string(),
+  natalPlanet: z.string(),
+  type: AspectTypeSchema,
+  exactAngle: z.number(),
+  orb: z.number().nonnegative(),
+});
+
+export type TransitAspect = z.infer<typeof TransitAspectSchema>;
+
+/** Wire format for `POST /transits`. */
+export const TransitRequestSchema = z.object({
+  birthData: BirthDataSchema,
+  /** ISO-8601; defaults server-side to "now" if absent. */
+  atInstant: z.string().datetime({ offset: true }).optional(),
+});
+
+export type TransitRequest = z.infer<typeof TransitRequestSchema>;
+
+export const TransitChartSchema = z.object({
+  calculatedAt: z.string().datetime({ offset: true }),
+  /** The instant we computed transiting positions for. */
+  transitInstant: z.string().datetime({ offset: true }),
+  /** Current planet positions in the (tropical) ecliptic. */
+  transitingPlanets: z.array(PlanetPositionSchema),
+  /** Aspects from transiting planets to natal planets, sorted ascending by orb. */
+  aspects: z.array(TransitAspectSchema),
+});
+
+export type TransitChart = z.infer<typeof TransitChartSchema>;

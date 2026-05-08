@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import { loadConfig, type Config } from "./config.ts";
 import { chartRoutes } from "./routes/chart.ts";
+import { transitsRoutes } from "./routes/transits.ts";
 import { AstronomyEngineEphemeris } from "./services/astronomyEngineEphemeris.ts";
 
 export async function buildServer(config: Config): Promise<FastifyInstance> {
@@ -16,8 +17,19 @@ export async function buildServer(config: Config): Promise<FastifyInstance> {
 
   app.get("/health", async () => ({ status: "ok" }));
 
+  // Shared-secret auth for every non-/health route.
+  app.addHook("onRequest", async (request, reply) => {
+    if (request.url === "/health") return;
+    const provided = request.headers["x-lumina-secret"];
+    if (typeof provided !== "string" || provided !== config.LUMINA_API_SECRET) {
+      reply.code(401);
+      throw new Error("invalid or missing X-Lumina-Secret header");
+    }
+  });
+
   const ephemeris = new AstronomyEngineEphemeris();
-  await app.register(chartRoutes, { ephemeris, config });
+  await app.register(chartRoutes, { ephemeris });
+  await app.register(transitsRoutes, { ephemeris });
 
   return app;
 }
