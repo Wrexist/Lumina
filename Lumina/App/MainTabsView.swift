@@ -5,6 +5,7 @@ import SwiftUI
 /// tab — it surfaces from a top-trailing gear in every hub (Phase 12).
 struct MainTabsView: View {
     @Bindable var router: AppRouter
+    @State private var settingsPresented = false
 
     var body: some View {
         TabView(selection: $router.selectedTab) {
@@ -17,6 +18,9 @@ struct MainTabsView: View {
             }
         }
         .tint(LuminaColors.celestialBlue)
+        .sheet(isPresented: $settingsPresented) {
+            SettingsView()
+        }
     }
 
     @ViewBuilder
@@ -34,7 +38,7 @@ struct MainTabsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        // TODO(lumina): present SettingsView sheet (Phase 12)
+                        settingsPresented = true
                     } label: {
                         Image(systemName: "gearshape")
                     }

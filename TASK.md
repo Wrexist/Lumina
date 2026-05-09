@@ -220,7 +220,7 @@
 
 ## 📋 Backlog — Phase 12: Settings, Account, Privacy Dashboard
 
-- [ ] `SettingsView` with all 5 sections
+- [~] `SettingsView` with all 5 sections — placeholder shell shipped (Account / Your info / Preferences / Privacy / About) wired to the gear icon in every nav bar; sub-screens still TODO
 - [ ] `EditBirthInfoView` (reuses onboarding forms)
 - [ ] Manage subscription deep link
 - [ ] Restore purchases action + toast
