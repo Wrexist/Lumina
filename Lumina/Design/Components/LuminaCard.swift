@@ -20,14 +20,9 @@ struct LuminaCard<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(surfaceBackground)
             .foregroundStyle(foreground)
-            .clipShape(.rect(cornerRadius: LuminaSpacing.md))
+            .luminaCornerRadius(LuminaRadii.md)
             .overlay(border)
-            .shadow(
-                color: LuminaColors.inkBlack.opacity(0.06),
-                radius: 8,
-                x: 0,
-                y: 2
-            )
+            .luminaShadow(.card)
     }
 
     @ViewBuilder
@@ -53,7 +48,7 @@ struct LuminaCard<Content: View>: View {
 
     @ViewBuilder
     private var border: some View {
-        RoundedRectangle(cornerRadius: LuminaSpacing.md, style: .continuous)
+        RoundedRectangle(cornerRadius: LuminaRadii.md, style: .continuous)
             .stroke(LuminaColors.inkBlack.opacity(0.08), lineWidth: 1)
     }
 }

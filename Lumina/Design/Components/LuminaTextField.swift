@@ -30,10 +30,10 @@ struct LuminaTextField: View {
                 .padding(LuminaSpacing.md)
                 .background(LuminaColors.parchment)
                 .overlay(
-                    RoundedRectangle(cornerRadius: LuminaSpacing.sm, style: .continuous)
+                    RoundedRectangle(cornerRadius: LuminaRadii.sm, style: .continuous)
                         .stroke(borderColor, lineWidth: focused ? 2 : 1)
                 )
-                .clipShape(.rect(cornerRadius: LuminaSpacing.sm))
+                .luminaCornerRadius(LuminaRadii.sm)
 
             footer
         }

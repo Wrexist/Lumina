@@ -29,7 +29,7 @@ struct LuminaSegmentedControl<Value: Hashable>: View {
                                 ? LuminaColors.midnight
                                 : Color.clear
                         )
-                        .clipShape(.rect(cornerRadius: LuminaSpacing.sm))
+                        .luminaCornerRadius(LuminaRadii.sm)
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(option.value == selection ? [.isSelected] : [])
@@ -38,10 +38,10 @@ struct LuminaSegmentedControl<Value: Hashable>: View {
         .padding(LuminaSpacing.xs)
         .background(LuminaColors.parchment)
         .overlay(
-            RoundedRectangle(cornerRadius: LuminaSpacing.md, style: .continuous)
+            RoundedRectangle(cornerRadius: LuminaRadii.md, style: .continuous)
                 .stroke(LuminaColors.inkBlack.opacity(0.12), lineWidth: 1)
         )
-        .clipShape(.rect(cornerRadius: LuminaSpacing.md))
+        .luminaCornerRadius(LuminaRadii.md)
     }
 }
 

@@ -29,17 +29,18 @@
 - [~] `LuminaSkeleton` shimmer — initial scaffold landed
 - [~] `LuminaBadge` for "Premium" / "Beta" / "New" — initial scaffold landed
 - [~] `GlossaryLink("term")` view modifier + `GlossaryStore` — initial scaffold landed; full corpus pending
-- [ ] `LuminaSegmentedControl` (house-system / chart-mode picker)
-- [ ] `LuminaConfirmationDialog` wrapper for destructive actions
-- [ ] `LuminaShadows` token set (subtle / card / elevated)
-- [ ] `LuminaRadii` token set + SwiftLint rule blocking raw `.cornerRadius(...)` literals
+- [x] **[2026-05-08]** `LuminaSegmentedControl` (house-system / chart-mode picker) — initial scaffold landed
+- [x] **[2026-05-08]** `LuminaConfirmationDialog` wrapper for destructive actions
+- [x] **[2026-05-08]** `LuminaShadows` token set (subtle / card / elevated)
+- [x] **[2026-05-08]** `LuminaRadii` token set + `.luminaCornerRadius(_:)` view modifier
+- [ ] SwiftLint rule blocking raw `.cornerRadius(...)` literals outside `Design/Tokens/`
 
 ### Errors & plumbing
-- [~] `LuminaError.swift` sum type with `userTitle` / `userBody` / `recoverySuggestion` / `analyticsKey` — initial scaffold landed
-- [ ] Error-mapping extension on `EphemerisService.ServiceError`
+- [x] **[2026-05-08]** `LuminaError.swift` sum type with `userTitle` / `userBody` / `recoveryActionTitle` / `analyticsKey`
+- [x] **[2026-05-08]** Error-mapping extension on `EphemerisService.ServiceError` and `URLError` via `LuminaError.from(_:)`
 - [ ] Error-mapping extension on `LuminaAIClient.ClientError`
 - [ ] `AppLock.swift` — Face ID gate for the Reflect tab (opt-in)
-- [ ] `Haptics.swift` — light / medium / heavy / success wrappers honoring Reduce Motion + Reduce Haptics
+- [x] **[2026-05-08]** `Haptics.swift` — light / medium / heavy / selection / success / warning / failure wrappers honoring Reduce Motion
 
 ### SwiftLint
 - [ ] Custom rule `lumina_no_dead_end_list` — flag `LazyVStack` / `List` / `ForEach` over a model collection without an empty branch
@@ -47,7 +48,7 @@
 - [ ] Custom rule `lumina_no_raw_corner_radius` — flag `.cornerRadius(...)` outside `Design/Tokens/`
 
 ### Project hygiene
-- [ ] Add `Lumina.xcodeproj/` to `.gitignore` explicitly (currently relies on convention)
+- [x] **[2026-05-08]** `.gitignore` already lists `Lumina.xcodeproj/` (verified)
 - [ ] Coverage reporter target so PR diffs surface % delta
 
 ---
@@ -324,6 +325,7 @@
 - [x] **[2026-04-29]** iOS `EphemerisService` actor with HTTP round-trip + decode tests
 - [x] **[2026-05-08]** New 16-phase ROADMAP.md cut, navigation IA spec at `docs/NAVIGATION.md`, branch `claude/roadmap-navigation-improvements-yqxV2`
 - [x] **[2026-05-08]** Phase 1 starter scaffolding landed: `AppRouter`, `LuminaTab`, `LuminaDeepLink`, `MainTabsView`, design-system v2 components (`LuminaButton`, `LuminaCard`, `LuminaTextField`, `LuminaSegmentedControl`, `LuminaSkeleton`, `LuminaEmptyState`, `LuminaErrorState`, `LuminaBadge`, `LuminaError`, `GlossaryLink`/`GlossaryStore`)
+- [x] **[2026-05-08]** Phase 1 sprint follow-up: `LuminaRadii` + `LuminaShadows` tokens, `Haptics` wrapper, `LuminaConfirmationDialog` extension, `LuminaError.from(_:)` mapping for `EphemerisService.ServiceError` and `URLError`. Migrated existing components to the new tokens. Added `DesignTokensAndErrorTests` covering token monotonicity, error mapping, and analytics-key uniqueness.
 
 ---
 

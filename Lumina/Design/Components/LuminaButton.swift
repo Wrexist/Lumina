@@ -36,12 +36,17 @@ struct LuminaButton: View {
             .background(background)
             .foregroundStyle(foreground)
             .overlay(border)
-            .clipShape(.rect(cornerRadius: LuminaSpacing.md))
+            .luminaCornerRadius(LuminaRadii.md)
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled || isLoading)
         .opacity(isEnabled ? 1 : 0.45)
         .animation(reduceMotion ? .none : .smooth(duration: 0.2), value: isLoading)
+        .simultaneousGesture(TapGesture().onEnded {
+            if variant == .primary || variant == .destructive {
+                Haptics.light.play()
+            }
+        })
         .accessibilityLabel(title)
         .accessibilityAddTraits(isEnabled ? [.isButton] : [.isButton, .notEnabled])
     }
@@ -81,7 +86,7 @@ struct LuminaButton: View {
     @ViewBuilder
     private var border: some View {
         if variant == .secondary {
-            RoundedRectangle(cornerRadius: LuminaSpacing.md, style: .continuous)
+            RoundedRectangle(cornerRadius: LuminaRadii.md, style: .continuous)
                 .stroke(LuminaColors.inkBlack.opacity(0.2), lineWidth: 1)
         } else {
             EmptyView()
