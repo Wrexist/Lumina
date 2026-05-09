@@ -1,0 +1,122 @@
+[
+  {
+    "key": "saturn return",
+    "displayName": "Saturn return",
+    "category": "astrology",
+    "summary": "When Saturn comes back to where it was at your birth, roughly every 29.5 years.",
+    "body": "Astrologers treat the Saturn return as a milestone where the structures of your life — work, relationships, identity — get a hard look. The first Saturn return falls between roughly age 27 and 30; the second around age 58.",
+    "aliases": ["saturn returns"]
+  },
+  {
+    "key": "rising sign",
+    "displayName": "Rising sign",
+    "category": "astrology",
+    "summary": "The zodiac sign that was on the eastern horizon when you were born.",
+    "body": "Also called the Ascendant. Many astrologers describe it as the persona — how you arrive in a room before anyone has heard you speak. Requires an accurate birth time.",
+    "aliases": ["ascendant", "asc"]
+  },
+  {
+    "key": "midheaven",
+    "displayName": "Midheaven",
+    "category": "astrology",
+    "summary": "The highest point of the sky at the moment of birth.",
+    "body": "Often abbreviated MC (Medium Coeli). Linked to vocation, public reputation, and the most visible expression of your chart. Like the rising sign, it depends on an accurate birth time.",
+    "aliases": ["mc", "medium coeli"]
+  },
+  {
+    "key": "retrograde",
+    "displayName": "Retrograde",
+    "category": "astrology",
+    "summary": "When a planet appears to move backwards from Earth's vantage point.",
+    "body": "Retrograde motion is an optical effect — planets don't actually reverse — but astrologers read it as an invitation to revisit, review, or revise rather than initiate.",
+    "aliases": ["retrogrades"]
+  },
+  {
+    "key": "transits",
+    "displayName": "Transits",
+    "category": "astrology",
+    "summary": "How today's planet positions interact with your natal chart.",
+    "body": "When a planet today aligns with one in your birth chart, astrologers call that a transit. Transits are why two people don't share the same daily reading even if they were born on the same day.",
+    "aliases": ["transit"]
+  },
+  {
+    "key": "house",
+    "displayName": "House",
+    "category": "astrology",
+    "summary": "One of 12 slices of the sky, each tied to an area of life.",
+    "body": "Houses divide the chart into 12 sectors — the first house is the self, the seventh is partnerships, the tenth is career, and so on. Different house systems (Placidus, Whole-sign, Sidereal) draw the slices differently.",
+    "aliases": ["houses", "1st house", "7th house"]
+  },
+  {
+    "key": "synastry",
+    "displayName": "Synastry",
+    "category": "astrology",
+    "summary": "Comparing two birth charts to see how they fit together.",
+    "body": "A synastry chart overlays one person's planets on another's, looking for aspects between them. It's the technical underpinning of compatibility readings.",
+    "aliases": ["synastry chart"]
+  },
+  {
+    "key": "composite",
+    "displayName": "Composite chart",
+    "category": "astrology",
+    "summary": "A single chart that represents a relationship as if it were its own person.",
+    "body": "Created by averaging the midpoints of two natal charts. Where synastry shows how two people interact, the composite shows the relationship itself.",
+    "aliases": ["composite chart", "relationship chart"]
+  },
+  {
+    "key": "generator",
+    "displayName": "Generator",
+    "category": "humanDesign",
+    "summary": "The most common Human Design type. About 70% of people.",
+    "body": "Generators are the workhorses of the system. Their strategy is to respond — to wait for life to bring something to react to, rather than chasing.",
+    "aliases": ["generators", "manifesting generator"]
+  },
+  {
+    "key": "splenic authority",
+    "displayName": "Splenic authority",
+    "category": "humanDesign",
+    "summary": "Making decisions from gut intuition, in the moment.",
+    "body": "One of seven authorities in Human Design. Splenic types do best by trusting their first instinct rather than thinking it through. The signal is quiet and only speaks once.",
+    "aliases": ["splenic"]
+  },
+  {
+    "key": "life line",
+    "displayName": "Life line",
+    "category": "palmistry",
+    "summary": "The line that curves around the base of the thumb.",
+    "body": "Despite the name, palmistry doesn't read the life line as predicting how long you'll live. Most readers see it as reflecting vitality, physical resilience, and major life-shape changes.",
+    "aliases": ["life-line"]
+  },
+  {
+    "key": "heart line",
+    "displayName": "Heart line",
+    "category": "palmistry",
+    "summary": "The horizontal line near the top of the palm.",
+    "body": "Palmistry reads the heart line for emotional style — how you bond, how you process feelings, how you express affection.",
+    "aliases": ["heart-line"]
+  },
+  {
+    "key": "head line",
+    "displayName": "Head line",
+    "category": "palmistry",
+    "summary": "The horizontal line across the middle of the palm.",
+    "body": "Read for thinking style — analytical vs intuitive, focused vs broad, decisive vs reflective.",
+    "aliases": ["head-line"]
+  },
+  {
+    "key": "fate line",
+    "displayName": "Fate line",
+    "category": "palmistry",
+    "summary": "The vertical line that runs up the centre of the palm.",
+    "body": "Not always visible. Palmistry reads its presence and breaks as moments where life direction shifted — career changes, relocations, identity pivots.",
+    "aliases": ["fate-line", "career line"]
+  },
+  {
+    "key": "lumina plus",
+    "displayName": "Lumina Plus",
+    "category": "general",
+    "summary": "Lumina's monthly or annual subscription.",
+    "body": "Unlocks audio narrations, unlimited palm scans, the full bodygraph, monthly journal pattern detection, and the Crush Report. Monthly $9.99 or annual $59.99 with a 7-day free trial.",
+    "aliases": ["plus", "premium", "subscription"]
+  }
+]

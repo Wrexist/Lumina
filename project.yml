@@ -48,6 +48,8 @@ targets:
     resources:
       - path: Lumina/Resources/Fonts
         optional: true
+      - path: Lumina/Resources/Glossary.json
+        optional: true
     info:
       path: Lumina/Resources/Info.plist
       properties:
@@ -60,6 +62,7 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         ITSAppUsesNonExemptEncryption: false
+        NSFaceIDUsageDescription: "Lumina uses Face ID to keep your reflections private on this device."
         LuminaAnthropicAPIKey: $(ANTHROPIC_API_KEY)
         LuminaElevenLabsAPIKey: $(ELEVENLABS_API_KEY)
         LuminaElevenLabsVoiceID: $(ELEVENLABS_VOICE_ID)

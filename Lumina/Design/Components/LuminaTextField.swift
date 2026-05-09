@@ -1,0 +1,113 @@
+import SwiftUI
+
+/// Single-line input with brand styling, an inline error slot, and an
+/// optional helper / character counter line. Onboarding and Settings reuse
+/// this everywhere — there is no second text-field component.
+struct LuminaTextField: View {
+    let title: String
+    @Binding var text: String
+    var placeholder = ""
+    var helper: String?
+    var error: String?
+    var isSecure = false
+    var keyboard: UIKeyboardType = .default
+    var textContentType: UITextContentType?
+    var maxCharacters: Int?
+
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
+            Text(title.uppercased())
+                .font(LuminaTypography.caption)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                .tracking(1.2)
+
+            field
+                .focused($focused)
+                .keyboardType(keyboard)
+                .textContentType(textContentType)
+                .padding(LuminaSpacing.md)
+                .background(LuminaColors.parchment)
+                .overlay(
+                    RoundedRectangle(cornerRadius: LuminaRadii.sm, style: .continuous)
+                        .stroke(borderColor, lineWidth: focused ? 2 : 1)
+                )
+                .luminaCornerRadius(LuminaRadii.sm)
+
+            footer
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(title)
+        .accessibilityValue(text.isEmpty ? "Empty" : text)
+    }
+
+    @ViewBuilder
+    private var field: some View {
+        if isSecure {
+            SecureField(placeholder, text: $text)
+                .font(LuminaTypography.body)
+        } else {
+            TextField(placeholder, text: $text)
+                .font(LuminaTypography.body)
+        }
+    }
+
+    @ViewBuilder
+    private var footer: some View {
+        if let error, !error.isEmpty {
+            Text(error)
+                .font(LuminaTypography.caption)
+                .foregroundStyle(errorColor)
+        } else if let helper, !helper.isEmpty {
+            HStack {
+                Text(helper)
+                    .font(LuminaTypography.caption)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                if let maxCharacters {
+                    Spacer()
+                    Text("\(text.count)/\(maxCharacters)")
+                        .font(LuminaTypography.mono)
+                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                }
+            }
+        } else if let maxCharacters {
+            HStack {
+                Spacer()
+                Text("\(text.count)/\(maxCharacters)")
+                    .font(LuminaTypography.mono)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            }
+        }
+    }
+
+    private var borderColor: Color {
+        if error != nil { return errorColor }
+        return focused ? LuminaColors.celestialBlue : LuminaColors.inkBlack.opacity(0.2)
+    }
+
+    private var errorColor: Color {
+        // Re-uses an existing brand token; we don't yet ship a dedicated
+        // error red because most error surfaces are recoverable, not punitive.
+        LuminaColors.blush
+    }
+}
+
+#Preview("States") {
+    VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
+        LuminaTextField(
+            title: "Your name",
+            text: .constant("Anna"),
+            placeholder: "Enter your name",
+            helper: "Used only to greet you."
+        )
+        LuminaTextField(
+            title: "Birth place",
+            text: .constant("Stoc"),
+            placeholder: "City, country",
+            error: "City not found — try a nearby one."
+        )
+    }
+    .padding(LuminaSpacing.lg)
+    .background(LuminaColors.parchment)
+}
