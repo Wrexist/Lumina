@@ -1,44 +1,167 @@
+import SwiftData
 import SwiftUI
 
-/// Phase-7 + Phase-10 placeholder. Default state is empty until the user
-/// adds at least one friend; once they do this becomes a sorted list.
+/// Phase-7 / Phase-10 People hub. Real list of `Friend`s sorted by
+/// recency, manual add, share-my-chart QR. Synastry bi-wheel + the
+/// 5-dimension narrative report ship with the backend `/synastry`
+/// endpoint in Phase 7.
 struct PeopleHubView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Friend.createdAt, order: .reverse) private var friends: [Friend]
+    @State private var addPresented = false
+    @State private var qrPresented = false
+
     var body: some View {
+        Group {
+            if friends.isEmpty {
+                emptyState
+            } else {
+                friendsList
+            }
+        }
+        .background(LuminaColors.parchment)
+        .navigationTitle("People")
+        .toolbar { toolbarContent }
+        .sheet(isPresented: $addPresented) {
+            AddFriendView()
+        }
+        .sheet(isPresented: $qrPresented) {
+            ShareQRView()
+        }
+    }
+
+    // MARK: - View building blocks
+
+    private var emptyState: some View {
         ScrollView {
             VStack(spacing: LuminaSpacing.lg) {
                 LuminaEmptyState(
                     systemImage: "person.2",
                     title: "No one here yet",
                     body: "Add a friend, partner, or family member to see what's happening between you.",
-                    primaryCTA: LuminaEmptyState.CTA(title: "Add someone", action: handleAdd),
-                    secondaryCTA: LuminaEmptyState.CTA(title: "Scan a friend's QR", action: handleScan)
+                    primaryCTA: LuminaEmptyState.CTA(title: "Add someone", action: presentAdd),
+                    secondaryCTA: LuminaEmptyState.CTA(title: "Share my chart", action: presentQR)
                 )
-
-                LuminaCard {
-                    VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                        Text("Privacy")
-                            .font(LuminaTypography.heading)
-                        Text("If you import from contacts we only read names and birthdays — never phone numbers, addresses, or photos. Nothing leaves your device unless you explicitly share.")
-                            .font(LuminaTypography.bodyLight)
-                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-                    }
-                }
+                privacyCard
             }
             .padding(LuminaSpacing.lg)
         }
+    }
+
+    private var friendsList: some View {
+        List {
+            Section {
+                ForEach(friends) { friend in
+                    NavigationLink {
+                        FriendDetailView(friend: friend)
+                    } label: {
+                        friendRow(friend)
+                    }
+                }
+            }
+            Section {
+                privacyCard
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            }
+        }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
         .background(LuminaColors.parchment)
-        .navigationTitle("People")
     }
 
-    private func handleAdd() {
-        // TODO(lumina): present add-friend sheet (Phase 10)
+    private var privacyCard: some View {
+        LuminaCard {
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                HStack(spacing: LuminaSpacing.sm) {
+                    Image(systemName: "lock")
+                        .foregroundStyle(LuminaColors.celestialBlue)
+                    Text("Privacy")
+                        .font(LuminaTypography.heading)
+                }
+                Text("Friends live on this device only. We don't sync names, birthdays, or photos to a server unless you explicitly turn on friend discovery (Phase 10 — currently disabled).")
+                    .font(LuminaTypography.bodyLight)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+            }
+        }
+        .padding(.horizontal, LuminaSpacing.lg)
+        .padding(.bottom, LuminaSpacing.lg)
     }
 
-    private func handleScan() {
-        // TODO(lumina): present QR scanner (Phase 10)
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Menu {
+                Button("Add someone", systemImage: "person.fill.badge.plus") {
+                    presentAdd()
+                }
+                Button("Share my chart", systemImage: "qrcode") {
+                    presentQR()
+                }
+            } label: {
+                Image(systemName: "plus.circle")
+            }
+            .accessibilityLabel("Add or share")
+        }
+    }
+
+    // MARK: - Methods
+
+    private func presentAdd() {
+        addPresented = true
+    }
+
+    private func presentQR() {
+        qrPresented = true
+    }
+
+    private func friendRow(_ friend: Friend) -> some View {
+        HStack(spacing: LuminaSpacing.md) {
+            avatar(for: friend)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(friend.name).font(LuminaTypography.body)
+                Text(birthLine(friend))
+                    .font(LuminaTypography.caption)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            }
+            Spacer()
+            if let score = friend.compatibilityScore {
+                Text("\(score)")
+                    .font(LuminaTypography.mono)
+                    .foregroundStyle(LuminaColors.celestialBlue)
+            }
+        }
+        .padding(.vertical, LuminaSpacing.xs)
+    }
+
+    private func avatar(for friend: Friend) -> some View {
+        ZStack {
+            Circle()
+                .fill(LuminaColors.parchment)
+                .overlay(Circle().stroke(LuminaColors.inkBlack.opacity(0.15), lineWidth: 1))
+            Text(initial(for: friend.name))
+                .font(LuminaTypography.body)
+                .foregroundStyle(LuminaColors.inkBlack)
+        }
+        .frame(width: 36, height: 36)
+    }
+
+    private func initial(for name: String) -> String {
+        String(name.trimmingCharacters(in: .whitespaces).prefix(1)).uppercased()
+    }
+
+    private func birthLine(_ friend: Friend) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        let date = formatter.string(from: friend.birthDate)
+        if let place = friend.birthPlaceName {
+            return "\(date) · \(place)"
+        }
+        return date
     }
 }
 
 #Preview {
     NavigationStack { PeopleHubView() }
+        .modelContainer(for: Friend.self, inMemory: true)
 }

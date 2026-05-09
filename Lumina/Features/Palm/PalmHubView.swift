@@ -1,8 +1,13 @@
 import SwiftUI
 
-/// Phase-6 placeholder. Empty-state path until the Vision + Core ML
-/// pipeline lands. Drives "Scan a hand" as the primary CTA.
+/// Phase-6 placeholder. The capture pipeline (Vision + Core ML
+/// segmentation) lands once the custom palm U-Net model trained on
+/// PolyU/CASIA data is available — see TASK.md "Blockers". Until then
+/// the tab ships a real transparency story and a clear "coming soon"
+/// affordance so users understand what we're building.
 struct PalmHubView: View {
+    @State private var transparencyPresented = false
+
     var body: some View {
         ScrollView {
             VStack(spacing: LuminaSpacing.lg) {
@@ -10,35 +15,80 @@ struct PalmHubView: View {
                     systemImage: "hand.raised",
                     title: "Read your hand",
                     body: "Your phone's camera + on-device AI traces the four major lines. Photos never leave your device.",
-                    primaryCTA: LuminaEmptyState.CTA(title: "Scan a hand", action: handleScan),
-                    secondaryCTA: LuminaEmptyState.CTA(title: "How this works", action: handleExplain)
+                    primaryCTA: LuminaEmptyState.CTA(title: "How this works", action: presentTransparency),
+                    secondaryCTA: LuminaEmptyState.CTA(title: "Notify me when it ships", action: handleNotifyMe)
                 )
-
-                LuminaCard {
-                    VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                        HStack(spacing: LuminaSpacing.sm) {
-                            LuminaBadge(title: "Plus", tone: .premium)
-                            Text("Unlimited scans")
-                                .font(LuminaTypography.body)
-                        }
-                        Text("Free includes one scan a month. Lumina Plus removes the limit and unlocks the deep narration.")
-                            .font(LuminaTypography.bodyLight)
-                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-                    }
-                }
+                differentiatorCard
+                premiumCard
+                blockerNote
             }
             .padding(LuminaSpacing.lg)
         }
         .background(LuminaColors.parchment)
         .navigationTitle("Palm")
+        .sheet(isPresented: $transparencyPresented) {
+            PalmTransparencyView()
+        }
     }
 
-    private func handleScan() {
-        // TODO(lumina): present PalmCaptureView (Phase 6)
+    // MARK: - View building blocks
+
+    private var differentiatorCard: some View {
+        LuminaCard {
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                HStack(spacing: LuminaSpacing.sm) {
+                    Image(systemName: "wand.and.sparkles")
+                        .foregroundStyle(LuminaColors.celestialBlue)
+                    Text("Why ours is different")
+                        .font(LuminaTypography.heading)
+                }
+                Text("Every other major app in this category overlays a generic illustration on top of your palm and writes a generic reading. Lumina actually traces your lines with a Core ML model trained on real palm images.")
+                    .font(LuminaTypography.body)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
+            }
+        }
     }
 
-    private func handleExplain() {
-        // TODO(lumina): present transparency sheet (Phase 6)
+    private var premiumCard: some View {
+        LuminaCard {
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                HStack(spacing: LuminaSpacing.sm) {
+                    LuminaBadge(title: "Plus", tone: .premium)
+                    Text("Unlimited scans")
+                        .font(LuminaTypography.body)
+                }
+                Text("Free includes one scan a month. Lumina Plus removes the limit and unlocks the deep narration.")
+                    .font(LuminaTypography.bodyLight)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+            }
+        }
+    }
+
+    private var blockerNote: some View {
+        LuminaCard {
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                HStack(spacing: LuminaSpacing.sm) {
+                    LuminaBadge(title: "Phase 6", tone: .neutral)
+                    Text("Where we are")
+                        .font(LuminaTypography.body)
+                }
+                Text("The capture session, line-segmentation Core ML model, and trace overlay land in Phase 6. The model is the gating item — we're balancing the training set across Fitzpatrick skin tones before shipping.")
+                    .font(LuminaTypography.bodyLight)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+            }
+        }
+    }
+
+    // MARK: - Methods
+
+    private func presentTransparency() {
+        Haptics.light.play()
+        transparencyPresented = true
+    }
+
+    private func handleNotifyMe() {
+        // TODO(lumina): wire to Anthropic email capture or OneSignal segment (Phase 11)
+        Haptics.medium.play()
     }
 }
 

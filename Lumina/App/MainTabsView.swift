@@ -18,6 +18,7 @@ struct MainTabsView: View {
             }
         }
         .tint(LuminaColors.celestialBlue)
+        .environment(router)
         .sheet(isPresented: $settingsPresented) {
             SettingsView()
         }

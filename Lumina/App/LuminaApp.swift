@@ -9,6 +9,6 @@ struct LuminaApp: App {
         WindowGroup {
             RootView()
         }
-        .modelContainer(for: JournalEntry.self)
+        .modelContainer(for: [JournalEntry.self, Friend.self])
     }
 }

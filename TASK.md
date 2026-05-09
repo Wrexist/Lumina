@@ -76,14 +76,14 @@
 
 ## 📋 Backlog — Phase 3: Today
 
-- [ ] `TodayView` — hero card + transit summary + quick-actions row
-- [ ] `DailyReadingViewModel`
+- [x] **[2026-05-08]** `TodayHubView` — hero + Big-3 + headline + transit list + quick-actions row, all wired
+- [x] **[2026-05-08]** `TodayViewModel` — loads natal chart from `UserBirthDataStore`, falls through to sample chart on missing-config dev builds; deterministic `headline(for:)` and `whatsHappening(for:)` per-day helpers (replace with real backend `/transits` in Phase 5)
 - [ ] `ContentGenerator.swift` (transits → RAG → claude-opus-4-6)
 - [ ] ElevenLabs TTS via Node `/generate-audio`
 - [ ] Audio cache (FileManager, 7-day TTL, 50MB LRU)
 - [ ] Daily reading SwiftData cache (invalidate at midnight)
-- [ ] Quick-actions horizontal scroller
-- [ ] Empty + offline + error states
+- [x] **[2026-05-08]** Quick-actions horizontal scroller wired to `AppRouter.selectedTab` for in-app deep-link to Chart / Reflect / People / Palm
+- [ ] Empty + offline + error states for the audio/reading card
 - [ ] Server-side daily-reading throttle (Supabase edge function)
 - [ ] OneSignal daily push 7:30–9:00 AM local
 - [ ] "Why this reading?" transparency sheet showing transit JSON + 3 RAG snippets
@@ -121,6 +121,8 @@
 
 ## 📋 Backlog — Phase 6: Palm Reading
 
+- [x] **[2026-05-08]** `PalmHubView` — empty-state shell, "How this works" sheet, differentiator card, premium card, blocker note. The full capture pipeline lands when the Core ML palm U-Net is available (currently blocked).
+- [x] **[2026-05-08]** "How this works" transparency modal (`PalmTransparencyView`) — 5-step pipeline explainer + privacy promise card
 - [ ] `PalmScanView` with hand outline guide + lighting indicator
 - [ ] Real-time hand pose overlay
 - [ ] Auto-capture trigger
@@ -131,7 +133,6 @@
 - [ ] `PalmFeatureExtractor`
 - [ ] Palm narration via claude-opus-4-6
 - [ ] `PalmReadingView` (4 accordion cards + synthesis)
-- [ ] "How this works" transparency modal
 - [ ] SwiftData `PalmReading` storage
 - [ ] History view
 - [ ] Free-tier scan gating
@@ -143,22 +144,21 @@
 
 ## 📋 Backlog — Phase 7: Compatibility (People tab)
 
-- [ ] `CompatibilityView` entry (3 add paths)
-- [ ] Contact import via `CNContactStore`
-- [ ] Manual friend entry form
-- [ ] `Friend @Model`
+- [x] **[2026-05-08]** `Friend @Model` (UUID id, name, birth date/time/place, source enum, cached compatibilityScore)
+- [x] **[2026-05-08]** Manual friend entry form (`AddFriendView`) reusing the Phase-2 MapKit `BirthPlaceSearch` plus a "time unknown" toggle
+- [x] **[2026-05-08]** Friend list + detail (`PeopleHubView`, `FriendDetailView`) with score badge, score card, birth-info card, remove via `LuminaConfirmationDialog`
+- [x] **[2026-05-08]** Compatibility score (`CompatibilityScorer.score(_:_:)`) — symmetric, range-bounded, element + modality-aware. Replace with synastry-aspect-weighted algorithm once `/synastry` lands.
+- [x] **[2026-05-08]** "Don't know their time?" path — toggle on `AddFriendView` defaults `birthTime` to nil
+- [x] **[2026-05-08]** Privacy disclosure card on `PeopleHubView` (empty + populated states)
+- [x] **[2026-05-08]** Share-my-chart QR (`ShareQRView`) — encodes `BirthData` as `lumina://share/<base64-json>` via CoreImage CIQRCodeGenerator
+- [ ] Contact import via `CNContactStore` filtered by birthday
+- [ ] QR scanner (`AVCaptureMetadataOutput`)
 - [ ] Backend `/synastry` endpoint
 - [ ] Backend `/composite` endpoint
 - [ ] Backend `/davison` endpoint
 - [ ] Synastry bi-wheel `Canvas` renderer
-- [ ] Compatibility score (deterministic)
 - [ ] LLM 5-dimension report
-- [ ] Compatibility result view
-- [ ] Share card
 - [ ] Crush Report IAP $4.99
-- [ ] Friend graph list
-- [ ] "Don't know their time?" path
-- [ ] Privacy disclosure card
 - [ ] Encrypted Supabase friends backup (Premium)
 
 ---

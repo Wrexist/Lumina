@@ -231,6 +231,15 @@ The project's `.swiftlint.yml` opts into `type_contents_order`. Default member o
 **[2026-05-08] SwiftLint `redundant_type_annotation` fires on stored properties too**
 `var isLoading: Bool = false` in a struct definition is flagged. Drop the annotation: `var isLoading = false`. Synthesized memberwise init still produces the same `isLoading: Bool` parameter signature.
 
+**[2026-05-08] AppRouter via `@Environment` for cross-tab quick actions**
+The Today tab needs to switch tabs when the user taps a quick-action card. Rather than passing the router down via init parameter through every hub view, the router is injected once at the `MainTabsView` body root: `.environment(router)`. Hub views read it via `@Environment(AppRouter.self) private var router` and mutate `router.selectedTab` directly. `@Bindable` on a parameter is for child views that explicitly own bindings to the router; `@Environment` is for incidental reads.
+
+**[2026-05-08] CIQRCodeGenerator + 8× scaling for crisp QR**
+`CIFilter.qrCodeGenerator()` outputs a tiny 23×23-ish image. SwiftUI scaling smooths the result and makes camera apps fail to scan. Scale up via `CGAffineTransform(scaleX: 8, y: 8)` BEFORE rendering to UIImage, then set `.interpolation(.none)` on the SwiftUI `Image` so the upscaled bitmap stays pixel-aligned. Pattern lives in `ShareQRView.makeQR(for:)`.
+
+**[2026-05-08] CompatibilityScorer needs symmetric jitter**
+First cut had no per-pair jitter inside an element/modality bucket — every fire-fire pair scored exactly the same. Added `pairHash = "\(pair[0])-\(pair[1])".hashValue` where `pair` is sorted alphabetically, then `jitter = abs(pairHash % 11) - 5`. The sort guarantees `score(a, b) == score(b, a)`. The hash gives variation across sign pairs without breaking the element/modality bucketing logic.
+
 **[2026-05-08] SwiftData arrived via `JournalEntry @Model`**
 First SwiftData model in the project. `ModelContainer(for: JournalEntry.self)` declared on the `WindowGroup` modifier in `LuminaApp.swift`. Views read via `@Query(sort: \JournalEntry.date, order: .reverse) private var entries: [JournalEntry]` and write via `@Environment(\.modelContext)`. The persistence-seam shape from `AppRouterStorage` / `OnboardingStorage` doesn't apply here — SwiftData provides its own seam. For tests, build an in-memory container: `ModelConfiguration(schema:, isStoredInMemoryOnly: true)`. The `id` property declared as `UUID` overrides the synthesised `Identifiable.ID = PersistentIdentifier` — works for SwiftUI `ForEach` but means external links should target the UUID, not the persistent id.
 
