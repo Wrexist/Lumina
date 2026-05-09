@@ -11,6 +11,7 @@ import SwiftUI
 /// resume-on-kill persistence, and the "I don't know my time" path.
 struct OnboardingFlowView: View {
     @State private var state = OnboardingState()
+    @State private var ephemeris = EphemerisService()
     let onComplete: () -> Void
 
     var body: some View {
@@ -60,14 +61,25 @@ struct OnboardingFlowView: View {
     @ViewBuilder
     private var contentForCurrentStep: some View {
         switch state.currentStep {
-        case .brandPromise: OnboardingScreens.BrandPromise()
-        case .motivation: OnboardingScreens.Motivation(selection: $state.motivation)
-        case .name: OnboardingScreens.Name(name: $state.name)
-        case .birthDate: OnboardingScreens.BirthDate(date: $state.birthDate)
-        case .birthTime: OnboardingScreens.BirthTime(time: $state.birthTime, unknown: $state.birthTimeUnknown)
-        case .birthPlace: OnboardingScreens.BirthPlace(placeName: $state.birthPlaceName)
-        case .chartReveal: OnboardingScreens.ChartReveal(ready: $state.chartReady)
-        case .whatNext: OnboardingScreens.WhatNext(onPick: { onComplete() })
+        case .brandPromise:
+            OnboardingScreens.BrandPromise()
+        case .motivation:
+            OnboardingScreens.Motivation(selection: $state.motivation)
+        case .name:
+            OnboardingScreens.Name(
+                name: $state.name,
+                inlineError: state.validationMessage(for: .name)
+            )
+        case .birthDate:
+            OnboardingScreens.BirthDate(date: $state.birthDate)
+        case .birthTime:
+            OnboardingScreens.BirthTime(time: $state.birthTime, unknown: $state.birthTimeUnknown)
+        case .birthPlace:
+            OnboardingScreens.BirthPlace(state: state)
+        case .chartReveal:
+            OnboardingScreens.ChartReveal(state: state, ephemeris: ephemeris)
+        case .whatNext:
+            OnboardingScreens.WhatNext { onComplete() }
         }
     }
 

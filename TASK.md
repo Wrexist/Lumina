@@ -56,12 +56,14 @@
 
 ## 📋 Backlog — Phase 2: Onboarding v2
 
-- [~] 8 onboarding screen views — placeholder screens shipped end-to-end (`OnboardingScreens.swift`); polish + real DatePicker / MapKit / chart-reveal animation pending
+- [~] 8 onboarding screen views — all 8 wired with real validation, "Why we ask" sheets, MapKit autocomplete, and real `EphemerisService` call on reveal; final polish (animation choreography, inline error transitions) pending
 - [x] **[2026-05-08]** `OnboardingProgressBar` (8 dots, no labels)
 - [x] **[2026-05-08]** `OnboardingState` `@Observable` model + resume-on-kill persistence via `OnboardingStorage` (UserDefaults / in-memory). SwiftData migration deferred until SwiftData enters the project broadly.
-- [ ] Inline debounced validation on every field
-- [ ] "Why we ask" link on every sensitive field
-- [ ] MapKit city autocomplete + manual lat/lon fallback
+- [x] **[2026-05-08]** Inline validation on `Name`, `BirthDate`, `BirthPlace` via `OnboardingState.validationMessage(for:)`
+- [x] **[2026-05-08]** "Why we ask" inline explainer (`WhyWeAsk` view) on every sensitive field (Name, BirthDate, BirthTime, BirthPlace)
+- [x] **[2026-05-08]** MapKit `BirthPlaceSearch` autocomplete; user picks a suggestion to capture lat/lon + IANA time zone
+- [x] **[2026-05-08]** `OnboardingScreens.ChartReveal` calls real `EphemerisService.chart(for:)` and falls through to synthesised readiness on missing-config dev builds
+- [ ] Manual lat/lon fallback for offline / geocoder-down cases
 - [ ] Soft post-onboarding paywall offer (not a hard wall) with explicit "Continue free"
 - [ ] Discount rescue paywall (once per install)
 - [ ] Sign in with Apple (deferred to after first chart reveal)

@@ -1,14 +1,14 @@
 import SwiftUI
 
 /// All 8 onboarding screen sub-views grouped under one namespace.
-/// Each is a small, self-contained `View` that takes its piece of
+/// `BirthPlace` (with MapKit autocomplete) and `ChartReveal` (with the
+/// real `EphemerisService` call) live in their own extension files
+/// (`OnboardingScreens+Place.swift`, `OnboardingScreens+Reveal.swift`)
+/// to keep this file under the SwiftLint length budget.
+///
+/// Each screen is a small, self-contained `View` that takes its piece of
 /// `OnboardingState` via a binding and exposes nothing else. The
 /// surrounding `OnboardingFlowView` owns navigation and validation.
-///
-/// These are still partial — the real flow (Phase 2 of the roadmap)
-/// brings MapKit autocomplete, the chart-reveal SVG draw, and live
-/// inline validation. What's already here: copy that follows the
-/// clarity charter, "I don't know" paths, accessibility wiring.
 enum OnboardingScreens {
     struct BrandPromise: View {
         var body: some View {
@@ -86,21 +86,30 @@ enum OnboardingScreens {
 
     struct Name: View {
         @Binding var name: String
+        let inlineError: String?
 
         var body: some View {
             VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                     Text("What should we call you?")
                         .font(LuminaTypography.heading)
-                    Text("Just a first name is fine.")
-                        .font(LuminaTypography.bodyLight)
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                    HStack {
+                        Text("Just a first name is fine.")
+                            .font(LuminaTypography.bodyLight)
+                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                        Spacer()
+                        WhyWeAsk(
+                            title: "Why we ask for your name",
+                            body: "Lumina greets you by name in readings and journal prompts. We never share it; it stays on your device unless you sign in."
+                        )
+                    }
                 }
                 LuminaTextField(
                     title: "Your name",
                     text: $name,
                     placeholder: "Anna",
                     helper: "Used only inside the app to greet you.",
+                    error: inlineError,
                     textContentType: .givenName,
                     maxCharacters: 60
                 )
@@ -118,9 +127,16 @@ enum OnboardingScreens {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                     Text("When were you born?")
                         .font(LuminaTypography.heading)
-                    Text("The date alone gets you a real chart. Time and place sharpen it.")
-                        .font(LuminaTypography.bodyLight)
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                    HStack {
+                        Text("The date alone gets you a real chart. Time and place sharpen it.")
+                            .font(LuminaTypography.bodyLight)
+                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                        Spacer()
+                        WhyWeAsk(
+                            title: "Why we ask for your birth date",
+                            body: "Your birth date sets every planet's exact position at the moment you were born. Without it, Lumina can't compute your chart."
+                        )
+                    }
                 }
                 DatePicker(
                     "Birth date",
@@ -153,9 +169,16 @@ enum OnboardingScreens {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                     Text("What time?")
                         .font(LuminaTypography.heading)
-                    Text("Without time, we still calculate your sign and planets — only houses are hidden.")
-                        .font(LuminaTypography.bodyLight)
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                    HStack {
+                        Text("Without time, we still calculate your sign and planets — only houses are hidden.")
+                            .font(LuminaTypography.bodyLight)
+                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                        Spacer()
+                        WhyWeAsk(
+                            title: "Why we ask for your birth time",
+                            body: "The exact time decides your rising sign and which house each planet falls into. With time, every reading is sharper. Without it, the rest of your chart is still real."
+                        )
+                    }
                 }
 
                 if !unknown {
@@ -187,60 +210,6 @@ enum OnboardingScreens {
 
         private var defaultTime: Date {
             Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: .now) ?? .now
-        }
-    }
-
-    struct BirthPlace: View {
-        @Binding var placeName: String
-
-        var body: some View {
-            VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
-                VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                    Text("Where?")
-                        .font(LuminaTypography.heading)
-                    Text("City and country are enough. The full MapKit autocomplete + manual lat/lon path ships in Phase 2.")
-                        .font(LuminaTypography.bodyLight)
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-                }
-                LuminaTextField(
-                    title: "Birth place",
-                    text: $placeName,
-                    placeholder: "Stockholm, Sweden",
-                    helper: "We use this once to set your time zone, then forget it.",
-                    textContentType: .addressCityAndState
-                )
-                Spacer()
-            }
-            .padding(LuminaSpacing.lg)
-        }
-    }
-
-    struct ChartReveal: View {
-        @Binding var ready: Bool
-
-        var body: some View {
-            VStack(spacing: LuminaSpacing.lg) {
-                Spacer()
-                Circle()
-                    .stroke(LuminaColors.inkBlack.opacity(0.15), lineWidth: 1)
-                    .frame(width: 240, height: 240)
-                    .overlay(
-                        Text(ready ? "Your chart is ready" : "Calculating your chart…")
-                            .font(LuminaTypography.body)
-                    )
-                Spacer()
-                Text("The animated wheel-draw + soft chime ships in Phase 4. For now we synthesise readiness so the rest of the flow is testable.")
-                    .font(LuminaTypography.caption)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, LuminaSpacing.lg)
-            }
-            .padding(LuminaSpacing.lg)
-            .task {
-                guard !ready else { return }
-                try? await Task.sleep(for: .seconds(1))
-                ready = true
-            }
         }
     }
 

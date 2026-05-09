@@ -70,12 +70,48 @@ final class OnboardingTests: XCTestCase {
         state.birthTimeUnknown = true
         state.advance()
         XCTAssertEqual(state.currentStep, .birthPlace)
+        // birth place advance now requires resolved coordinates from the
+        // MapKit autocomplete — typing alone isn't sufficient.
         state.birthPlaceName = "Stockholm"
+        XCTAssertFalse(state.canAdvance(from: .birthPlace))
+        state.applyResolvedPlace(
+            name: "Stockholm, Sweden",
+            latitude: 59.3293,
+            longitude: 18.0686,
+            timeZoneIdentifier: "Europe/Stockholm"
+        )
         state.advance()
         XCTAssertEqual(state.currentStep, .chartReveal)
         state.chartReady = true
         state.advance()
         XCTAssertEqual(state.currentStep, .whatNext)
+    }
+
+    @MainActor
+    func testBirthDateRejectsFutureDate() {
+        let state = OnboardingState(storage: .inMemory())
+        state.birthDate = Date.now.addingTimeInterval(86_400)
+        XCTAssertFalse(state.canAdvance(from: .birthDate))
+        XCTAssertNotNil(state.validationMessage(for: .birthDate))
+    }
+
+    @MainActor
+    func testMakeBirthDataRequiresResolvedCoordinates() {
+        let state = OnboardingState(storage: .inMemory())
+        state.birthDate = Date(timeIntervalSince1970: 0)
+        state.birthPlaceName = "Stockholm"
+        XCTAssertNil(state.makeBirthData(), "birth data is nil without coordinates")
+
+        state.applyResolvedPlace(
+            name: "Stockholm",
+            latitude: 59.3293,
+            longitude: 18.0686,
+            timeZoneIdentifier: "Europe/Stockholm"
+        )
+        let birthData = state.makeBirthData()
+        XCTAssertNotNil(birthData)
+        XCTAssertEqual(birthData?.placeName, "Stockholm")
+        XCTAssertEqual(birthData?.latitude ?? 0, 59.3293, accuracy: 0.001)
     }
 
     @MainActor
@@ -98,7 +134,12 @@ final class OnboardingTests: XCTestCase {
         first.name = "Anna"
         first.birthDate = Date(timeIntervalSince1970: 0)
         first.birthTimeUnknown = true
-        first.birthPlaceName = "Stockholm"
+        first.applyResolvedPlace(
+            name: "Stockholm, Sweden",
+            latitude: 59.3293,
+            longitude: 18.0686,
+            timeZoneIdentifier: "Europe/Stockholm"
+        )
         first.currentStep = .birthPlace
         first.persist()
 
@@ -108,7 +149,10 @@ final class OnboardingTests: XCTestCase {
         XCTAssertEqual(second.name, "Anna")
         XCTAssertEqual(second.birthDate, Date(timeIntervalSince1970: 0))
         XCTAssertTrue(second.birthTimeUnknown)
-        XCTAssertEqual(second.birthPlaceName, "Stockholm")
+        XCTAssertEqual(second.birthPlaceName, "Stockholm, Sweden")
+        XCTAssertEqual(second.birthLatitude ?? 0, 59.3293, accuracy: 0.001)
+        XCTAssertEqual(second.birthLongitude ?? 0, 18.0686, accuracy: 0.001)
+        XCTAssertEqual(second.birthTimeZoneIdentifier, "Europe/Stockholm")
     }
 
     @MainActor
