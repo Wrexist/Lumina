@@ -85,8 +85,11 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section("About") {
-            SettingsRow(title: "Help & FAQ", trailing: .badge("Soon"))
-            SettingsRow(title: "Send feedback", trailing: .badge("Soon"))
+            NavigationLink {
+                HelpView()
+            } label: {
+                SettingsRow(title: "Help & FAQ", trailing: nil)
+            }
             SettingsRow(title: "Terms of service", trailing: .badge("Soon"))
             SettingsRow(title: "Privacy policy", trailing: .badge("Soon"))
             SettingsRow(title: "Open-source acknowledgements", trailing: .badge("Soon"))

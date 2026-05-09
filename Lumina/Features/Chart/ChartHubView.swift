@@ -13,6 +13,7 @@ struct ChartHubView: View {
     @State private var mode: ChartMode = .astrology
     @State private var selectedPlanet: NatalChart.PlanetPosition?
     @State private var selectedCenter: HumanDesignCenter?
+    @Environment(AppRouter.self) private var router
 
     var body: some View {
         ScrollView {
@@ -25,6 +26,9 @@ struct ChartHubView: View {
         .background(LuminaColors.parchment)
         .navigationTitle("Chart")
         .task { await viewModel.loadIfNeeded() }
+        .onChange(of: router.pendingPresentation) { _, link in
+            handlePending(link)
+        }
         .sheet(item: $selectedPlanet) { planet in
             if case .ready(let chart) = viewModel.state {
                 PlanetDetailSheet(planet: planet, chart: chart)
@@ -121,11 +125,32 @@ struct ChartHubView: View {
 
     private func astrologyContent(_ chart: NatalChart) -> some View {
         VStack(spacing: LuminaSpacing.lg) {
+            if chart.houses == nil {
+                unknownTimeBanner
+            }
             BigThreeBand(chart: chart)
             ChartWheelView(chart: chart, onTapPlanet: handleTap)
                 .padding(LuminaSpacing.sm)
             houseSystemPicker
+            AspectLegend()
             interpretationsPlaceholder
+        }
+    }
+
+    private var unknownTimeBanner: some View {
+        LuminaCard(surface: .glass) {
+            HStack(alignment: .top, spacing: LuminaSpacing.sm) {
+                Image(systemName: "clock.badge.questionmark")
+                    .foregroundStyle(LuminaColors.celestialBlue)
+                VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
+                    Text("Houses are hidden")
+                        .font(LuminaTypography.body)
+                        .bold()
+                    Text("Without your birth time we can't compute the Ascendant, MC, or house cusps. Add a time in Settings → Your info to unlock them — your sign and planets are accurate either way.")
+                        .font(LuminaTypography.bodyLight)
+                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                }
+            }
         }
     }
 
@@ -187,6 +212,22 @@ struct ChartHubView: View {
 
     private func handleOpenSettings() {
         // TODO(lumina): present SettingsView with focus on "Your info" (Phase 12)
+    }
+
+    /// Consumes a pending `AppRouter.pendingPresentation`. We only react
+    /// to chart-tab links so we don't steal sheets meant for other tabs.
+    private func handlePending(_ link: LuminaDeepLink?) {
+        guard let link else { return }
+        switch link {
+        case .chart(let planetName):
+            mode = .astrology
+            if let name = planetName, case .ready(let chart) = viewModel.state {
+                selectedPlanet = chart.planets.first { $0.planet.caseInsensitiveCompare(name) == .orderedSame }
+            }
+            router.pendingPresentation = nil
+        default:
+            break
+        }
     }
 }
 

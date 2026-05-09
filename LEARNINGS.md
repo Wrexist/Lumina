@@ -231,6 +231,12 @@ The project's `.swiftlint.yml` opts into `type_contents_order`. Default member o
 **[2026-05-08] SwiftLint `redundant_type_annotation` fires on stored properties too**
 `var isLoading: Bool = false` in a struct definition is flagged. Drop the annotation: `var isLoading = false`. Synthesized memberwise init still produces the same `isLoading: Bool` parameter signature.
 
+**[2026-05-08] Deep-link presentation via `AppRouter.pendingPresentation`**
+The Chart tab consumes `lumina://chart/planet/Mars` by reading `router.pendingPresentation` via `.onChange(of:)`. The pattern: `AppRouter.handle(deepLink:)` sets `selectedTab = link.tab` AND `pendingPresentation = link`; the tab that owns the link consumes it (presents a sheet, navigates somewhere) and clears `router.pendingPresentation = nil`. Only the tab that "owns" the link kind reacts — others' `handlePending` falls through. Lets a single deep-link queue route to the right tab without polymorphism.
+
+**[2026-05-08] Retrograde marker — `Text("℞")` in Canvas, not a dashed arc**
+First cut tried a dashed mini-arc just outside each retrograde planet via `Path.addArc(...)`. SwiftUI's clockwise convention with screen-y inversion made the arc rotate the wrong way for half the longitudes. Replaced with a plain `Text("℞")` drawn at the planet's outer position via `context.draw(text, at:)`. Reads as the traditional astrological marker, no angular math.
+
 **[2026-05-08] Human Design — ship the structure, hold back fake math**
 First-pass HD support is honest about what's real vs missing. The 64-gate mandala mapping (Gate 25 starts at 3°52'30" Aries, 5.625° per gate, fixed sequence) is fully real and tested for exhaustivity / disjointness. So is per-center gate ownership and the activation pipeline (`HumanDesignActivation.compute(from:)` → personality-side gates + defined centers). What we DO NOT ship: Type, Profile, Authority. Those require the design-side chart (88° solar arc back from birth), which the backend can't compute yet. The renderer surfaces a `BodygraphView.designSideMissingNote` so the user sees exactly what's pending. Brand pillar: don't fake it.
 

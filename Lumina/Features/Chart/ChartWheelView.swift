@@ -23,6 +23,7 @@ struct ChartWheelView: View {
                     drawZodiacRing(in: context, center: center, radius: radius)
                     drawHouses(in: context, center: center, radius: radius)
                     drawAspects(in: context, center: center, radius: radius)
+                    drawRetrogradeMarkers(in: context, center: center, radius: radius)
                 }
                 planetButtons(center: center, radius: radius)
             }
@@ -157,6 +158,20 @@ struct ChartWheelView: View {
         case .conjunction, .opposition: 1.4
         case .square, .trine: 1.0
         case .sextile: 0.6
+        }
+    }
+
+    /// Small "℞" marker drawn just outside the planet glyph for any
+    /// retrograde planet. Reads as the traditional astrological marker
+    /// without crowding the glyph.
+    private func drawRetrogradeMarkers(in context: GraphicsContext, center: CGPoint, radius: CGFloat) {
+        let markerRadius = radius * 0.78
+        for planet in chart.planets where planet.isRetrograde {
+            let position = point(longitude: planet.longitude, radius: markerRadius, center: center)
+            let marker = Text("℞")
+                .font(.system(size: radius * 0.07, weight: .light))
+                .foregroundColor(LuminaColors.mutedGold)
+            context.draw(marker, at: position)
         }
     }
 

@@ -99,12 +99,12 @@
 - [x] **[2026-05-08]** House system `LuminaSegmentedControl` wired to `BirthChartViewModel.reload()`
 - [x] **[2026-05-08]** Big 3 (Sun / Moon / Rising) band
 - [x] **[2026-05-08]** Aspect lines through chart center, color + weight by aspect type
-- [ ] Unknown-birth-time graceful state in chart wheel (hide cusps banner)
-- [ ] Retrograde dashed-orbit ring
-- [ ] Aspect legend expandable card
-- [ ] Zodiac sign profile sheet
+- [x] **[2026-05-08]** Unknown-birth-time graceful state — banner above the wheel + houses already hidden in the renderer
+- [x] **[2026-05-08]** Retrograde marker — small "℞" glyph drawn just outside each retrograde planet
+- [x] **[2026-05-08]** `AspectLegend` expandable card — five aspect types with color swatches, line widths, degrees, plain-English meaning
+- [x] **[2026-05-08]** `lumina://chart/planet/<name>` deep-link handler — Chart tab consumes `AppRouter.pendingPresentation` and presents the matching `PlanetDetailSheet`
+- [ ] Zodiac sign profile sheet (tap a sign glyph on the wheel)
 - [ ] Share card via `ImageRenderer`
-- [ ] Deep-link `lumina://chart/planet/<name>` handler
 - [ ] "Read my chart aloud" Premium narration (90s audio)
 
 ---
@@ -172,7 +172,7 @@
 - [x] **[2026-05-08]** `CenterDetailSheet` — per-center activated gates + which planet activated each
 - [x] **[2026-05-08]** Chart-tab Astrology / Human Design segmented control wired through to the bodygraph
 - [ ] Design-side "88° solar arc" chart (requires backend `/design` endpoint) → Type / Profile / Authority
-- [ ] Channel rendering (defined when both gates of a channel are activated)
+- [x] **[2026-05-08]** Channel rendering — full 36-channel `HumanDesignChannels.all` table; defined channels (both gates activated) render as a Canvas line bridging the two centers
 - [ ] HD glossary integration with `GlossaryLink`
 - [ ] Astrology-HD crossover callouts
 - [ ] Premium gate (type + profile free)
@@ -237,8 +237,8 @@
 - [ ] `PrivacyDashboardView` ("what we know / what we don't")
 - [ ] Export-my-data → JSON archive via `.fileExporter`
 - [ ] Delete-account flow (3-step + 30-day grace + local wipe)
-- [ ] Help & FAQ view
-- [ ] Send feedback via `MFMailComposeViewController`
+- [x] **[2026-05-08]** Help & FAQ view (`HelpView`) — 12 hand-written articles across 6 topics, `.searchable` over title + body
+- [~] Send feedback — in-app form shipped (`FeedbackView`); MFMailComposeViewController + diagnostic-dump attachment still pending
 - [ ] Open-source acknowledgements view
 
 ---
