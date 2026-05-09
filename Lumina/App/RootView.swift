@@ -19,7 +19,7 @@ struct RootView: View {
                         router.bootstrap()
                     }
             case .onboarding:
-                OnboardingPlaceholderView {
+                OnboardingFlowView {
                     router.completeOnboarding()
                 }
             case .mainTabs:

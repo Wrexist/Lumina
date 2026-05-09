@@ -56,9 +56,9 @@
 
 ## 📋 Backlog — Phase 2: Onboarding v2
 
-- [ ] 8 onboarding screen views in `Features/Onboarding/Screens/`
-- [ ] `OnboardingProgressBar` (8 dots, no labels)
-- [ ] `OnboardingState` SwiftData model + resume-on-kill persistence
+- [~] 8 onboarding screen views — placeholder screens shipped end-to-end (`OnboardingScreens.swift`); polish + real DatePicker / MapKit / chart-reveal animation pending
+- [x] **[2026-05-08]** `OnboardingProgressBar` (8 dots, no labels)
+- [x] **[2026-05-08]** `OnboardingState` `@Observable` model + resume-on-kill persistence via `OnboardingStorage` (UserDefaults / in-memory). SwiftData migration deferred until SwiftData enters the project broadly.
 - [ ] Inline debounced validation on every field
 - [ ] "Why we ask" link on every sensitive field
 - [ ] MapKit city autocomplete + manual lat/lon fallback
