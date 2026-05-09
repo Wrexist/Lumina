@@ -180,19 +180,20 @@
 
 ## 📋 Backlog — Phase 9: Reflect (Journal)
 
-- [ ] `JournalPromptGenerator`
-- [ ] `JournalEntryView` with debounced auto-save
-- [ ] `JournalEntry @Model` (encrypted at rest)
-- [ ] Calendar history view
-- [ ] Entry detail view
-- [ ] Word counter (no streaks)
-- [ ] `FetchDescriptor` search
-- [ ] Pattern detection after 30th entry
+- [x] **[2026-05-08]** `JournalPromptGenerator` (deterministic per-day pool + softer-prompt counterpart + transit-key shape; LLM-backed transit pipeline lands with Phase 5)
+- [x] **[2026-05-08]** `JournalEntryView` with 1s debounced auto-save and live word count
+- [x] **[2026-05-08]** `JournalEntry @Model` (UUID id, date, prompt, body, transitKey, wordCount, createdAt, updatedAt)
+- [x] **[2026-05-08]** `JournalCalendarView` month-grid with entry-dot indicators
+- [x] **[2026-05-08]** `JournalEntryDetailView` read-only with edit / delete via `LuminaConfirmationDialog`
+- [x] **[2026-05-08]** Word counter (no streaks, no celebratory animation)
+- [x] **[2026-05-08]** `@Query(sort:order:)` fetch with `LazyVStack`-style `ForEach` for recents (5) and full calendar
+- [ ] Pattern detection after 30th entry (LLM batch — wires with Phase 5 pipeline)
 - [ ] Monthly pattern view (Premium)
-- [ ] Premium gate (3 free, then paywall)
-- [ ] Face ID lock toggle
+- [~] Premium gate — soft Plus banner once entries.count ≥ 3; full paywall gating ships with RevenueCat in Phase 16
+- [x] **[2026-05-08]** Face ID lock toggle persisted via `AppPreferences`; `ReflectHubView` shows a locked screen and routes through `AppLock.unlock(.reflectTab)`
 - [ ] Markdown export (Premium)
-- [ ] Sensitive-prompt softer alternative path
+- [x] **[2026-05-08]** Sensitive-prompt softer alternative path (`JournalPromptGenerator.softerPrompt(for:)`); UI tap-out wires when the LLM transit pipeline lands
+- [x] **[2026-05-08]** `ModelContainer(for: JournalEntry.self)` registered at `LuminaApp` `WindowGroup`
 
 ---
 

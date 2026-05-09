@@ -231,6 +231,15 @@ The project's `.swiftlint.yml` opts into `type_contents_order`. Default member o
 **[2026-05-08] SwiftLint `redundant_type_annotation` fires on stored properties too**
 `var isLoading: Bool = false` in a struct definition is flagged. Drop the annotation: `var isLoading = false`. Synthesized memberwise init still produces the same `isLoading: Bool` parameter signature.
 
+**[2026-05-08] SwiftData arrived via `JournalEntry @Model`**
+First SwiftData model in the project. `ModelContainer(for: JournalEntry.self)` declared on the `WindowGroup` modifier in `LuminaApp.swift`. Views read via `@Query(sort: \JournalEntry.date, order: .reverse) private var entries: [JournalEntry]` and write via `@Environment(\.modelContext)`. The persistence-seam shape from `AppRouterStorage` / `OnboardingStorage` doesn't apply here — SwiftData provides its own seam. For tests, build an in-memory container: `ModelConfiguration(schema:, isStoredInMemoryOnly: true)`. The `id` property declared as `UUID` overrides the synthesised `Identifiable.ID = PersistentIdentifier` — works for SwiftUI `ForEach` but means external links should target the UUID, not the persistent id.
+
+**[2026-05-08] Custom SwiftUI View init triggers `type_contents_order`**
+`var body: some View` is an `instance_property` per the SwiftLint rule, so it must come BEFORE any `init`. Without a custom init the natural order works; with a custom init (`init(entry:)` for `JournalEntryView`) you'd be forced to put `body` above the init, which reads weird. Fix: drop the custom init and hydrate `@State` inside `.task(id:)` or `.onAppear`. Paired with a `hydrated: Bool` guard so `.onChange(of: draft)` doesn't fire its debounced save during the initial hydration write.
+
+**[2026-05-08] Avoid `@retroactive Identifiable` extensions on Foundation types**
+`.navigationDestination(item:)` and `.sheet(item:)` need `Item: Identifiable`. Adding `extension Date: @retroactive Identifiable` works but plants a foreign-protocol-on-foreign-type extension that any other module could collide with. Wrap instead: `private struct SelectedDay: Identifiable { let date: Date; var id: TimeInterval { date.timeIntervalSinceReferenceDate } }`. Used in `JournalCalendarView`.
+
 **[2026-05-08] Chart wheel: single-pass Canvas + overlay Button hit-testing**
 The chart wheel renderer (`ChartWheelView`) draws the zodiac ring, house cusps, sign glyphs, and aspect lines in a single SwiftUI `Canvas` pass for 60fps scrolling. Planet glyphs are NOT in the Canvas — they're SwiftUI `Button`s with `.position(x:y:)` and `.contentShape(Circle())` so each one is independently tappable with a 44pt touch target. Astrology convention: 0° at left (9 o'clock), CCW visually (which goes DOWN first because of screen-y direction). Formula: `angleRad = (180.0 - longitudeRotated) * .pi / 180`, then `x = cx + r·cos(angleRad)`, `y = cy + r·sin(angleRad)`. The wheel auto-rotates by `chart.houses.ascendant` when houses are present, putting the Asc at left.
 

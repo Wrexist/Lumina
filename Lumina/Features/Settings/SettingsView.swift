@@ -11,8 +11,7 @@ import SwiftUI
 /// `ROADMAP.md`.
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var lockReflectWithFaceID = false
-    @State private var reduceMotionOverride = false
+    @State private var preferences = AppPreferences.shared
 
     var body: some View {
         NavigationStack {
@@ -61,10 +60,10 @@ struct SettingsView: View {
             } label: {
                 SettingsRow(title: "Notifications", trailing: nil)
             }
-            Toggle(isOn: $lockReflectWithFaceID) {
+            Toggle(isOn: $preferences.lockReflectWithFaceID) {
                 Text("Lock Reflect with Face ID").font(LuminaTypography.body)
             }
-            Toggle(isOn: $reduceMotionOverride) {
+            Toggle(isOn: $preferences.reduceMotionOverride) {
                 Text("Reduce motion").font(LuminaTypography.body)
             }
         }
