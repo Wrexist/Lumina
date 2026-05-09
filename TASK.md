@@ -14,7 +14,7 @@
 - [x] Set up `project.xcconfig` + `scripts/inject_env.sh` for secrets injection
 - [x] Configure SwiftLint `.swiftlint.yml` — strict mode (added `excluded:` for design-token files)
 - [x] Configure SwiftFormat `.swiftformat`
-- [x] Set up GitHub Actions CI workflow (type-check + lint + test) — `.github/workflows/ci.yml` runs on `macos-14`
+- [x] Set up GitHub Actions CI workflow (type-check + lint + test) — `.github/workflows/ci.yml` runs on `macos-15` with `xcode-version: latest-stable`
 - [ ] Set up TestFlight distribution via GitHub Actions + fastlane (Xcode Cloud is impractical without a local Mac to drive its setup) — needs Apple Developer Program enrollment, App Store Connect API key, signing P12, provisioning profile
 - [!] Create Supabase project — auth, user_profiles table, pgvector extension — needs human account credentials
 
@@ -37,15 +37,20 @@
 - [x] **[2026-04-29]** Wire `EphemerisService.chart()` in iOS to actually POST to the backend
 - [x] **[2026-04-29]** House calculations — Placidus iterative cusps + closed-form Asc/MC + whole-sign fallback for |lat| ≥ 66.5°. Six new vitest cases. iOS `NatalChart.HouseCusps` model + decode test.
 - [x] **[2026-04-29]** Aspects (sextile/square/trine/opposition/conjunction with 8°/6°/4° orbs, +2° for Sun/Moon involvement). Eight new vitest cases. iOS `NatalChart.Aspect` model.
-- [ ] Sidereal house variant (subtract Lahiri ayanamsha from tropical longitudes)
-- [ ] Aspects (sextile/square/trine/opposition/conjunction with orbs)
+- [x] **[2026-04-29]** Sidereal house variant (subtract Lahiri ayanamsha from tropical longitudes). Four vitest cases covering J2000 baseline, precession drift, and angular-separation invariance.
 - [ ] Transits & progressions
 - [ ] Swap `astronomy-engine` → `swisseph` once Swiss Ephemeris Pro license clears
 - [ ] Production deploy (Fly.io: Dockerfile, healthcheck, secrets)
 - [ ] In-memory LRU cache for repeated birth-data queries
 - [ ] Rate limiting (Fastify plugin, key on X-Lumina-Secret)
+
+### Platform Integration (iOS)
 - [ ] `HandPoseDetector.swift` — VNDetectHumanHandPoseRequest wrapper
 - [ ] Supabase client singleton + auth session observer
+- [ ] Wire RevenueCat SDK calls in `IAPManager` (configure, fetch entitlements, observe delegate)
+- [ ] Wire OneSignal SDK calls in `AppDelegate` (initialize with `LuminaOneSignalAppID`)
+- [ ] Wire Anthropic Messages API call in `LuminaAIClient.dailyReading`
+- [ ] Add SwiftData `ModelContainer` to `LuminaApp` once first `@Model` ships
 
 ### Onboarding Flow (7 screens)
 - [ ] Screen 1: Brand promise (single serif sentence on parchment)

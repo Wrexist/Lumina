@@ -216,6 +216,15 @@ First Placidus iteration emitted house cusps in a non-monotonic order (house 4 c
 - The backend writes `calculatedAt` via `new Date().toISOString()` which always includes fractional seconds (`...12.600Z`). Swift's default `JSONDecoder.DateDecodingStrategy.iso8601` rejects fractional seconds. Fix: a custom strategy that tries `[.withInternetDateTime, .withFractionalSeconds]` first, then plain `withInternetDateTime`. Lives in `EphemerisService.swift` as `chartDecoder`.
 - The zod schema declares `birthTime` as `.nullable()`, which requires the key to be present. Swift's default `Encodable` for `Date?` *omits* the key when nil. The fix is twofold: the iOS `BirthData` overrides `encode(to:)` to always emit `birthTime` (as JSON `null` when nil), AND the zod schema adds `.optional()` so omitted-key payloads from the CLI / future clients still validate.
 
+**[2026-05-09] `ChartRequestBody` delegates to `BirthData.encode(to:)` instead of re-encoding fields by hand**
+The Swift wire-body for `POST /chart` originally restated every `BirthData` field in its own custom encoder, duplicating the source-of-truth for the `birthTime: null` quirk. The cleaner pattern is to call `birthData.encode(to: encoder)` to populate the BirthData keys, then open a second container keyed only on `houseSystem` and add it. Swift's `JSONEncoder` merges keys from sibling containers into the same object, so the wire shape is unchanged. Renamed the inner `Keys` enum to the conventional `CodingKeys`. The `birthTime` key is always present because `BirthData`'s own encoder uses `encode(_:forKey:)` (which emits `null` for nil) rather than `encodeIfPresent`.
+
+**[2026-05-09] Houses.ts had a dead `_internal` export of `MEAN_OBLIQUITY_J2000`**
+The constant was a holdover from an early draft; `meanObliquity()` computes obliquity directly from the IAU 2006 polynomial and never reads the J2000 baseline. The export existed only to silence "unused constant" lints. Both removed — `tsc --noEmit` is happy.
+
+**[2026-05-09] Doc drift after a flurry of feature commits**
+After Placidus → aspects → sidereal landed in quick succession, `TASK.md`, `README.md`, and `backend/README.md` were left listing those features as not-yet-shipped. Lesson: every PR that ships a feature should also flip the task box and trim the "not here yet" list in the same commit. The `/session-end` hook prints a checklist that includes the TASK.md update — don't skip it.
+
 **[2026-04-29] Drop tsx, use Node 22 `--experimental-strip-types`**
 Originally used `tsx` for dev/CLI. tsx loads astronomy-engine's CJS entry, where named imports (`import { Body }`) silently fail because the CJS module's static analysis can't detect named exports. Vitest happens to load the ESM entry so its test pass — divergent runtime behavior between tools. Fix: drop `tsx`, run `.ts` files directly with `node --experimental-strip-types` (Node 22.6+). Required:
 - `tsconfig.json`: `"allowImportingTsExtensions": true`, `"noEmit": true`, `"rewriteRelativeImportExtensions": true`

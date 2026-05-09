@@ -63,10 +63,18 @@ npm run test:watch
 
 Tests inject HTTP requests via `app.inject`, no real port binding.
 
+## What's shipped
+
+- 10 planet positions (Sun … Pluto) with retrograde flag, J2000 ecliptic.
+- Placidus house cusps + Asc/MC, with a closed-form whole-sign fallback
+  for `|lat| ≥ 66.5°`. See `src/lib/houses.ts`.
+- Whole-Sign and Lahiri-sidereal `houseSystem` variants.
+- Major Ptolemaic aspects (conjunction / sextile / square / trine /
+  opposition) with luminary-widened orbs. See `src/lib/aspects.ts`.
+
 ## What's intentionally **not** here yet
 
-- Houses (Placidus / Whole Sign / Sidereal) — next iteration
-- Aspects, transits, progressions
+- Transits & progressions
 - Production deploy (Fly.io setup, Dockerfile, healthcheck wiring)
 - Caching (Redis or in-memory LRU for repeat birth-data queries)
 - Rate limiting
@@ -78,7 +86,7 @@ Tests inject HTTP requests via `app.inject`, no real port binding.
 
 The Swift side at `Lumina/Core/Ephemeris/EphemerisService.swift` POSTs to
 `{SWISS_EPH_SERVICE_URL}/chart` with the body shape declared in
-`src/types.ts` (`BirthDataSchema`). Header: `X-Lumina-Secret:
-{SWISS_EPH_API_SECRET}`. Response is the `NatalChart` shape — array of
-ten planet positions in J2000 ecliptic coordinates plus a placeholder
-`houseSystem` until houses ship.
+`src/types.ts` (`ChartRequestSchema` = `BirthData` + optional
+`houseSystem`). Header: `X-Lumina-Secret: {SWISS_EPH_API_SECRET}`.
+Response is the `NatalChartSchema` shape: planet positions, sorted
+aspects, and `houses` (null when `birthTime` is omitted/null).

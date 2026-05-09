@@ -20,7 +20,7 @@ A best-in-class astrology + AI palm reading app for iOS 26. Real computer vision
 | IAP | RevenueCat SDK |
 | Push | OneSignal |
 | Backend | Supabase (auth, user profiles, RAG vector store) |
-| CI | GitHub Actions → Xcode Cloud |
+| CI | GitHub Actions (`macos-15`, latest-stable Xcode) |
 
 ---
 
@@ -48,7 +48,7 @@ Lumina/
 │   ├── Ephemeris/                   # Swiss Eph API client
 │   ├── PalmCV/                      # Vision + Core ML pipeline
 │   ├── AI/                          # Claude API + RAG client
-│   └── RevenueCat/                  # IAP manager
+│   └── IAP/                         # RevenueCat manager + entitlements
 ├── Features/
 │   ├── Onboarding/
 │   ├── BirthChart/
@@ -76,12 +76,16 @@ Lumina/
 git clone https://github.com/YOUR_USERNAME/lumina-ios.git
 cd lumina-ios
 
-# 2. Install dependencies (Swift Package Manager — auto on Xcode open)
-open Lumina.xcodeproj
-
-# 3. Copy environment config
+# 2. Copy environment config and fill in API keys
 cp .env.example .env.local
-# Fill in API keys (see docs/API_KEYS.md)
+# (see docs/API_KEYS.md once it lands)
+
+# 3. Generate the Xcode project (Lumina.xcodeproj is NOT committed —
+#    it is regenerated from project.yml via XcodeGen)
+brew install xcodegen
+bash scripts/inject_env.sh   # writes secrets/Config.xcconfig from .env.local
+xcodegen generate
+open Lumina.xcodeproj        # Swift Packages resolve on first open
 
 # 4. Install backend deps for local ephemeris service
 cd backend && npm install && npm run dev
