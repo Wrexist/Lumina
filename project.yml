@@ -4,7 +4,9 @@ options:
   deploymentTarget:
     iOS: "26.0"
   developmentLanguage: en
-  xcodeVersion: "17.0"
+  # Intentionally unpinned — CI runs `xcode-version: latest-stable` so the
+  # project must regenerate cleanly against whatever Xcode the runner has.
+  # See LEARNINGS.md "CI runs on macos-15 with latest-stable Xcode".
   createIntermediateGroups: true
   generateEmptyDirectories: true
 

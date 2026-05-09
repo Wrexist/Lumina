@@ -15,22 +15,21 @@ actor EphemerisService {
         case decoding(message: String)
     }
 
+    /// Request body for `POST /chart`. Encodes to a flat object — `BirthData`
+    /// fields plus an optional `houseSystem`. Delegates to `BirthData`'s own
+    /// `Encodable` (which always emits `birthTime` as JSON null when nil),
+    /// then layers `houseSystem` on top.
     private struct ChartRequestBody: Encodable {
-        enum Keys: String, CodingKey {
-            case birthDate, birthTime, placeName, latitude, longitude, timeZoneIdentifier, houseSystem
+        enum CodingKeys: String, CodingKey {
+            case houseSystem
         }
 
         let birthData: BirthData
         let houseSystem: HouseSystem?
 
         func encode(to encoder: Encoder) throws {
-            var container = encoder.container(keyedBy: Keys.self)
-            try container.encode(birthData.birthDate, forKey: .birthDate)
-            try container.encode(birthData.birthTime, forKey: .birthTime)
-            try container.encode(birthData.placeName, forKey: .placeName)
-            try container.encode(birthData.latitude, forKey: .latitude)
-            try container.encode(birthData.longitude, forKey: .longitude)
-            try container.encode(birthData.timeZoneIdentifier, forKey: .timeZoneIdentifier)
+            try birthData.encode(to: encoder)
+            var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encodeIfPresent(houseSystem, forKey: .houseSystem)
         }
     }

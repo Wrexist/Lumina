@@ -23,7 +23,6 @@
  */
 import type { HouseCusps } from "../types.ts";
 
-const MEAN_OBLIQUITY_J2000 = 23.4392911; // degrees, IAU 2006
 const HIGH_LATITUDE_THRESHOLD = 66.5; // |lat| above this → fall back
 
 const DEG = Math.PI / 180;
@@ -252,6 +251,3 @@ function angularDelta(a: number, b: number): number {
   if (delta < -HALF_CIRCLE) delta += FULL_CIRCLE;
   return delta;
 }
-
-// Suppress unused import warnings of constants in some toolchains.
-export const _internal = { MEAN_OBLIQUITY_J2000 };

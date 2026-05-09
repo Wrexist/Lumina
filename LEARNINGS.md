@@ -288,3 +288,16 @@ Originally used `tsx` for dev/CLI. tsx loads astronomy-engine's CJS entry, where
 - All relative imports use `.ts` extension explicitly (not `.js`)
 - npm scripts use `node --watch --env-file-if-exists=.env --experimental-strip-types src/server.ts`
 This eliminates one dev dep, removes a class of CJS/ESM resolution bugs, and matches where Node TS support is heading (Node 23+ enables strip-types by default).
+
+---
+
+## 🧹 Review-pass
+
+**[2026-05-09] `ChartRequestBody` delegates to `BirthData.encode(to:)` instead of re-encoding fields by hand**
+The Swift wire-body for `POST /chart` originally restated every `BirthData` field in its own custom encoder, duplicating the source-of-truth for the `birthTime: null` quirk. The cleaner pattern is to call `birthData.encode(to: encoder)` to populate the BirthData keys, then open a second container keyed only on `houseSystem` and add it. Swift's `JSONEncoder` merges keys from sibling containers into the same object, so the wire shape is unchanged. Renamed the inner `Keys` enum to the conventional `CodingKeys`. The `birthTime` key is always present because `BirthData`'s own encoder uses `encode(_:forKey:)` (which emits `null` for nil) rather than `encodeIfPresent`.
+
+**[2026-05-09] Houses.ts had a dead `_internal` export of `MEAN_OBLIQUITY_J2000`**
+The constant was a holdover from an early draft; `meanObliquity()` computes obliquity directly from the IAU 2006 polynomial and never reads the J2000 baseline. The export existed only to silence "unused constant" lints. Both removed — `tsc --noEmit` is happy.
+
+**[2026-05-09] Doc drift after a flurry of feature commits**
+After Placidus → aspects → sidereal landed in quick succession, `TASK.md`, `README.md`, and `backend/README.md` were left listing those features as not-yet-shipped. The branch `claude/review-and-fix-bugs-umCyP` swept those, removed the dead `_internal` export, refactored `ChartRequestBody`, and unpinned `xcodeVersion` in `project.yml` (CI uses `latest-stable`). Lesson: every PR that ships a feature should also flip the task box and trim the "not here yet" list in the same commit. The `/session-end` hook prints a checklist that includes the TASK.md update — don't skip it.
