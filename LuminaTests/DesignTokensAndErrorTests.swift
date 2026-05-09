@@ -39,6 +39,24 @@ final class DesignTokensAndErrorTests: XCTestCase {
         XCTAssertEqual(mapped, .server(status: 422))
     }
 
+    func testMapsAIMissingAPIKey() {
+        let mapped = LuminaError.from(LuminaAIClient.ClientError.missingAPIKey)
+        XCTAssertEqual(mapped, .missingConfiguration(key: "AnthropicAPIKey"))
+    }
+
+    func testMapsAINotImplementedToUnknown() {
+        if case .unknown = LuminaError.from(LuminaAIClient.ClientError.notImplemented) {
+            // expected
+        } else {
+            XCTFail("expected .unknown")
+        }
+    }
+
+    func testMapsAIInvalidResponse() {
+        let mapped = LuminaError.from(LuminaAIClient.ClientError.invalidResponse)
+        XCTAssertEqual(mapped, .server(status: 0))
+    }
+
     func testMapsURLOfflineErrors() {
         let offline = URLError(.notConnectedToInternet)
         XCTAssertEqual(LuminaError.from(offline), .offline)

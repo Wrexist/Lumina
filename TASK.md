@@ -38,14 +38,15 @@
 ### Errors & plumbing
 - [x] **[2026-05-08]** `LuminaError.swift` sum type with `userTitle` / `userBody` / `recoveryActionTitle` / `analyticsKey`
 - [x] **[2026-05-08]** Error-mapping extension on `EphemerisService.ServiceError` and `URLError` via `LuminaError.from(_:)`
-- [ ] Error-mapping extension on `LuminaAIClient.ClientError`
-- [ ] `AppLock.swift` — Face ID gate for the Reflect tab (opt-in)
+- [x] **[2026-05-08]** Error-mapping extension on `LuminaAIClient.ClientError` via `LuminaError.from(_:)`
+- [x] **[2026-05-08]** `AppLock.swift` — Face ID / device-passcode gate (`@MainActor @Observable`, session-scoped unlocks, `LAContext` evaluation, structured `LockError` for mapping)
 - [x] **[2026-05-08]** `Haptics.swift` — light / medium / heavy / selection / success / warning / failure wrappers honoring Reduce Motion
 
 ### SwiftLint
-- [ ] Custom rule `lumina_no_dead_end_list` — flag `LazyVStack` / `List` / `ForEach` over a model collection without an empty branch
-- [ ] Custom rule `lumina_no_modal_on_modal` — flag `.sheet` inside another `.sheet` content closure
-- [ ] Custom rule `lumina_no_raw_corner_radius` — flag `.cornerRadius(...)` outside `Design/Tokens/`
+- [ ] Custom rule `lumina_no_dead_end_list` — flag `LazyVStack` / `List` / `ForEach` over a model collection without an empty branch (deferred — needs AST, not regex)
+- [~] `lumina_no_modal_on_modal` — left as a PR-review checklist item; regex-based detection is unreliable
+- [x] **[2026-05-08]** Custom rule `no_raw_corner_radius` — flag `.cornerRadius(...)` outside `Design/Tokens/`
+- [x] **[2026-05-08]** Custom rule `no_raw_shadow` — flag `.shadow(color:` outside `Design/Tokens/`
 
 ### Project hygiene
 - [x] **[2026-05-08]** `.gitignore` already lists `Lumina.xcodeproj/` (verified)

@@ -187,3 +187,22 @@ custom_rules:
     regex: '(padding|spacing|frame[^)]*\.\s*(width|height))\s*:\s*(?!LuminaSpacing)[0-9]{2,}'
     severity: warning
     excluded: ".*/Design/Tokens/LuminaSpacing\\.swift"
+
+  no_raw_corner_radius:
+    name: "No Raw cornerRadius"
+    message: "Use .luminaCornerRadius(LuminaRadii.x) — see Design/Tokens/LuminaRadii.swift."
+    regex: '\.cornerRadius\('
+    severity: warning
+    excluded: ".*/Design/Tokens/.*\\.swift"
+
+  no_raw_shadow:
+    name: "No Raw shadow"
+    message: "Use .luminaShadow(.subtle|.card|.elevated) — see Design/Tokens/LuminaShadows.swift."
+    regex: '\.shadow\(color:'
+    severity: warning
+    excluded: ".*/Design/Tokens/.*\\.swift"
+
+  # `no_modal_on_modal` is intentionally NOT a regex rule — modal nesting
+  # detection requires AST awareness that regex can't do without false
+  # positives. Tracked as a PR-review checklist item in docs/NAVIGATION.md
+  # §2.2 and in TASK.md.

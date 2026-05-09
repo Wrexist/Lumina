@@ -14,6 +14,9 @@ extension LuminaError {
         if let serviceError = error as? EphemerisService.ServiceError {
             return mapEphemeris(serviceError)
         }
+        if let aiError = error as? LuminaAIClient.ClientError {
+            return mapAI(aiError)
+        }
         if let urlError = error as? URLError {
             return mapURL(urlError)
         }
@@ -30,6 +33,17 @@ extension LuminaError {
             return .server(status: status)
         case .decoding:
             return .server(status: 422)
+        }
+    }
+
+    private static func mapAI(_ error: LuminaAIClient.ClientError) -> LuminaError {
+        switch error {
+        case .missingAPIKey:
+            return .missingConfiguration(key: "AnthropicAPIKey")
+        case .notImplemented:
+            return .unknown(underlyingMessage: "This feature is still being built.")
+        case .invalidResponse:
+            return .server(status: 0)
         }
     }
 
