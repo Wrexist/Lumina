@@ -165,15 +165,16 @@
 
 ## 📋 Backlog — Phase 8: Human Design (lives in Chart tab)
 
-- [ ] HD Swift wrapper (gates / channels / centers / type / profile / authority)
-- [ ] `BodygraphData` model
-- [ ] Bodygraph SVG renderer
-- [ ] Center fill states (defined / undefined / split)
-- [ ] Type / Profile / Authority cards (zero jargon)
-- [ ] Center detail sheets
+- [x] **[2026-05-08]** `HumanDesignMandala` — 64-gate sequence at 5.625°/gate, gate-and-line by ecliptic longitude
+- [x] **[2026-05-08]** `HumanDesignCenter` — 9 centers + complete gate ownership (64 gates exactly once, disjoint)
+- [x] **[2026-05-08]** `HumanDesignActivation.compute(from:)` — natal chart → personality-side activations + defined centers
+- [x] **[2026-05-08]** `BodygraphView` — Canvas renderer with tappable centers (defined / open) on a normalised 0–1 layout
+- [x] **[2026-05-08]** `CenterDetailSheet` — per-center activated gates + which planet activated each
+- [x] **[2026-05-08]** Chart-tab Astrology / Human Design segmented control wired through to the bodygraph
+- [ ] Design-side "88° solar arc" chart (requires backend `/design` endpoint) → Type / Profile / Authority
+- [ ] Channel rendering (defined when both gates of a channel are activated)
 - [ ] HD glossary integration with `GlossaryLink`
 - [ ] Astrology-HD crossover callouts
-- [ ] `HumanDesignViewModel`
 - [ ] Premium gate (type + profile free)
 
 ---
@@ -227,8 +228,9 @@
 
 ## 📋 Backlog — Phase 12: Settings, Account, Privacy Dashboard
 
-- [~] `SettingsView` with all 5 sections — placeholder shell shipped (Account / Your info / Preferences / Privacy / About) wired to the gear icon in every nav bar; sub-screens still TODO
-- [ ] `EditBirthInfoView` (reuses onboarding forms)
+- [x] **[2026-05-08]** `SettingsView` with all 5 sections wired to the gear icon
+- [x] **[2026-05-08]** `EditBirthInfoView` — reuses Phase-2 `BirthPlaceSearch` and `WhyWeAsk`; hydrates from `UserBirthDataStore`, writes back on save; manual-coordinates fallback
+- [x] **[2026-05-08]** `PrivacyDashboardView` — "what's on this device / what's on our server / what's never stored" with live counts from SwiftData and UserDefaults
 - [ ] Manage subscription deep link
 - [ ] Restore purchases action + toast
 - [ ] Sign out flow

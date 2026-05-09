@@ -1,10 +1,8 @@
 import SwiftUI
 
-/// Phase-4 chart tab. Shows the user's real natal chart by default and
-/// falls through to a deterministic sample chart on dev builds without
-/// the Swiss Eph URL configured (see `BirthChartViewModel.sampleChart`).
-///
-/// Astrology / Human Design toggle stays in place for Phase 8.
+/// Phase-4 chart tab. Astrology mode renders the natal wheel + Big-3 +
+/// planet detail. Human Design mode (Phase 8 starter) renders the
+/// bodygraph with personality-side gate activations and per-center detail.
 struct ChartHubView: View {
     enum ChartMode: Hashable, CaseIterable {
         case astrology
@@ -14,6 +12,7 @@ struct ChartHubView: View {
     @State private var viewModel = BirthChartViewModel()
     @State private var mode: ChartMode = .astrology
     @State private var selectedPlanet: NatalChart.PlanetPosition?
+    @State private var selectedCenter: HumanDesignCenter?
 
     var body: some View {
         ScrollView {
@@ -29,6 +28,11 @@ struct ChartHubView: View {
         .sheet(item: $selectedPlanet) { planet in
             if case .ready(let chart) = viewModel.state {
                 PlanetDetailSheet(planet: planet, chart: chart)
+            }
+        }
+        .sheet(item: $selectedCenter) { center in
+            if case .ready(let chart) = viewModel.state {
+                CenterDetailSheet(center: center, activation: HumanDesignActivation.compute(from: chart))
             }
         }
     }
@@ -49,7 +53,10 @@ struct ChartHubView: View {
         case .idle, .loading:
             loadingState
         case .ready(let chart):
-            chartContent(chart)
+            switch mode {
+            case .astrology: astrologyContent(chart)
+            case .humanDesign: humanDesignContent(chart)
+            }
         case .missingBirthData:
             missingDataState
         case .failed(let error):
@@ -110,9 +117,9 @@ struct ChartHubView: View {
         }
     }
 
-    // MARK: - Actions
+    // MARK: - Methods
 
-    private func chartContent(_ chart: NatalChart) -> some View {
+    private func astrologyContent(_ chart: NatalChart) -> some View {
         VStack(spacing: LuminaSpacing.lg) {
             BigThreeBand(chart: chart)
             ChartWheelView(chart: chart, onTapPlanet: handleTap)
@@ -122,8 +129,56 @@ struct ChartHubView: View {
         }
     }
 
+    private func humanDesignContent(_ chart: NatalChart) -> some View {
+        let activation = HumanDesignActivation.compute(from: chart)
+        return VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
+            BodygraphView(activation: activation, onTapCenter: handleTapCenter)
+                .frame(maxWidth: .infinity)
+            definedCentersSummary(activation)
+            LuminaCard {
+                VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                    HStack {
+                        LuminaBadge(title: "Phase 8", tone: .neutral)
+                        Text("Type, Profile, and Authority")
+                            .font(LuminaTypography.body)
+                    }
+                    Text(BodygraphView.designSideMissingNote)
+                        .font(LuminaTypography.bodyLight)
+                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                }
+            }
+        }
+    }
+
+    private func definedCentersSummary(_ activation: HumanDesignActivation) -> some View {
+        VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+            Text("DEFINED CENTERS")
+                .font(LuminaTypography.mono)
+                .tracking(1.4)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            if activation.definedCenters.isEmpty {
+                Text("All open — receiving and amplifying everyone around you.")
+                    .font(LuminaTypography.body)
+            } else {
+                ForEach(Array(activation.definedCenters).sorted(by: { $0.rawValue < $1.rawValue })) { center in
+                    HStack {
+                        Text(center.displayName).font(LuminaTypography.body)
+                        Spacer()
+                        Text("\(center.gates.intersection(activation.activatedGates).count) gates")
+                            .font(LuminaTypography.mono)
+                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                    }
+                }
+            }
+        }
+    }
+
     private func handleTap(_ planet: NatalChart.PlanetPosition) {
         selectedPlanet = planet
+    }
+
+    private func handleTapCenter(_ center: HumanDesignCenter) {
+        selectedCenter = center
     }
 
     private func handleRetry() {

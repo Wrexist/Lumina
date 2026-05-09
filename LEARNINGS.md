@@ -231,6 +231,12 @@ The project's `.swiftlint.yml` opts into `type_contents_order`. Default member o
 **[2026-05-08] SwiftLint `redundant_type_annotation` fires on stored properties too**
 `var isLoading: Bool = false` in a struct definition is flagged. Drop the annotation: `var isLoading = false`. Synthesized memberwise init still produces the same `isLoading: Bool` parameter signature.
 
+**[2026-05-08] Human Design — ship the structure, hold back fake math**
+First-pass HD support is honest about what's real vs missing. The 64-gate mandala mapping (Gate 25 starts at 3°52'30" Aries, 5.625° per gate, fixed sequence) is fully real and tested for exhaustivity / disjointness. So is per-center gate ownership and the activation pipeline (`HumanDesignActivation.compute(from:)` → personality-side gates + defined centers). What we DO NOT ship: Type, Profile, Authority. Those require the design-side chart (88° solar arc back from birth), which the backend can't compute yet. The renderer surfaces a `BodygraphView.designSideMissingNote` so the user sees exactly what's pending. Brand pillar: don't fake it.
+
+**[2026-05-08] Bodygraph layout via normalised CGRect + `.position`**
+The 9 centers' positions on the bodygraph canvas are normalised to a 0–1 coordinate space stored on the `HumanDesignCenter` enum (`layoutFrame: CGRect`). The renderer multiplies by the GeometryReader-derived `size` and uses `.position(x:y:)` for absolute placement. Lets the bodygraph scale to any container without touching the layout constants. Real HD shapes are triangles for Head/Ajna/Solar Plexus/Spleen and squares for the rest — Phase 8 polish swaps in the actual paths; for now we render all as rounded rectangles so the structure ships without the SVG path work.
+
 **[2026-05-08] AppRouter via `@Environment` for cross-tab quick actions**
 The Today tab needs to switch tabs when the user taps a quick-action card. Rather than passing the router down via init parameter through every hub view, the router is injected once at the `MainTabsView` body root: `.environment(router)`. Hub views read it via `@Environment(AppRouter.self) private var router` and mutate `router.selectedTab` directly. `@Bindable` on a parameter is for child views that explicitly own bindings to the router; `@Environment` is for incidental reads.
 

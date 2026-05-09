@@ -46,9 +46,11 @@ struct SettingsView: View {
 
     private var yourInfoSection: some View {
         Section("Your info") {
-            SettingsRow(title: "Birth date", trailing: .badge("Soon"))
-            SettingsRow(title: "Birth time", trailing: .badge("Soon"))
-            SettingsRow(title: "Birth place", trailing: .badge("Soon"))
+            NavigationLink {
+                EditBirthInfoView()
+            } label: {
+                SettingsRow(title: "Birth date, time, and place", trailing: nil)
+            }
         }
     }
 
@@ -71,7 +73,11 @@ struct SettingsView: View {
 
     private var privacySection: some View {
         Section("Privacy") {
-            SettingsRow(title: "Privacy dashboard", trailing: .badge("Soon"))
+            NavigationLink {
+                PrivacyDashboardView()
+            } label: {
+                SettingsRow(title: "Privacy dashboard", trailing: nil)
+            }
             SettingsRow(title: "Export my data", trailing: .badge("Soon"))
             SettingsRow(title: "Delete my account", trailing: .badge("Soon"))
         }
