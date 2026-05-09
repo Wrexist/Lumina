@@ -12,6 +12,8 @@ import SwiftUI
 struct OnboardingFlowView: View {
     @State private var state = OnboardingState()
     @State private var ephemeris = EphemerisService()
+    @State private var paywall = PaywallTracker.shared
+    @State private var paywallVariant: PaywallOfferView.Variant?
     let onComplete: () -> Void
 
     var body: some View {
@@ -30,6 +32,13 @@ struct OnboardingFlowView: View {
                     .padding(.horizontal, LuminaSpacing.lg)
                     .padding(.bottom, LuminaSpacing.lg)
             }
+        }
+        .fullScreenCover(item: $paywallVariant) { variant in
+            PaywallOfferView(
+                variant: variant,
+                onStartTrial: handleStartTrial,
+                onContinueFree: handleContinueFree
+            )
         }
     }
 
@@ -79,7 +88,7 @@ struct OnboardingFlowView: View {
         case .chartReveal:
             OnboardingScreens.ChartReveal(state: state, ephemeris: ephemeris)
         case .whatNext:
-            OnboardingScreens.WhatNext { onComplete() }
+            OnboardingScreens.WhatNext { handleFinalTap() }
         }
     }
 
@@ -92,11 +101,62 @@ struct OnboardingFlowView: View {
             isEnabled: state.canAdvance(from: state.currentStep)
         ) {
             if isFinal {
-                onComplete()
+                handleFinalTap()
             } else {
                 state.advance()
             }
         }
+    }
+
+    /// Final-step tap. The first time, present the paywall offer as a
+    /// non-blocking full-screen cover. After the user has seen (and
+    /// declined) it, subsequent finals route straight to MainTabs.
+    private func handleFinalTap() {
+        if paywall.hasSeenInitialOffer {
+            onComplete()
+        } else {
+            paywallVariant = .initial
+        }
+    }
+
+    private func handleStartTrial() {
+        paywall.recordInitialOfferSeen()
+        if paywallVariant == .rescue {
+            paywall.recordRescueShown()
+        }
+        paywallVariant = nil
+        // TODO(lumina): trigger RevenueCat purchase flow before completing
+        persistAndComplete()
+    }
+
+    private func handleContinueFree() {
+        guard let current = paywallVariant else {
+            persistAndComplete()
+            return
+        }
+        switch current {
+        case .initial:
+            paywall.recordInitialOfferSeen()
+            if paywall.shouldShowRescue() {
+                paywallVariant = .rescue
+            } else {
+                paywallVariant = nil
+                persistAndComplete()
+            }
+        case .rescue:
+            paywall.recordRescueShown()
+            paywallVariant = nil
+            persistAndComplete()
+        }
+    }
+
+    /// Writes the captured `BirthData` into the persistent store before
+    /// completing onboarding so every other tab can read from one source.
+    private func persistAndComplete() {
+        if let birthData = state.makeBirthData() {
+            UserBirthDataStore.userDefaults.save(birthData)
+        }
+        onComplete()
     }
 }
 

@@ -56,7 +56,11 @@ struct SettingsView: View {
     private var preferencesSection: some View {
         Section("Preferences") {
             SettingsRow(title: "House system", trailing: .text("Placidus"))
-            SettingsRow(title: "Notifications", trailing: .badge("Soon"))
+            NavigationLink {
+                NotificationSettingsView()
+            } label: {
+                SettingsRow(title: "Notifications", trailing: nil)
+            }
             Toggle(isOn: $lockReflectWithFaceID) {
                 Text("Lock Reflect with Face ID").font(LuminaTypography.body)
             }

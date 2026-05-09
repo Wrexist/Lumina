@@ -10,6 +10,7 @@ extension OnboardingScreens {
         @State private var search = BirthPlaceSearch()
         @State private var query = ""
         @State private var resolveError: String?
+        @State private var manualSheet = false
 
         var body: some View {
             VStack(alignment: .leading, spacing: LuminaSpacing.md) {
@@ -25,9 +26,15 @@ extension OnboardingScreens {
                     textContentType: .addressCityAndState
                 )
                 suggestionList
+                LuminaButton(title: "Enter coordinates manually", variant: .ghost) {
+                    manualSheet = true
+                }
                 Spacer()
             }
             .padding(LuminaSpacing.lg)
+            .sheet(isPresented: $manualSheet) {
+                ManualBirthPlaceSheet(state: state)
+            }
         }
 
         private var heading: some View {

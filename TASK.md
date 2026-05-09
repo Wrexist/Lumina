@@ -63,13 +63,14 @@
 - [x] **[2026-05-08]** "Why we ask" inline explainer (`WhyWeAsk` view) on every sensitive field (Name, BirthDate, BirthTime, BirthPlace)
 - [x] **[2026-05-08]** MapKit `BirthPlaceSearch` autocomplete; user picks a suggestion to capture lat/lon + IANA time zone
 - [x] **[2026-05-08]** `OnboardingScreens.ChartReveal` calls real `EphemerisService.chart(for:)` and falls through to synthesised readiness on missing-config dev builds
-- [ ] Manual lat/lon fallback for offline / geocoder-down cases
-- [ ] Soft post-onboarding paywall offer (not a hard wall) with explicit "Continue free"
-- [ ] Discount rescue paywall (once per install)
+- [x] **[2026-05-08]** Manual lat/lon fallback (`ManualBirthPlaceSheet`) for offline / geocoder-down cases — name, lat, lon, IANA time-zone picker
+- [x] **[2026-05-08]** Soft post-onboarding paywall offer (`PaywallOfferView`, `.fullScreenCover`) on the WhatNext step with explicit "Continue free"
+- [x] **[2026-05-08]** Discount rescue paywall (once per install, gated by `PaywallTracker`)
 - [ ] Sign in with Apple (deferred to after first chart reveal)
-- [ ] Deferred notification permission (after first daily reading)
+- [~] Deferred notification permission — `NotificationPermission` helper landed and reachable from Settings; the contextual prompt after the first daily reading lands with the Today tab build-out
 - [ ] 14 onboarding analytics events
 - [ ] "Update birth info" Settings surface that reuses these forms
+- [x] **[2026-05-08]** `UserBirthDataStore` writes `BirthData` to UserDefaults on completion so every other tab can read from one source
 
 ---
 
@@ -91,18 +92,19 @@
 
 ## 📋 Backlog — Phase 4: Birth Chart
 
-- [ ] `BirthChartView` layout (wheel 55% / interpretations below)
-- [ ] Chart wheel `Canvas` renderer (single-pass, 60fps)
-- [ ] Glyph hit-testing dictionary (44pt touch targets)
-- [ ] `PlanetDetailView` `.sheet(item:)`
-- [ ] House system `LuminaSegmentedControl`
-- [ ] Unknown-birth-time graceful state
+- [x] **[2026-05-08]** `ChartHubView` layout (mode picker, big-3, wheel, house picker, interpretations card)
+- [x] **[2026-05-08]** Chart wheel `Canvas` renderer (`ChartWheelView`, single-pass, Asc-aligned rotation)
+- [x] **[2026-05-08]** Glyph hit-testing via overlay `Button`s with 44pt touch targets
+- [x] **[2026-05-08]** `PlanetDetailSheet` `.sheet(item:)` with degree, sign, house, retrograde, copy-stub interpretation
+- [x] **[2026-05-08]** House system `LuminaSegmentedControl` wired to `BirthChartViewModel.reload()`
+- [x] **[2026-05-08]** Big 3 (Sun / Moon / Rising) band
+- [x] **[2026-05-08]** Aspect lines through chart center, color + weight by aspect type
+- [ ] Unknown-birth-time graceful state in chart wheel (hide cusps banner)
 - [ ] Retrograde dashed-orbit ring
 - [ ] Aspect legend expandable card
 - [ ] Zodiac sign profile sheet
 - [ ] Share card via `ImageRenderer`
 - [ ] Deep-link `lumina://chart/planet/<name>` handler
-- [ ] Big 3 (Sun / Moon / Rising) band at top of Chart tab
 - [ ] "Read my chart aloud" Premium narration (90s audio)
 
 ---
@@ -210,11 +212,13 @@
 
 ## 📋 Backlog — Phase 11: Notifications + Engagement
 
+- [x] **[2026-05-08]** `NotificationPermission` helper — `@MainActor @Observable`, `request()`/`refreshStatus()`, `Status` enum mapped from `UNAuthorizationStatus`
+- [x] **[2026-05-08]** `NotificationSettingsView` reachable from Settings → Notifications (state-aware CTA: turn on / open iOS Settings / all set)
 - [ ] OneSignal SDK integration + token registration + 4 segments
-- [ ] Daily morning push
+- [ ] Daily morning push (wired through OneSignal)
 - [ ] Weekly "week ahead" Sunday push (Premium)
 - [ ] Event-triggered pushes (eclipse, retrograde, ingress) capped at 5/week
-- [ ] Settings: granular toggles per push type
+- [ ] Granular per-push-type toggles in NotificationSettingsView
 - [ ] "No weekend notifications" toggle
 - [ ] Quiet hours (default 9pm–7am)
 

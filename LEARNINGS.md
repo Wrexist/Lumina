@@ -231,6 +231,15 @@ The project's `.swiftlint.yml` opts into `type_contents_order`. Default member o
 **[2026-05-08] SwiftLint `redundant_type_annotation` fires on stored properties too**
 `var isLoading: Bool = false` in a struct definition is flagged. Drop the annotation: `var isLoading = false`. Synthesized memberwise init still produces the same `isLoading: Bool` parameter signature.
 
+**[2026-05-08] Chart wheel: single-pass Canvas + overlay Button hit-testing**
+The chart wheel renderer (`ChartWheelView`) draws the zodiac ring, house cusps, sign glyphs, and aspect lines in a single SwiftUI `Canvas` pass for 60fps scrolling. Planet glyphs are NOT in the Canvas — they're SwiftUI `Button`s with `.position(x:y:)` and `.contentShape(Circle())` so each one is independently tappable with a 44pt touch target. Astrology convention: 0° at left (9 o'clock), CCW visually (which goes DOWN first because of screen-y direction). Formula: `angleRad = (180.0 - longitudeRotated) * .pi / 180`, then `x = cx + r·cos(angleRad)`, `y = cy + r·sin(angleRad)`. The wheel auto-rotates by `chart.houses.ascendant` when houses are present, putting the Asc at left.
+
+**[2026-05-08] Paywall tracker — once per install, never twice in a session**
+Apple Guideline 3.1.2(c) (April 2026 enforcement) bans the second-paywall pattern. `PaywallTracker` (`@MainActor @Observable` singleton) persists `hasSeenInitialOffer` and `hasShownRescue` to UserDefaults; `shouldShowRescue()` returns true exactly once per install. The onboarding flow's `handleContinueFree()` switches `paywallVariant` from `.initial` → `.rescue` on the first decline, then `.rescue` → onComplete on the second. After both have fired, the user can never be prompted again on this install.
+
+**[2026-05-08] `MKLocalSearchCompleter` delegate isolation in Swift 6**
+`BirthPlaceSearch` is `@MainActor @Observable final class : NSObject` so SwiftUI views can `@State` it directly and bind to `suggestions`. The delegate methods are `nonisolated` (MapKit calls them off-main) and dispatch back to the actor via `Task { @MainActor in ... }`. Suggestion array is captured as `let mapped = ...` BEFORE the Task closure so the Sendable transfer is just `[Suggestion]` — `MKLocalSearchCompleter` itself never crosses actors.
+
 **[2026-05-08] OnboardingState as `@Observable` + `@unchecked Sendable` storage**
 First Phase-2 cut used SwiftData for persistent onboarding state. SwiftData adds `ModelContainer` + migration plan ceremony that's overkill for a single-user, append-only state machine. Replaced with a tiny `@Observable` view model (`OnboardingState`) plus an `OnboardingStorage` struct that wraps an `OnboardingStorageBacking` protocol. Concrete backings: `UserDefaultsBacking` (production) and a `DispatchQueue`-locked in-memory variant (tests). The `OnboardingSnapshot` `Codable` shape is intentionally separate from the live state model so the in-memory shape can iterate without breaking the on-disk format. Same pattern is used by `AppRouterStorage` — codify as the canonical persistence-seam shape until a feature legitimately needs SwiftData.
 
