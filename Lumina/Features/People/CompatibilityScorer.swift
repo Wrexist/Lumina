@@ -69,10 +69,21 @@ enum CompatibilityScorer {
         // pairs in the same element/modality bucket don't all land on
         // the same number. Hashes are order-independent because we sort.
         let pair = [leftSign, rightSign].sorted()
-        let pairHash = "\(pair[0])-\(pair[1])".hashValue
-        let jitter = abs(pairHash % 11) - 5
+        let jitter = Int(stableHash("\(pair[0])-\(pair[1])") % 11) - 5
         score += jitter
         return max(0, min(100, score))
+    }
+
+    /// FNV-1a 64-bit hash — deterministic across processes. `String.hashValue`
+    /// is seeded per app run, so using it here drifted the cached
+    /// `Friend.compatibilityScore` on every cold launch.
+    static func stableHash(_ string: String) -> UInt64 {
+        var hash: UInt64 = 0xcbf2_9ce4_8422_2325
+        for byte in string.utf8 {
+            hash ^= UInt64(byte)
+            hash = hash &* 0x0000_0100_0000_01b3
+        }
+        return hash
     }
 
     /// Combined sun-sign string for display ("Aries · Leo").

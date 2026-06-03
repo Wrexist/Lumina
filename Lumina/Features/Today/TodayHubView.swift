@@ -16,15 +16,7 @@ struct TodayHubView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
                 header
-                if let chart = viewModel.natalChart {
-                    BigThreeBand(chart: chart)
-                }
-                headlineCard
-                readingPlaceholder
-                Divider()
-                whatsHappeningSection
-                Divider()
-                quickActionsSection
+                content
             }
             .padding(LuminaSpacing.lg)
         }
@@ -34,6 +26,53 @@ struct TodayHubView: View {
     }
 
     // MARK: - View building blocks
+
+    @ViewBuilder
+    private var content: some View {
+        switch viewModel.state {
+        case .idle, .loading:
+            loadingState
+        case .missingBirthData:
+            missingDataState
+        case .failed(let error):
+            LuminaErrorState(error: error, onRetry: handleRetry)
+        case .ready:
+            loadedContent
+        }
+    }
+
+    private var loadedContent: some View {
+        VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
+            if let chart = viewModel.natalChart {
+                BigThreeBand(chart: chart)
+            }
+            headlineCard
+            readingPlaceholder
+            Divider()
+            whatsHappeningSection
+            Divider()
+            quickActionsSection
+        }
+    }
+
+    private var loadingState: some View {
+        VStack(alignment: .leading, spacing: LuminaSpacing.md) {
+            LuminaSkeleton(shape: .block(height: 96))
+            LuminaSkeleton(shape: .line(width: 260, height: 22))
+            LuminaSkeleton(shape: .block(height: 80))
+            LuminaSkeleton(shape: .line(height: 18))
+            LuminaSkeleton(shape: .line(height: 18))
+        }
+    }
+
+    private var missingDataState: some View {
+        LuminaEmptyState(
+            systemImage: "sparkles",
+            title: "Finish your chart",
+            body: "Add your birth date, time, and place to see your sky today.",
+            primaryCTA: LuminaEmptyState.CTA(title: "Add birth info", action: openSettings)
+        )
+    }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
@@ -136,6 +175,14 @@ struct TodayHubView: View {
     private func jump(to tab: LuminaTab) {
         Haptics.light.play()
         router.selectedTab = tab
+    }
+
+    private func handleRetry() {
+        Task { await viewModel.retry() }
+    }
+
+    private func openSettings() {
+        router.handle(deepLink: .settings)
     }
 }
 

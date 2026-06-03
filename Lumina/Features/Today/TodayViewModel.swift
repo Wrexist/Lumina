@@ -16,6 +16,7 @@ final class TodayViewModel {
         case loading
         case ready
         case missingBirthData
+        case failed(LuminaError)
     }
 
     static let pool: [String] = [
@@ -58,11 +59,14 @@ final class TodayViewModel {
     /// non-overlapping. Phase 5 swaps to real top-3 transits from the
     /// backend `/transits` endpoint.
     static func whatsHappening(for date: Date, calendar: Calendar = .current) -> [String] {
+        // Offsets 1/4/7 so none equals the headline (offset 0) — the headline
+        // card and the first "what's happening" row used to print the same line.
         let day = calendar.ordinality(of: .day, in: .year, for: date) ?? 0
-        let primary = pool[day % pool.count]
-        let secondary = pool[(day + 3) % pool.count]
-        let tertiary = pool[(day + 7) % pool.count]
-        return [primary, secondary, tertiary]
+        return [
+            pool[(day + 1) % pool.count],
+            pool[(day + 4) % pool.count],
+            pool[(day + 7) % pool.count],
+        ]
     }
 
     func loadIfNeeded() async {
@@ -78,17 +82,23 @@ final class TodayViewModel {
         do {
             natalChart = try await ephemeris.chart(for: birthData)
             state = .ready
-        } catch let serviceError as EphemerisService.ServiceError where serviceError == .missingConfiguration {
-            // Dev path — let the Today screen still render against the
-            // sample chart so the rest of the shell is exercised.
-            natalChart = BirthChartViewModel.sampleChart()
-            state = .ready
         } catch {
             logger.error("today chart load failed: \(error.localizedDescription)")
-            // Fall back to sample so Today never dead-ends. Real error
-            // surfacing happens on Chart tab where a retry exists.
+            #if DEBUG
+            // Dev builds often run without a Swiss Eph URL; fall back to the
+            // sample chart so the rest of the shell stays exercisable.
             natalChart = BirthChartViewModel.sampleChart()
             state = .ready
+            #else
+            // In production a real failure must surface, not silently show
+            // someone else's chart.
+            state = .failed(LuminaError.from(error))
+            #endif
         }
+    }
+
+    func retry() async {
+        state = .idle
+        await loadIfNeeded()
     }
 }
