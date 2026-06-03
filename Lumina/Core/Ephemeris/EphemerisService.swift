@@ -34,6 +34,23 @@ actor EphemerisService {
         }
     }
 
+    /// Request body for `POST /transits` — `BirthData` fields plus an
+    /// optional `at` moment (omitted means "now" on the server).
+    private struct TransitsRequestBody: Encodable {
+        enum CodingKeys: String, CodingKey {
+            case at
+        }
+
+        let birthData: BirthData
+        let at: Date?
+
+        func encode(to encoder: any Encoder) throws {
+            try birthData.encode(to: encoder)
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encodeIfPresent(at, forKey: .at)
+        }
+    }
+
     private static let chartEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -110,5 +127,29 @@ actor EphemerisService {
         request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
         request.httpBody = try Self.chartEncoder.encode(body)
         return request
+    }
+
+    /// Transit→natal aspects for `moment` (defaults to "now" on the server).
+    /// Real positions only — see CLAUDE.md "Critical Rules". Wire format is
+    /// defined in `backend/src/routes/transits.ts`.
+    func transits(for birthData: BirthData, at moment: Date? = nil) async throws -> TransitsResult {
+        guard let baseURL, let apiSecret, !apiSecret.isEmpty else {
+            throw ServiceError.missingConfiguration
+        }
+        let body = TransitsRequestBody(birthData: birthData, at: moment)
+        var request = URLRequest(url: baseURL.appendingPathComponent("transits"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
+        request.httpBody = try Self.chartEncoder.encode(body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
+        guard (200..<300).contains(http.statusCode) else {
+            let errorBody = String(data: data, encoding: .utf8) ?? ""
+            throw ServiceError.httpError(status: http.statusCode, body: errorBody)
+        }
+        return try Self.chartDecoder.decode(TransitsResult.self, from: data)
     }
 }
