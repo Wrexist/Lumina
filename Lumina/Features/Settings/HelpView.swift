@@ -4,7 +4,7 @@ import SwiftUI
 /// grouped by topic, fully on-device. The pull-down search on Today
 /// (Phase 13) will index this content alongside the glossary.
 struct HelpView: View {
-    private struct Article: Identifiable, Hashable {
+    fileprivate struct Article: Identifiable, Hashable {
         let id: String
         let topic: Topic
         let title: String

@@ -27,7 +27,7 @@ actor EphemerisService {
         let birthData: BirthData
         let houseSystem: HouseSystem?
 
-        func encode(to encoder: Encoder) throws {
+        func encode(to encoder: any Encoder) throws {
             try birthData.encode(to: encoder)
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encodeIfPresent(houseSystem, forKey: .houseSystem)
@@ -45,8 +45,8 @@ actor EphemerisService {
         decoder.dateDecodingStrategy = .custom { decoder in
             let container = try decoder.singleValueContainer()
             let raw = try container.decode(String.self)
-            if let date = Self.withFractionalSeconds.date(from: raw) { return date }
-            if let date = Self.withoutFractionalSeconds.date(from: raw) { return date }
+            if let date = EphemerisService.withFractionalSeconds.date(from: raw) { return date }
+            if let date = EphemerisService.withoutFractionalSeconds.date(from: raw) { return date }
             throw DecodingError.dataCorruptedError(
                 in: container,
                 debugDescription: "Expected ISO 8601 date, got \"\(raw)\""
@@ -55,13 +55,15 @@ actor EphemerisService {
         return decoder
     }()
 
-    private static let withFractionalSeconds: ISO8601DateFormatter = {
+    // ISO8601DateFormatter isn't Sendable, but parsing is thread-safe, so these
+    // shared formatters are safe to read from any isolation.
+    nonisolated(unsafe) private static let withFractionalSeconds: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return formatter
     }()
 
-    private static let withoutFractionalSeconds = ISO8601DateFormatter()
+    nonisolated(unsafe) private static let withoutFractionalSeconds = ISO8601DateFormatter()
 
     private let logger = Logger(subsystem: "app.lumina.ios", category: "Ephemeris")
     private let session: URLSession
