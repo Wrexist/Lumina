@@ -52,6 +52,9 @@ targets:
         optional: true
       - path: Lumina/Resources/Glossary.json
         optional: true
+      - path: Lumina/Resources/Localizable.xcstrings
+        optional: true
+      - path: Lumina/Resources/PrivacyInfo.xcprivacy
     info:
       path: Lumina/Resources/Info.plist
       properties:
@@ -63,6 +66,10 @@ targets:
           UIApplicationSupportsMultipleScenes: false
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        # The brand is a single light "parchment + ink" editorial theme; we
+        # ship light-only rather than a half-built dark mode. Revisit when a
+        # dark palette exists (see docs/AUDIT-2026-06-03.md R6).
+        UIUserInterfaceStyle: Light
         ITSAppUsesNonExemptEncryption: false
         NSFaceIDUsageDescription: "Lumina uses Face ID to keep your reflections private on this device."
         LuminaAnthropicAPIKey: $(ANTHROPIC_API_KEY)
