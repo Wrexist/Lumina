@@ -128,6 +128,9 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.lumina.ios.tests
         IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+        # The unit-test bundle has no committed Info.plist; let Xcode generate
+        # one (required for code-signing the test bundle).
+        GENERATE_INFOPLIST_FILE: YES
 
 schemes:
   Lumina:
