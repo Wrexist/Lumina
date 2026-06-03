@@ -42,14 +42,17 @@ struct TodayHubView: View {
     }
 
     private var loadedContent: some View {
-        VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
+        let lines = viewModel.todayLines
+        return VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
             if let chart = viewModel.natalChart {
                 BigThreeBand(chart: chart)
             }
-            headlineCard
+            headlineCard(lines.headline)
             readingPlaceholder
-            Divider()
-            whatsHappeningSection
+            if !lines.secondary.isEmpty {
+                Divider()
+                whatsHappeningSection(lines.secondary)
+            }
             Divider()
             quickActionsSection
         }
@@ -85,10 +88,10 @@ struct TodayHubView: View {
         }
     }
 
-    private var headlineCard: some View {
+    private func headlineCard(_ headline: String?) -> some View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                Text(TodayViewModel.headline(for: .now))
+                Text(headline ?? "A quiet sky today — nothing major is touching your chart right now.")
                     .font(LuminaTypography.heading)
                 Text("Tap any planet on the Chart tab to learn more about your placements.")
                     .font(LuminaTypography.bodyLight)
@@ -117,13 +120,13 @@ struct TodayHubView: View {
         }
     }
 
-    private var whatsHappeningSection: some View {
+    private func whatsHappeningSection(_ lines: [String]) -> some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
             Text("WHAT'S HAPPENING")
                 .font(LuminaTypography.mono)
                 .tracking(1.4)
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-            ForEach(TodayViewModel.whatsHappening(for: .now), id: \.self) { line in
+            ForEach(lines, id: \.self) { line in
                 HStack(alignment: .top, spacing: LuminaSpacing.sm) {
                     Text("•").font(LuminaTypography.body)
                     Text(line).font(LuminaTypography.body)

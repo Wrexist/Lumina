@@ -83,21 +83,28 @@ final class PeopleAndTodayTests: XCTestCase {
         XCTAssertNil(friend.makeBirthData())
     }
 
-    // MARK: - TodayViewModel deterministic helpers
+    // MARK: - TodayViewModel.todayLines (real transits → headline + rows)
 
     @MainActor
-    func testTodayHeadlineIsDeterministicPerDate() {
-        let date = Date(timeIntervalSince1970: 1_725_000_000)
-        XCTAssertEqual(TodayViewModel.headline(for: date), TodayViewModel.headline(for: date))
+    func testTodayLinesEmptyWhenNoTransits() {
+        let lines = TodayViewModel.todayLines(from: [])
+        XCTAssertNil(lines.headline)
+        XCTAssertTrue(lines.secondary.isEmpty)
     }
 
     @MainActor
-    func testWhatsHappeningReturnsThreeRows() {
-        let rows = TodayViewModel.whatsHappening(for: .now)
-        XCTAssertEqual(rows.count, 3)
-        for row in rows {
-            XCTAssertFalse(row.isEmpty)
-        }
+    func testTodayLinesUseTightestAsHeadlineAndCapSecondary() {
+        let transits = [
+            TransitReading(transiting: "Pluto", natal: "Mercury", type: .trine, exactAngle: 120, orb: 0.4, applying: false),
+            TransitReading(transiting: "Venus", natal: "Venus", type: .sextile, exactAngle: 60, orb: 0.5, applying: true),
+            TransitReading(transiting: "Saturn", natal: "Neptune", type: .square, exactAngle: 90, orb: 1.3, applying: true),
+            TransitReading(transiting: "Moon", natal: "Jupiter", type: .opposition, exactAngle: 180, orb: 1.3, applying: false),
+            TransitReading(transiting: "Mars", natal: "Sun", type: .conjunction, exactAngle: 0, orb: 2, applying: true),
+        ]
+        let lines = TodayViewModel.todayLines(from: transits)
+        XCTAssertEqual(lines.headline, "Pluto trine your Mercury, easing")
+        XCTAssertEqual(lines.secondary.count, 3, "secondary is capped at 3")
+        XCTAssertEqual(lines.secondary.first, "Venus sextile your Venus, building")
     }
 
     // MARK: - Helpers

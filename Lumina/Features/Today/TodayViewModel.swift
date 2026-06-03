@@ -1,13 +1,14 @@
 import Foundation
 import OSLog
 
-/// View model for the Today (Home) tab. Loads the user's natal chart so
-/// the Big 3 band, "your sky today" headline, and the quick-actions row
-/// can render against real placements.
+/// View model for the Today (Home) tab. Loads the user's natal chart so the
+/// Big 3 band renders against real placements, and the live sky (transits to
+/// that chart) so the headline + "what's happening" lines describe what is
+/// *actually* aspecting the user right now — never invented copy.
 ///
 /// Real RAG-backed reading body + ElevenLabs audio land with Phase 3/5 of
-/// `ROADMAP.md`. Until then, the today-reading state surfaces the
-/// canonical "needs Anthropic key" affordance.
+/// `ROADMAP.md`. The transit lines here are the deterministic, honest
+/// stand-in until then.
 @MainActor
 @Observable
 final class TodayViewModel {
@@ -19,25 +20,14 @@ final class TodayViewModel {
         case failed(LuminaError)
     }
 
-    static let pool: [String] = [
-        "Mercury squares Saturn — words feel heavier than usual.",
-        "The Moon enters a tender water sign tonight — slow down for it.",
-        "Venus settles into routine — small acts of care over grand gestures.",
-        "Mars asks where your time actually goes today.",
-        "A trine between Sun and Jupiter widens what's possible.",
-        "Saturn holds the line on something half-finished.",
-        "Mercury and Venus meet — clearer words around what you want.",
-        "The Moon waxes — what wants to be said, said it now.",
-        "Pluto retraces familiar ground — note what's changed since last time.",
-        "Uranus shakes a small assumption loose. Don't refasten it too quickly.",
-    ]
-
     private let logger = Logger(subsystem: "app.lumina.ios", category: "TodayViewModel")
     private let store: UserBirthDataStore
     private let ephemeris: EphemerisService
 
     private(set) var state: LoadState = .idle
     private(set) var natalChart: NatalChart?
+    /// Transit→natal aspects for right now, tightest-orb-first (backend order).
+    private(set) var transits: [TransitReading] = []
 
     init(
         store: UserBirthDataStore = .userDefaults,
@@ -47,26 +37,19 @@ final class TodayViewModel {
         self.ephemeris = ephemeris
     }
 
-    /// Headline transit for the day. Deterministic per local day so the
-    /// Today screen, the morning push (Phase 11), and the journal prompt
-    /// (Phase 9) can all reference the same line.
-    static func headline(for date: Date, calendar: Calendar = .current) -> String {
-        let day = calendar.ordinality(of: .day, in: .year, for: date) ?? 0
-        return pool[day % pool.count]
+    /// Splits the sorted transits into the headline line and the secondary
+    /// "what's happening" lines. Pure — testable without the network.
+    static func todayLines(
+        from transits: [TransitReading],
+        maxSecondary: Int = 3
+    ) -> (headline: String?, secondary: [String]) {
+        let phrased = transits.map(TransitPhrasing.sentence)
+        return (phrased.first, Array(phrased.dropFirst().prefix(maxSecondary)))
     }
 
-    /// Three "what's happening in your sky" rows. Deterministic per day,
-    /// non-overlapping. Phase 5 swaps to real top-3 transits from the
-    /// backend `/transits` endpoint.
-    static func whatsHappening(for date: Date, calendar: Calendar = .current) -> [String] {
-        // Offsets 1/4/7 so none equals the headline (offset 0) — the headline
-        // card and the first "what's happening" row used to print the same line.
-        let day = calendar.ordinality(of: .day, in: .year, for: date) ?? 0
-        return [
-            pool[(day + 1) % pool.count],
-            pool[(day + 4) % pool.count],
-            pool[(day + 7) % pool.count],
-        ]
+    /// The current headline + secondary lines from the loaded transits.
+    var todayLines: (headline: String?, secondary: [String]) {
+        Self.todayLines(from: transits)
     }
 
     func loadIfNeeded() async {
@@ -80,14 +63,21 @@ final class TodayViewModel {
         }
         state = .loading
         do {
-            natalChart = try await ephemeris.chart(for: birthData)
+            // The natal chart is the critical path; transits are best-effort
+            // (a missing transit list just hides the "what's happening" rows).
+            async let chartLoad = ephemeris.chart(for: birthData)
+            async let transitsLoad = ephemeris.transits(for: birthData)
+            natalChart = try await chartLoad
+            transits = (try? await transitsLoad)?.transits ?? []
             state = .ready
         } catch {
-            logger.error("today chart load failed: \(error.localizedDescription)")
+            logger.error("today load failed: \(error.localizedDescription)")
+            transits = []
             #if DEBUG
             // Dev builds often run without a Swiss Eph URL; fall back to the
-            // sample chart so the rest of the shell stays exercisable.
+            // sample chart + sample transits so the shell stays exercisable.
             natalChart = BirthChartViewModel.sampleChart()
+            transits = Self.sampleTransits()
             state = .ready
             #else
             // In production a real failure must surface, not silently show
@@ -99,6 +89,20 @@ final class TodayViewModel {
 
     func retry() async {
         state = .idle
+        transits = []
         await loadIfNeeded()
     }
+
+    #if DEBUG
+    /// Dev-only stand-in transits so previews and no-backend builds can
+    /// exercise the Today UI. Never compiled into a release build.
+    static func sampleTransits() -> [TransitReading] {
+        [
+            TransitReading(transiting: "Pluto", natal: "Mercury", type: .trine, exactAngle: 120, orb: 0.4, applying: false),
+            TransitReading(transiting: "Venus", natal: "Venus", type: .sextile, exactAngle: 60, orb: 0.5, applying: true),
+            TransitReading(transiting: "Saturn", natal: "Neptune", type: .square, exactAngle: 90, orb: 1.3, applying: true),
+            TransitReading(transiting: "Moon", natal: "Jupiter", type: .opposition, exactAngle: 180, orb: 1.3, applying: false),
+        ]
+    }
+    #endif
 }
