@@ -48,7 +48,9 @@ struct LuminaButton: View {
             }
         })
         .accessibilityLabel(title)
-        .accessibilityAddTraits(isEnabled ? [.isButton] : [.isButton, .notEnabled])
+        // `.disabled(...)` above already conveys the disabled state to
+        // accessibility; SwiftUI's AccessibilityTraits has no `.notEnabled`.
+        .accessibilityAddTraits(.isButton)
     }
 
     private var contents: some View {
