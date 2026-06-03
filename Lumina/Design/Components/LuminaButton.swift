@@ -71,7 +71,7 @@ struct LuminaButton: View {
     private var background: Color {
         switch variant {
         case .primary: LuminaColors.celestialBlue
-        case .destructive: LuminaColors.inkBlack
+        case .destructive: LuminaColors.error
         case .secondary, .ghost: .clear
         }
     }

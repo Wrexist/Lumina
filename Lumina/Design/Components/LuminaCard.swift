@@ -31,10 +31,10 @@ struct LuminaCard<Content: View>: View {
         case .parchment:
             LuminaColors.parchment
         case .glass:
-            // iOS 26 native Liquid Glass; gracefully degrades on older OS
-            // via the `.thinMaterial` fallback (kept generic so the file
-            // compiles on iOS 17+ runners while still using glass at run
-            // time on iOS 26 devices).
+            // TODO(lumina): swap to the iOS 26 native Liquid Glass API
+            // (`.glassEffect`) once it can be verified on a Mac — the brand
+            // pillar wants real glass, not a material. `.thinMaterial` is the
+            // interim frosted fallback. See docs/AUDIT-2026-06-03.md R6.
             Rectangle()
                 .fill(.thinMaterial)
         case .midnight:
