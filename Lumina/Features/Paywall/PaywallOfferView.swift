@@ -108,7 +108,9 @@ struct PaywallOfferView: View {
     }
 
     private var trustNote: some View {
-        Text("No charge until trial ends. We never use dark patterns, and we never re-prompt you in the same session.")
+        Text(variant == .rescue
+            ? "No charge until your trial ends. This is the last time we'll bring it up — cancel anytime in Settings."
+            : "No charge until your trial ends. We never use dark patterns — cancel anytime in Settings.")
             .font(LuminaTypography.caption)
             .foregroundStyle(LuminaColors.inkBlack.opacity(0.55))
             .multilineTextAlignment(.leading)

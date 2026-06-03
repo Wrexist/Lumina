@@ -9,7 +9,6 @@ final class PaywallTracker {
     private enum Keys {
         static let everSeen = "luminaPaywallEverSeen"
         static let rescueShown = "luminaPaywallRescueShown"
-        static let lastDeclineDate = "luminaPaywallLastDeclineAt"
     }
 
     static let shared = PaywallTracker()
@@ -27,7 +26,6 @@ final class PaywallTracker {
     func recordInitialOfferSeen() {
         hasSeenInitialOffer = true
         defaultsRef.set(true, forKey: Keys.everSeen)
-        defaultsRef.set(Date.now, forKey: Keys.lastDeclineDate)
     }
 
     func recordRescueShown() {
@@ -48,6 +46,5 @@ final class PaywallTracker {
         hasShownRescue = false
         defaultsRef.removeObject(forKey: Keys.everSeen)
         defaultsRef.removeObject(forKey: Keys.rescueShown)
-        defaultsRef.removeObject(forKey: Keys.lastDeclineDate)
     }
 }

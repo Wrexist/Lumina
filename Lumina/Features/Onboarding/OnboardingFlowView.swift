@@ -13,7 +13,8 @@ struct OnboardingFlowView: View {
     @State private var state = OnboardingState()
     @State private var ephemeris = EphemerisService()
     @State private var paywall = PaywallTracker.shared
-    @State private var paywallVariant: PaywallOfferView.Variant?
+    @State private var paywallPresented = false
+    @State private var paywallVariant: PaywallOfferView.Variant = .initial
     let onComplete: () -> Void
 
     var body: some View {
@@ -33,9 +34,9 @@ struct OnboardingFlowView: View {
                     .padding(.bottom, LuminaSpacing.lg)
             }
         }
-        .fullScreenCover(item: $paywallVariant) { variant in
+        .fullScreenCover(isPresented: $paywallPresented) {
             PaywallOfferView(
-                variant: variant,
+                variant: paywallVariant,
                 onStartTrial: handleStartTrial,
                 onContinueFree: handleContinueFree
             )
@@ -116,6 +117,7 @@ struct OnboardingFlowView: View {
             onComplete()
         } else {
             paywallVariant = .initial
+            paywallPresented = true
         }
     }
 
@@ -124,28 +126,28 @@ struct OnboardingFlowView: View {
         if paywallVariant == .rescue {
             paywall.recordRescueShown()
         }
-        paywallVariant = nil
+        paywallPresented = false
         // TODO(lumina): trigger RevenueCat purchase flow before completing
         persistAndComplete()
     }
 
     private func handleContinueFree() {
-        guard let current = paywallVariant else {
-            persistAndComplete()
-            return
-        }
-        switch current {
+        switch paywallVariant {
         case .initial:
             paywall.recordInitialOfferSeen()
             if paywall.shouldShowRescue() {
+                // Swap the cover's content to the rescue offer *in place*. A
+                // fullScreenCover(item:) won't reliably re-present on a
+                // non-nil → non-nil change, so we keep a single cover up and
+                // change only the variant it renders.
                 paywallVariant = .rescue
             } else {
-                paywallVariant = nil
+                paywallPresented = false
                 persistAndComplete()
             }
         case .rescue:
             paywall.recordRescueShown()
-            paywallVariant = nil
+            paywallPresented = false
             persistAndComplete()
         }
     }
