@@ -15,7 +15,7 @@ final class Friend {
         case qr
     }
 
-    var id: UUID
+    @Attribute(.unique) var id: UUID
     var name: String
     var birthDate: Date
     var birthTime: Date?

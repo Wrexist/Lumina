@@ -16,6 +16,7 @@ struct ReflectHubView: View {
     @State private var lock = AppLock.shared
     @State private var unlockError: LuminaError?
     @State private var unlocking = false
+    @State private var openedEntry: JournalEntry?
 
     var body: some View {
         Group {
@@ -47,7 +48,7 @@ struct ReflectHubView: View {
             if let unlockError {
                 Text(unlockError.userBody)
                     .font(LuminaTypography.caption)
-                    .foregroundStyle(LuminaColors.blush)
+                    .foregroundStyle(LuminaColors.error)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, LuminaSpacing.lg)
             }
@@ -69,6 +70,9 @@ struct ReflectHubView: View {
             }
             .padding(LuminaSpacing.lg)
         }
+        .navigationDestination(item: $openedEntry) { entry in
+            JournalEntryView(entry: entry)
+        }
     }
 
     private var todaysPromptCard: some View {
@@ -89,19 +93,10 @@ struct ReflectHubView: View {
 
     private var primaryCTA: some View {
         let title = todayEntry == nil ? "Write today's reflection" : "Continue today's reflection"
-        return NavigationLink {
-            JournalEntryView(entry: todayEntry ?? createTodayEntry())
-        } label: {
-            HStack {
-                Image(systemName: "pencil")
-                Text(title)
-            }
-            .frame(maxWidth: .infinity, minHeight: 56)
-            .padding(.horizontal, LuminaSpacing.lg)
-            .background(LuminaColors.celestialBlue)
-            .foregroundStyle(LuminaColors.parchment)
-            .luminaCornerRadius(LuminaRadii.md)
-        }
+        // Value-based navigation: the entry is created in the tap handler, NOT
+        // in a NavigationLink destination builder (which SwiftUI evaluates
+        // eagerly during `body`, inserting blank entries on mere tab open).
+        return LuminaButton(title: title, variant: .primary, systemImage: "pencil", action: openTodayEntry)
     }
 
     @ViewBuilder
@@ -161,6 +156,10 @@ struct ReflectHubView: View {
 
     // MARK: - Methods
 
+    private func openTodayEntry() {
+        openedEntry = todayEntry ?? createTodayEntry()
+    }
+
     private func unlock() async {
         guard !unlocking else { return }
         unlocking = true
@@ -204,7 +203,7 @@ struct ReflectHubView: View {
         let key = JournalPromptGenerator.shared.transitKey(for: date)
         let entry = JournalEntry(date: date, prompt: prompt, transitKey: key)
         modelContext.insert(entry)
-        try? modelContext.save()
+        modelContext.saveOrLog(category: "Reflect")
         return entry
     }
 

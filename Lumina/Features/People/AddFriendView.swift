@@ -189,7 +189,7 @@ struct AddFriendView: View {
             friend.compatibilityScore = CompatibilityScorer.score(userBirth.birthDate, friend.birthDate)
         }
         modelContext.insert(friend)
-        try? modelContext.save()
+        modelContext.saveOrLog(category: "People")
         Haptics.success.play()
         dismiss()
     }

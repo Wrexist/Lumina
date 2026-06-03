@@ -94,7 +94,9 @@ struct ChartWheelView: View {
     }
 
     private func drawHouses(in context: GraphicsContext, center: CGPoint, radius: CGFloat) {
-        guard let houses = chart.houses else { return }
+        // Exactly 12 cusps are required; bail rather than index out of bounds
+        // (`cusps[(index + 1) % 12]`) on a malformed payload.
+        guard let houses = chart.houses, houses.cusps.count == 12 else { return }
         let outer = radius * 0.82
         let inner = radius * 0.50
 

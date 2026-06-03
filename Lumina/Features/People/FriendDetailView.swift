@@ -9,6 +9,7 @@ struct FriendDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @State private var confirmingRemove = false
+    @State private var score = 50
 
     var body: some View {
         ScrollView {
@@ -24,6 +25,7 @@ struct FriendDetailView: View {
         .navigationTitle(friend.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { trailingToolbar }
+        .task { loadScore() }
         .luminaConfirmation(
             "Remove \(friend.name)?",
             message: "This deletes them from your People tab. You can add them again any time.",
@@ -47,7 +49,6 @@ struct FriendDetailView: View {
     }
 
     private var scoreCard: some View {
-        let score = friend.compatibilityScore ?? compute()
         let label = CompatibilityScorer.Label(score: score)
         return LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
@@ -113,17 +114,24 @@ struct FriendDetailView: View {
 
     // MARK: - Methods
 
-    private func compute() -> Int {
-        guard let userBirth = UserBirthDataStore.userDefaults.load() else { return 50 }
-        let score = CompatibilityScorer.score(userBirth.birthDate, friend.birthDate)
-        friend.compatibilityScore = score
-        try? modelContext.save()
-        return score
+    /// Resolves the displayed score outside `body` (mutating the model and
+    /// saving during view evaluation triggers "modifying state during view
+    /// update"). Uses the cached score when present, otherwise computes once.
+    private func loadScore() {
+        if let cached = friend.compatibilityScore {
+            score = cached
+            return
+        }
+        guard let userBirth = UserBirthDataStore.userDefaults.load() else { return }
+        let computed = CompatibilityScorer.score(userBirth.birthDate, friend.birthDate)
+        friend.compatibilityScore = computed
+        modelContext.saveOrLog(category: "People")
+        score = computed
     }
 
     private func handleRemove() {
         modelContext.delete(friend)
-        try? modelContext.save()
+        modelContext.saveOrLog(category: "People")
         dismiss()
     }
 

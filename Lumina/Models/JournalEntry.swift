@@ -11,8 +11,9 @@ import SwiftData
 @Model
 final class JournalEntry {
     /// Stable id for `Identifiable` and external references (e.g. deep
-    /// links into a specific entry from a notification).
-    var id: UUID
+    /// links into a specific entry from a notification). Unique so a
+    /// deep-link lookup by UUID can never resolve to two rows.
+    @Attribute(.unique) var id: UUID
     /// The day the entry belongs to. We bucket per local-day; not the
     /// minute-level write timestamp.
     var date: Date

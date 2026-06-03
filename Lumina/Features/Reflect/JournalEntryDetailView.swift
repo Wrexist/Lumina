@@ -111,6 +111,6 @@ struct JournalEntryDetailView: View {
 
     private func handleDelete() {
         modelContext.delete(entry)
-        try? modelContext.save()
+        modelContext.saveOrLog(category: "Reflect")
     }
 }

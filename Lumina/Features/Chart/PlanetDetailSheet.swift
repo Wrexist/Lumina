@@ -82,7 +82,9 @@ struct PlanetDetailSheet: View {
     /// House number (1–12) given the chart's cusps. Returns nil when the
     /// chart has no houses (unknown birth time).
     private var house: Int? {
-        guard let houses = chart.houses else { return nil }
+        // A natal chart always carries exactly 12 cusps; guard so a malformed
+        // payload can never drive `cusps[(index + 1) % 12]` out of bounds.
+        guard let houses = chart.houses, houses.cusps.count == 12 else { return nil }
         let lon = (planet.longitude.truncatingRemainder(dividingBy: 360) + 360)
             .truncatingRemainder(dividingBy: 360)
         for (index, cusp) in houses.cusps.enumerated() {
