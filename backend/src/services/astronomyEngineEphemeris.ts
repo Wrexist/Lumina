@@ -3,8 +3,16 @@ import { computeAspects } from "../lib/aspects.ts";
 import { placidusHouses, tropicalAngles, wholeSignHouses } from "../lib/houses.ts";
 import { lahiriAyanamsha, tropicalToSidereal } from "../lib/sidereal.ts";
 import { noonLocalAsUTC } from "../lib/timezone.ts";
-import type { BirthData, HouseCusps, HouseSystem, NatalChart, PlanetPosition } from "../types.ts";
-import type { ChartOptions, EphemerisService } from "./ephemeris.ts";
+import { computeTransits } from "../lib/transits.ts";
+import type {
+  BirthData,
+  HouseCusps,
+  HouseSystem,
+  NatalChart,
+  PlanetPosition,
+  TransitsResult,
+} from "../types.ts";
+import type { ChartOptions, EphemerisService, TransitOptions } from "./ephemeris.ts";
 
 interface PlanetSpec {
   readonly body: Body;
@@ -56,6 +64,21 @@ export class AstronomyEngineEphemeris implements EphemerisService {
       planets,
       aspects,
       houses,
+    };
+  }
+
+  async transits(birthData: BirthData, options: TransitOptions = {}): Promise<TransitsResult> {
+    const at = options.at ?? new Date();
+    // Natal positions are tropical (J2000), matching the default chart; the
+    // sidereal/house-system choice doesn't affect transit longitudes.
+    const natalInstant = effectiveInstant(birthData);
+    const natalPlanets = PLANETS.map((spec) => positionAt(spec, natalInstant));
+    const transitingPlanets = PLANETS.map((spec) => positionAt(spec, at));
+    return {
+      calculatedAt: new Date().toISOString(),
+      transitAt: at.toISOString(),
+      transitingPlanets,
+      transits: computeTransits(transitingPlanets, natalPlanets),
     };
   }
 }

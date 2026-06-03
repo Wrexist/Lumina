@@ -103,3 +103,44 @@ export const NatalChartSchema = z.object({
 });
 
 export type NatalChart = z.infer<typeof NatalChartSchema>;
+
+/**
+ * A transiting (currently-moving) planet's aspect to a natal planet —
+ * "transiting Mars trines your natal Venus". Mirrors `TransitReading` in
+ * `Lumina/Core/Ephemeris/Models/NatalChart.swift`.
+ */
+export const TransitSchema = z.object({
+  /** The currently-moving planet making the contact. */
+  transiting: z.string(),
+  /** The natal planet being contacted. */
+  natal: z.string(),
+  type: AspectTypeSchema,
+  exactAngle: z.number(),
+  orb: z.number().nonnegative(),
+  /** True when the aspect is tightening toward exact, false when separating. */
+  applying: z.boolean(),
+});
+
+export type Transit = z.infer<typeof TransitSchema>;
+
+/**
+ * Wire format for `POST /transits`: birth data plus an optional moment to
+ * compute the sky for. The iOS client omits `at` to mean "right now".
+ */
+export const TransitsRequestSchema = BirthDataSchema.extend({
+  at: plausibleInstant.optional(),
+});
+
+export type TransitsRequest = z.infer<typeof TransitsRequestSchema>;
+
+export const TransitsResultSchema = z.object({
+  calculatedAt: z.string().datetime({ offset: true }),
+  /** The moment the transiting positions were computed for. */
+  transitAt: z.string().datetime({ offset: true }),
+  /** Current geocentric positions of all ten bodies. */
+  transitingPlanets: z.array(PlanetPositionSchema),
+  /** Transit→natal aspects, sorted ascending by orb (tightest first). */
+  transits: z.array(TransitSchema),
+});
+
+export type TransitsResult = z.infer<typeof TransitsResultSchema>;
