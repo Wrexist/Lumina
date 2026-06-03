@@ -28,6 +28,7 @@ final class ChartTests: XCTestCase {
 
     // MARK: - BirthChartViewModel.sampleChart
 
+    @MainActor
     func testSampleChartHasAllTenPlanets() {
         let chart = BirthChartViewModel.sampleChart()
         XCTAssertEqual(chart.planets.count, 10)
@@ -39,6 +40,7 @@ final class ChartTests: XCTestCase {
         }
     }
 
+    @MainActor
     func testSampleChartHasHouses() {
         let chart = BirthChartViewModel.sampleChart()
         XCTAssertNotNil(chart.houses)
