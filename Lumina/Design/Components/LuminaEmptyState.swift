@@ -10,9 +10,23 @@ struct LuminaEmptyState: View {
 
     let systemImage: String
     let title: String
-    let body: String
+    let message: String
     var primaryCTA: CTA?
     var secondaryCTA: CTA?
+
+    init(
+        systemImage: String,
+        title: String,
+        body: String,
+        primaryCTA: CTA? = nil,
+        secondaryCTA: CTA? = nil
+    ) {
+        self.systemImage = systemImage
+        self.title = title
+        self.message = body
+        self.primaryCTA = primaryCTA
+        self.secondaryCTA = secondaryCTA
+    }
 
     var content: some View {
         VStack(spacing: LuminaSpacing.lg) {
@@ -26,7 +40,7 @@ struct LuminaEmptyState: View {
                     .font(LuminaTypography.heading)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(LuminaColors.inkBlack)
-                Text(body)
+                Text(message)
                     .font(LuminaTypography.body)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))

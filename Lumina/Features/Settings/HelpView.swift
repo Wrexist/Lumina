@@ -177,7 +177,7 @@ private struct ArticleView: View {
 
 private struct FeedbackView: View {
     @State private var subject = ""
-    @State private var body = ""
+    @State private var message = ""
 
     var body: some View {
         ScrollView {
@@ -191,7 +191,7 @@ private struct FeedbackView: View {
                         .font(LuminaTypography.caption)
                         .tracking(1.2)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-                    TextEditor(text: $body)
+                    TextEditor(text: $message)
                         .font(LuminaTypography.body)
                         .scrollContentBackground(.hidden)
                         .background(LuminaColors.parchment)
@@ -201,7 +201,7 @@ private struct FeedbackView: View {
                                 .stroke(LuminaColors.inkBlack.opacity(0.2), lineWidth: 1)
                         )
                 }
-                LuminaButton(title: "Send", variant: .primary, isEnabled: !body.trimmingCharacters(in: .whitespaces).isEmpty) {
+                LuminaButton(title: "Send", variant: .primary, isEnabled: !message.trimmingCharacters(in: .whitespaces).isEmpty) {
                     // TODO(lumina): wire MFMailComposeViewController + diagnostic dump (Phase 12)
                     Haptics.success.play()
                 }

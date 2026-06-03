@@ -14,9 +14,14 @@ import SwiftUI
 /// ```
 struct WhyWeAsk: View {
     let title: String
-    let body: String
+    let message: String
 
     @State private var isPresented = false
+
+    init(title: String, body: String) {
+        self.title = title
+        self.message = body
+    }
 
     var body: some View {
         Button {
@@ -34,7 +39,7 @@ struct WhyWeAsk: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Why we ask: \(title)")
         .sheet(isPresented: $isPresented) {
-            WhyWeAskSheet(title: title, body: body)
+            WhyWeAskSheet(title: title, body: message)
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
         }
@@ -43,13 +48,18 @@ struct WhyWeAsk: View {
 
 private struct WhyWeAskSheet: View {
     let title: String
-    let body: String
+    let message: String
+
+    init(title: String, body: String) {
+        self.title = title
+        self.message = body
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.md) {
             Text(title)
                 .font(LuminaTypography.heading)
-            Text(body)
+            Text(message)
                 .font(LuminaTypography.body)
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
             Spacer()

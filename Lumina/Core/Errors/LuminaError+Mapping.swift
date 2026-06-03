@@ -7,7 +7,7 @@ extension LuminaError {
     /// Wraps any caught `Error` into the closest matching `LuminaError`.
     /// Falls through to `.unknown(...)` so we always present *something*
     /// human, but the case-by-case mappings should cover production paths.
-    static func from(_ error: Error) -> LuminaError {
+    static func from(_ error: any Error) -> LuminaError {
         if let luminaError = error as? LuminaError {
             return luminaError
         }
