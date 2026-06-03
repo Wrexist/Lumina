@@ -3,6 +3,7 @@ import { loadConfig, type Config } from "./config.ts";
 import { createRateLimiter } from "./lib/rateLimit.ts";
 import { chartRoutes } from "./routes/chart.ts";
 import { transitsRoutes } from "./routes/transits.ts";
+import { synastryRoutes } from "./routes/synastry.ts";
 import { AstronomyEngineEphemeris } from "./services/astronomyEngineEphemeris.ts";
 
 export async function buildServer(config: Config): Promise<FastifyInstance> {
@@ -42,6 +43,7 @@ export async function buildServer(config: Config): Promise<FastifyInstance> {
   const ephemeris = new AstronomyEngineEphemeris();
   await app.register(chartRoutes, { ephemeris, config });
   await app.register(transitsRoutes, { ephemeris, config });
+  await app.register(synastryRoutes, { ephemeris, config });
 
   return app;
 }

@@ -144,3 +144,50 @@ export const TransitsResultSchema = z.object({
 });
 
 export type TransitsResult = z.infer<typeof TransitsResultSchema>;
+
+/**
+ * One cross-aspect between person A's planet and person B's planet —
+ * the building block of a synastry (relationship) reading. Mirrors
+ * `SynastryAspect` in `Lumina/Core/Ephemeris/Models/SynastryResult.swift`.
+ */
+export const SynastryAspectSchema = z.object({
+  /** Person A's planet. */
+  planetA: z.string(),
+  /** Person B's planet. */
+  planetB: z.string(),
+  type: AspectTypeSchema,
+  exactAngle: z.number(),
+  orb: z.number().nonnegative(),
+});
+
+export type SynastryAspect = z.infer<typeof SynastryAspectSchema>;
+
+/**
+ * One person in a synastry request. Geocentric planet longitudes don't
+ * depend on the birth *place*, so only the date (plus an optional time for
+ * Moon precision and an optional zone for the unknown-time noon fallback)
+ * is needed — which is all a contacts-imported friend may carry.
+ */
+export const SynastryPersonSchema = z.object({
+  birthDate: plausibleInstant,
+  birthTime: plausibleInstant.nullable().optional(),
+  timeZoneIdentifier: z.string().min(1).max(64).optional(),
+});
+
+export type SynastryPerson = z.infer<typeof SynastryPersonSchema>;
+
+/** Wire format for `POST /synastry`: the two people to compare. */
+export const SynastryRequestSchema = z.object({
+  personA: SynastryPersonSchema,
+  personB: SynastryPersonSchema,
+});
+
+export type SynastryRequest = z.infer<typeof SynastryRequestSchema>;
+
+export const SynastryResultSchema = z.object({
+  calculatedAt: z.string().datetime({ offset: true }),
+  /** A↔B cross-aspects, sorted ascending by orb (tightest first). */
+  aspects: z.array(SynastryAspectSchema),
+});
+
+export type SynastryResult = z.infer<typeof SynastryResultSchema>;

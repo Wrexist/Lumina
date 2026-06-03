@@ -4,15 +4,25 @@ import { placidusHouses, tropicalAngles, wholeSignHouses } from "../lib/houses.t
 import { lahiriAyanamsha, tropicalToSidereal } from "../lib/sidereal.ts";
 import { noonLocalAsUTC } from "../lib/timezone.ts";
 import { computeTransits } from "../lib/transits.ts";
+import { computeSynastry } from "../lib/synastry.ts";
 import type {
   BirthData,
   HouseCusps,
   HouseSystem,
   NatalChart,
   PlanetPosition,
+  SynastryPerson,
+  SynastryResult,
   TransitsResult,
 } from "../types.ts";
 import type { ChartOptions, EphemerisService, TransitOptions } from "./ephemeris.ts";
+
+/** The fields `effectiveInstant` needs — a `BirthData` or a synastry person. */
+interface InstantSource {
+  readonly birthDate: string;
+  readonly birthTime?: string | null;
+  readonly timeZoneIdentifier?: string | null;
+}
 
 interface PlanetSpec {
   readonly body: Body;
@@ -81,15 +91,27 @@ export class AstronomyEngineEphemeris implements EphemerisService {
       transits: computeTransits(transitingPlanets, natalPlanets),
     };
   }
+
+  async synastry(personA: SynastryPerson, personB: SynastryPerson): Promise<SynastryResult> {
+    // Synastry compares geocentric planet longitudes, which are independent
+    // of birth place — so each person needs only a date (+ optional time).
+    const planetsA = PLANETS.map((spec) => positionAt(spec, effectiveInstant(personA)));
+    const planetsB = PLANETS.map((spec) => positionAt(spec, effectiveInstant(personB)));
+    return {
+      calculatedAt: new Date().toISOString(),
+      aspects: computeSynastry(planetsA, planetsB),
+    };
+  }
 }
 
-function effectiveInstant(birthData: BirthData): Date {
+function effectiveInstant(source: InstantSource): Date {
   // A known birth time is already an absolute instant (the iOS client encodes
   // a `Date`). For an unknown time we use the astrological convention of noon
   // *local* time on the birth date — resolved through the birth time zone so
-  // we neither shift the calendar day nor silently use noon UTC.
-  if (birthData.birthTime != null) return new Date(birthData.birthTime);
-  return noonLocalAsUTC(new Date(birthData.birthDate), birthData.timeZoneIdentifier);
+  // we neither shift the calendar day nor silently use noon UTC. A synastry
+  // person may carry no zone at all, in which case noon UTC is the fallback.
+  if (source.birthTime != null) return new Date(source.birthTime);
+  return noonLocalAsUTC(new Date(source.birthDate), source.timeZoneIdentifier ?? "UTC");
 }
 
 function housesFor(

@@ -1,4 +1,11 @@
-import type { BirthData, HouseSystem, NatalChart, TransitsResult } from "../types.ts";
+import type {
+  BirthData,
+  HouseSystem,
+  NatalChart,
+  SynastryPerson,
+  SynastryResult,
+  TransitsResult,
+} from "../types.ts";
 
 /**
  * Pluggable ephemeris backend. The `astronomy-engine` implementation is
@@ -10,6 +17,8 @@ export interface EphemerisService {
   chart(birthData: BirthData, options?: ChartOptions): Promise<NatalChart>;
   /** Transit→natal aspects for a given moment (the current sky by default). */
   transits(birthData: BirthData, options?: TransitOptions): Promise<TransitsResult>;
+  /** A↔B cross-aspects between two people's natal charts. */
+  synastry(personA: SynastryPerson, personB: SynastryPerson): Promise<SynastryResult>;
 }
 
 export interface ChartOptions {
