@@ -181,9 +181,22 @@ struct ChartWheelView: View {
 
     private func planetButtons(center: CGPoint, radius: CGFloat) -> some View {
         let placementRadius = radius * 0.66
+        // De-cluster conjunct glyphs: planets within a few degrees of each
+        // other are stacked at staggered radii so each stays legible and
+        // independently tappable instead of landing on the same point.
+        let radii = ChartWheelLayout.staggeredRadii(
+            longitudes: chart.planets.map(\.longitude),
+            placement: placementRadius,
+            step: radius * 0.12,
+            band: (radius * 0.56)...(radius * 0.76)
+        )
+        let radiusByPlanet = Dictionary(
+            uniqueKeysWithValues: zip(chart.planets.map(\.planet), radii)
+        )
         return ZStack {
             ForEach(chart.planets, id: \.planet) { planet in
-                let pos = point(longitude: planet.longitude, radius: placementRadius, center: center)
+                let glyphRadius = radiusByPlanet[planet.planet] ?? placementRadius
+                let pos = point(longitude: planet.longitude, radius: glyphRadius, center: center)
                 Button {
                     Haptics.light.play()
                     onTapPlanet?(planet)
