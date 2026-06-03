@@ -301,3 +301,28 @@ The constant was a holdover from an early draft; `meanObliquity()` computes obli
 
 **[2026-05-09] Doc drift after a flurry of feature commits**
 After Placidus → aspects → sidereal landed in quick succession, `TASK.md`, `README.md`, and `backend/README.md` were left listing those features as not-yet-shipped. The branch `claude/review-and-fix-bugs-umCyP` swept those, removed the dead `_internal` export, refactored `ChartRequestBody`, and unpinned `xcodeVersion` in `project.yml` (CI uses `latest-stable`). Lesson: every PR that ships a feature should also flip the task box and trim the "not here yet" list in the same commit. The `/session-end` hook prints a checklist that includes the TASK.md update — don't skip it.
+
+---
+
+## 🩹 Audit remediation pass (2026-06-03, branch `claude/adoring-euler-yEDvq`)
+
+**[2026-06] SwiftLint `--strict` + `brew install swiftlint` (latest) drifted CI red — 369 violations**
+CI was failing on a docs-only commit, i.e. before any code change. Root cause: the `.swiftlint.yml` `opt_in_rules` set included rules the codebase pervasively and intentionally violates, and `brew install swiftlint` pulls whatever's latest, so the gate was never actually satisfiable. The dominant offender was `switch_case_on_newline` (207 of 369) — this codebase uses single-line value-returning switch expressions (`case .today: "Today"`) in nearly every enum, which that rule forbids. Reconciled the config to the house style: dropped `switch_case_on_newline`, `multiline_arguments`, `number_separator`, `type_contents_order`, `trailing_closure`, `closure_body_length`, `legacy_multiple`; disabled `trailing_comma` (we keep them) + `large_tuple`; relaxed `line_length` to 200/240 and `cyclomatic_complexity` to 15/20; excluded `a`/`b`/`g` from `identifier_name`. Lesson: with no local Mac, either pin the SwiftLint version or keep the opt-in set aligned with the actual code — an aspirational rule list that the code doesn't satisfy is worse than none, because it silently red-walls every push.
+
+**[2026-06] `String.hashValue` is per-process randomized — never persist anything derived from it**
+`CompatibilityScorer` seeded its jitter with `"\(a)-\(b)".hashValue`, then the result was cached into SwiftData (`Friend.compatibilityScore`). Swift seeds `Hashable` with a random per-execution seed, so the "stable" score silently changed on every cold launch. Replaced with an explicit FNV-1a fold over the UTF-8 bytes. Any value that crosses a process boundary (persisted, sent over the wire, compared across launches) must use a deterministic hash, not `hashValue`.
+
+**[2026-06] `NavigationLink { Destination(... sideEffect()) }` evaluates the destination eagerly**
+`ReflectHubView` built its editor link as `NavigationLink { JournalEntryView(entry: todayEntry ?? createTodayEntry()) }`. SwiftUI evaluates a `NavigationLink`'s destination closure during the parent's `body` pass (to build the view value), not on tap — so `createTodayEntry()` (a SwiftData insert+save) ran every time the Reflect tab rendered, spawning blank entries. Fix: create-on-tap via a `Button` action + value-based `.navigationDestination(item:)`. Never put a side effect in a `NavigationLink` destination builder.
+
+**[2026-06] `fullScreenCover(item:)` does not re-present on a non-nil → non-nil change**
+The onboarding rescue paywall switched `paywallVariant` from `.initial` to `.rescue` while the cover was up; SwiftUI kept showing `.initial`. Fix: bind the cover to `isPresented:` (a Bool) and swap the variant the content renders in place — one persistent cover, content changes. (Alternatively nil-out then re-set next runloop, but in-place swap is cleaner and flash-free.)
+
+**[2026-06] `AppLock` session unlock must be re-armed on `scenePhase == .background`**
+`resetSessionUnlocks()` existed but was never called, so the Reflect Face ID gate stayed unlocked for the whole process lifetime. Wired it from `LuminaApp`'s `.onChange(of: scenePhase)`. Session-scoped gates need an explicit re-arm hook — having the method isn't enough.
+
+**[2026-06] Don't ship secrets in Info.plist; don't ship full birth PII in a QR**
+Removed `LuminaAnthropicAPIKey` from the generated Info.plist (it would ride in the IPA, trivially extractable) — LLM calls route through the backend. The share QR encoded exact birth date+time+precise lat/lon as plaintext base64; reduced to a `SharedBirthData` (date + city + ~11 km coarsened coords, no time) and switched to URL-safe base64 (standard base64's `/` and `+` corrupt a URL path).
+
+**[2026-06] Gate dev-only sample fallbacks behind `#if DEBUG`**
+`TodayViewModel` fell back to a hardcoded Stockholm sample chart on *any* load failure, so a real network error in production showed the user someone else's Big-3. Sample fallback is now `#if DEBUG` only; release surfaces a `.failed(LuminaError)` state with retry.

@@ -18,7 +18,7 @@ struct LuminaSkeleton: View {
     var body: some View {
         Group {
             switch shape {
-            case .line(let width, let height):
+            case let .line(width, height):
                 container.frame(width: width, height: height)
             case .block(let height):
                 container.frame(maxWidth: .infinity).frame(height: height)

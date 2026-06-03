@@ -10,8 +10,8 @@
 | Item | Value |
 |---|---|
 | **Phase** | Phase 1 — Navigation Shell + Design System v2 (active sprint per `ROADMAP.md`) |
-| **Active branch** | `claude/roadmap-navigation-improvements-yqxV2` |
-| **Last updated** | 2026-05-08 |
+| **Active branch** | `claude/adoring-euler-yEDvq` (audit remediation; `…yqxV2` merged via PR #3/#4) |
+| **Last updated** | 2026-06-03 |
 | **Dev environment** | **No local macOS** — CI on `macos-15`/Xcode-latest is the only build/test loop |
 | **Blockers** | Font license · Swiss Eph license · ElevenLabs voice · Palm ML model · Supabase project · TestFlight signing |
 | **Spec docs** | `ROADMAP.md` (16-phase plan) · `docs/NAVIGATION.md` (IA + UX clarity charter — read before any view PR) |
