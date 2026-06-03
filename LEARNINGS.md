@@ -326,3 +326,22 @@ Removed `LuminaAnthropicAPIKey` from the generated Info.plist (it would ride in 
 
 **[2026-06] Gate dev-only sample fallbacks behind `#if DEBUG`**
 `TodayViewModel` fell back to a hardcoded Stockholm sample chart on *any* load failure, so a real network error in production showed the user someone else's Big-3. Sample fallback is now `#if DEBUG` only; release surfaces a `.failed(LuminaError)` state with retry.
+
+---
+
+## 🌌 Feature pass — real transits + chart-wheel (2026-06-03 cont., branch `claude/adoring-euler-yEDvq`)
+
+**[2026-06] Replaced fabricated "today" transits with the real backend computation**
+`TodayViewModel.headline/whatsHappening` drew transit claims ("Mercury squares Saturn") from a day-of-year-indexed `pool` — i.e. the exact "hallucinated planetary positions" the product exists to refute. Added a real `/transits` endpoint (transit→natal cross-aspects) and wired the Today tab to it. Lesson: a "harmless placeholder" that asserts a specific astrological fact is a brand-integrity bug here, not just a stub — prefer an honest empty state ("a quiet sky today") over plausible fiction.
+
+**[2026-06] Transit `applying`/`separating` needs only the motion *sign*, not a second ephemeris call**
+A transit is applying when its orb is shrinking. Rather than sampling the ephemeris again, reuse the already-computed `isRetrograde` (the planet's travel direction): nudge the transit longitude one tiny step along that direction (`±0.05°`, smaller than any orb) and check whether the orb decreased. Pure, deterministic, unit-testable — no time/velocity inputs.
+
+**[2026-06] Transit orbs are far tighter than natal orbs; keep luminaries un-widened**
+Natal aspects use 4–10° orbs (widened for Sun/Moon). A transit is a moment, not a placement, so it uses 2–3° and does *not* widen for luminaries (the Sun/Moon already make frequent contacts). Same-named pairs are kept on purpose — transiting Sun conjunct natal Sun is the solar return (birthday). Strong end-to-end test: transits computed *at the birth instant* must return every planet conjunct itself at orb ≈ 0.
+
+**[2026-06] De-cluster conjunct chart-wheel glyphs by cutting the circle at its largest gap**
+Planets within the conjunction orb were drawn at one radius → glyphs stacked illegibly and only the top `Button` was tappable. Fix (`ChartWheelLayout`): group planets within ~9°, stack each cluster at staggered radii centred on the placement band. To cluster correctly across the 0°/360° seam without special-casing, sort by longitude then *cut the circle at the largest angular gap* and scan linearly from there — a 29° Pisces / 1° Aries pair then clusters naturally. Pure + unit-tested (verified against a Python port before pushing).
+
+**[2026-06] `async let` for best-effort parallelism with a clean failure path**
+Today loads the natal chart (critical) and transits (best-effort) concurrently: `async let chart…; async let transits…; natalChart = try await chart; transits = (try? await transits)?.transits ?? []`. If the critical `try await` throws, the un-awaited `async let` is implicitly cancelled+awaited at scope exit (SE-0317) — no warning, no leak. `try?` on the best-effort one means a transit failure just hides the rows instead of failing the whole screen.

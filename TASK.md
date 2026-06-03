@@ -77,7 +77,8 @@
 ## 📋 Backlog — Phase 3: Today
 
 - [x] **[2026-05-08]** `TodayHubView` — hero + Big-3 + headline + transit list + quick-actions row, all wired
-- [x] **[2026-05-08]** `TodayViewModel` — loads natal chart from `UserBirthDataStore`, falls through to sample chart on missing-config dev builds; deterministic `headline(for:)` and `whatsHappening(for:)` per-day helpers (replace with real backend `/transits` in Phase 5)
+- [x] **[2026-05-08]** `TodayViewModel` — loads natal chart from `UserBirthDataStore`, falls through to sample chart on missing-config dev builds
+- [x] **[2026-06-03]** Real transits replace the fabricated headline pool — `TodayViewModel` fetches `/transits` concurrently with the chart; `todayLines(from:)` + `TransitPhrasing` render the tightest contact as the headline and up to 3 secondary rows, with an honest "a quiet sky today" empty state
 - [ ] `ContentGenerator.swift` (transits → RAG → claude-opus-4-6)
 - [ ] ElevenLabs TTS via Node `/generate-audio`
 - [ ] Audio cache (FileManager, 7-day TTL, 50MB LRU)
@@ -299,7 +300,8 @@
 - [x] **[2026-04-29]** Placidus iterative cusps + closed-form Asc/MC + whole-sign fallback
 - [x] **[2026-04-29]** 5 Ptolemaic aspects with orbs
 - [x] **[2026-04-29]** Sidereal house variant via Lahiri ayanamsha
-- [ ] Transits & progressions endpoints
+- [x] **[2026-06-03]** `/transits` endpoint — transit→natal cross-aspects (tight orbs, applying/separating, sorted by orb) + pure `computeTransits` lib, 13 tests; shared `requireSharedSecret` auth helper
+- [ ] Progressions endpoint (secondary progressions)
 - [ ] `/synastry`, `/composite`, `/davison` endpoints
 - [ ] Swap `astronomy-engine` → `swisseph` once Pro license clears
 - [ ] Production deploy to Fly.io (Dockerfile, healthcheck, secrets, auto-sleep)
@@ -349,7 +351,16 @@ Full audit at `docs/AUDIT-2026-06-03.md`; fixes (all CI-verified once build sett
 - [x] **R4 navigation** — `settings`/`help`/`share` deep links resolve; pending links replayed post-onboarding; ChartHubView cold-launch race fixed; QR share round-trip implemented (`AcceptShareView`); HelpView nested-stack removed.
 - [x] **R5/R6** — stable `CompatibilityScorer` hash; Today renders all 4 states (sample fallback `#if DEBUG`); accessible error color; Dynamic Type scaling; secure-field a11y; "1th house" ordinal; Settings dead-end chevrons removed; HD "defined → activated (personality-side)" honesty copy.
 - [x] **R7 backend** — noon-local timezone correctness, host-TZ-independent CLI, constant-time secret compare, rate limiter, security headers, body-size cap, birthDate bounds, Dockerfile + fly.toml (30 → 43 tests).
-- [ ] Remaining backlog (R5/R6/R8): onboarding per-field persistence, WhatNext card routing, planet-glyph de-clustering, soft-delete-with-undo, gitleaks/coverage CI gates, snapshot tests, native iOS 26 glass API.
+- [x] **[2026-06-03]** Onboarding per-step persistence + WhatNext card routing (land on the chosen tab) + planet-glyph de-clustering (`ChartWheelLayout`, conjunct glyphs stack at staggered radii).
+- [ ] Remaining backlog (R8): soft-delete-with-undo, gitleaks/coverage CI gates, snapshot tests, native iOS 26 glass API.
+
+### ✅ Feature pass — real transits + chart-wheel — [2026-06-03], branch `claude/adoring-euler-yEDvq`
+
+All CI-verified (runs #52, #54 green on Xcode 26.3 / iOS 26; backend 56 tests):
+
+- [x] **Real "today" transits** — retired the fabricated day-of-year headline pool (literal hallucinated planetary positions) in favour of the real backend computation. Backend `/transits` (transit→natal cross-aspects, tight 2–3° orbs, applying/separating derived from `isRetrograde`, solar-return contacts kept); iOS `EphemerisService.transits(for:at:)`, `TransitReading`/`TransitsResult` models, pure `TransitPhrasing`, and `TodayViewModel` fetching chart + transits concurrently. Honest "a quiet sky today" empty state.
+- [x] **Chart-wheel glyph de-clustering** — `ChartWheelLayout` stacks conjunct planet glyphs at staggered radii (circle cut at largest gap to handle the 0°/360° seam) so each stays legible and tappable.
+- [x] **Shared backend auth** — extracted constant-time `requireSharedSecret` used by `/chart` and `/transits`.
 
 ---
 
