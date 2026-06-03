@@ -15,6 +15,7 @@ struct OnboardingFlowView: View {
     @State private var paywall = PaywallTracker.shared
     @State private var paywallPresented = false
     @State private var paywallVariant: PaywallOfferView.Variant = .initial
+    @Environment(\.scenePhase) private var scenePhase
     let onComplete: () -> Void
 
     var body: some View {
@@ -40,6 +41,11 @@ struct OnboardingFlowView: View {
                 onStartTrial: handleStartTrial,
                 onContinueFree: handleContinueFree
             )
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // Persist mid-step edits when backgrounded so a force-quit resumes
+            // exactly where the user left off (docs/NAVIGATION.md §6).
+            if phase != .active { state.persist() }
         }
     }
 
