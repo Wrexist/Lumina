@@ -85,11 +85,13 @@ final class PeopleAndTodayTests: XCTestCase {
 
     // MARK: - TodayViewModel deterministic helpers
 
+    @MainActor
     func testTodayHeadlineIsDeterministicPerDate() {
         let date = Date(timeIntervalSince1970: 1_725_000_000)
         XCTAssertEqual(TodayViewModel.headline(for: date), TodayViewModel.headline(for: date))
     }
 
+    @MainActor
     func testWhatsHappeningReturnsThreeRows() {
         let rows = TodayViewModel.whatsHappening(for: .now)
         XCTAssertEqual(rows.count, 3)
