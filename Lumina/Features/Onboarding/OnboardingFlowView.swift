@@ -16,7 +16,10 @@ struct OnboardingFlowView: View {
     @State private var paywallPresented = false
     @State private var paywallVariant: PaywallOfferView.Variant = .initial
     @Environment(\.scenePhase) private var scenePhase
-    let onComplete: () -> Void
+    @State private var pendingDestination: LuminaDeepLink?
+    /// Called when onboarding finishes. The optional deep link is the tab the
+    /// user chose on the "what next" screen (nil = land on Today).
+    let onComplete: (LuminaDeepLink?) -> Void
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -95,7 +98,7 @@ struct OnboardingFlowView: View {
         case .chartReveal:
             OnboardingScreens.ChartReveal(state: state, ephemeris: ephemeris)
         case .whatNext:
-            OnboardingScreens.WhatNext { handleFinalTap() }
+            OnboardingScreens.WhatNext { handleFinalTap($0) }
         }
     }
 
@@ -108,7 +111,7 @@ struct OnboardingFlowView: View {
             isEnabled: state.canAdvance(from: state.currentStep)
         ) {
             if isFinal {
-                handleFinalTap()
+                handleFinalTap(nil)
             } else {
                 state.advance()
             }
@@ -118,9 +121,10 @@ struct OnboardingFlowView: View {
     /// Final-step tap. The first time, present the paywall offer as a
     /// non-blocking full-screen cover. After the user has seen (and
     /// declined) it, subsequent finals route straight to MainTabs.
-    private func handleFinalTap() {
+    private func handleFinalTap(_ destination: LuminaDeepLink?) {
+        pendingDestination = destination
         if paywall.hasSeenInitialOffer {
-            onComplete()
+            onComplete(destination)
         } else {
             paywallVariant = .initial
             paywallPresented = true
@@ -164,10 +168,10 @@ struct OnboardingFlowView: View {
         if let birthData = state.makeBirthData() {
             UserBirthDataStore.userDefaults.save(birthData)
         }
-        onComplete()
+        onComplete(pendingDestination)
     }
 }
 
 #Preview {
-    OnboardingFlowView(onComplete: { })
+    OnboardingFlowView { _ in }
 }
