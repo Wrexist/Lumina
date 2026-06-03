@@ -62,6 +62,24 @@ struct SharedBirthData: Codable, Sendable, Hashable {
     }
 }
 
+extension JSONEncoder {
+    /// Encoder for the share payload — ISO-8601 dates, matched by `luminaShare`
+    /// on `JSONDecoder` so the round-trip is symmetric.
+    static let luminaShare: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        return encoder
+    }()
+}
+
+extension JSONDecoder {
+    static let luminaShare: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
+    }()
+}
+
 extension Data {
     /// URL-safe base64 (RFC 4648 §5) without padding — safe inside a URL path
     /// component, where standard base64's `+` and `/` are not.

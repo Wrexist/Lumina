@@ -60,50 +60,46 @@ struct HelpView: View {
               body: "Settings → Account → Manage subscription opens Apple's native subscription management screen. We never bury cancel — that's a brand pillar."),
     ]
 
-    @Environment(\.dismiss) private var dismiss
     @State private var query = ""
 
+    // No own NavigationStack: HelpView is either pushed inside the Settings
+    // stack or wrapped in a NavigationStack when presented as a sheet — a
+    // nested stack here produced a double nav bar and a "Done" that popped one
+    // level instead of closing the sheet.
     var body: some View {
-        NavigationStack {
-            List {
-                if !query.isEmpty {
-                    searchResults
-                } else {
-                    ForEach(Topic.allCases) { topic in
-                        Section(topic.displayName) {
-                            ForEach(articles(for: topic)) { article in
-                                NavigationLink {
-                                    ArticleView(article: article)
-                                } label: {
-                                    Text(article.title).font(LuminaTypography.body)
-                                }
-                            }
-                        }
-                    }
-                    Section {
-                        NavigationLink {
-                            FeedbackView()
-                        } label: {
-                            HStack {
-                                Image(systemName: "envelope")
-                                Text("Send feedback")
+        List {
+            if !query.isEmpty {
+                searchResults
+            } else {
+                ForEach(Topic.allCases) { topic in
+                    Section(topic.displayName) {
+                        ForEach(articles(for: topic)) { article in
+                            NavigationLink {
+                                ArticleView(article: article)
+                            } label: {
+                                Text(article.title).font(LuminaTypography.body)
                             }
                         }
                     }
                 }
-            }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-            .background(LuminaColors.parchment)
-            .searchable(text: $query, prompt: "Search help")
-            .navigationTitle("Help & FAQ")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
+                Section {
+                    NavigationLink {
+                        FeedbackView()
+                    } label: {
+                        HStack {
+                            Image(systemName: "envelope")
+                            Text("Send feedback")
+                        }
+                    }
                 }
             }
         }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminaColors.parchment)
+        .searchable(text: $query, prompt: "Search help")
+        .navigationTitle("Help & FAQ")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     @ViewBuilder
@@ -208,5 +204,5 @@ private struct FeedbackView: View {
 }
 
 #Preview {
-    HelpView()
+    NavigationStack { HelpView() }
 }

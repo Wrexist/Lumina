@@ -108,7 +108,7 @@ struct ShareQRView: View {
         }
         do {
             let shared = SharedBirthData(from: birthData)
-            let json = try JSONEncoder.shareEncoder.encode(shared)
+            let json = try JSONEncoder.luminaShare.encode(shared)
             let payload = json.base64URLEncodedString()
             let url = "lumina://share/\(payload)"
             qrImage = Self.makeQR(for: url)
@@ -119,12 +119,4 @@ struct ShareQRView: View {
             self.error = LuminaError.from(error)
         }
     }
-}
-
-private extension JSONEncoder {
-    static let shareEncoder: JSONEncoder = {
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        return encoder
-    }()
 }

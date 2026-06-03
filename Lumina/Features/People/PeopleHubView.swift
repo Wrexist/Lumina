@@ -6,10 +6,17 @@ import SwiftUI
 /// 5-dimension narrative report ship with the backend `/synastry`
 /// endpoint in Phase 7.
 struct PeopleHubView: View {
+    private struct SharePayload: Identifiable {
+        let value: String
+        var id: String { value }
+    }
+
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppRouter.self) private var router
     @Query(sort: \Friend.createdAt, order: .reverse) private var friends: [Friend]
     @State private var addPresented = false
     @State private var qrPresented = false
+    @State private var sharePayload: SharePayload?
 
     var body: some View {
         Group {
@@ -27,6 +34,13 @@ struct PeopleHubView: View {
         }
         .sheet(isPresented: $qrPresented) {
             ShareQRView()
+        }
+        .sheet(item: $sharePayload) { payload in
+            AcceptShareView(payload: payload.value)
+        }
+        .task { consumeShare(router.pendingPresentation) }
+        .onChange(of: router.pendingPresentation) { _, link in
+            consumeShare(link)
         }
     }
 
@@ -115,6 +129,14 @@ struct PeopleHubView: View {
         qrPresented = true
     }
 
+    /// Consumes a `lumina://share/<payload>` deep link routed to this tab,
+    /// presenting the add-friend confirmation. Ignores links for other tabs.
+    private func consumeShare(_ link: LuminaDeepLink?) {
+        guard let link, case .acceptShare(let payload) = link else { return }
+        sharePayload = SharePayload(value: payload)
+        router.pendingPresentation = nil
+    }
+
     private func friendRow(_ friend: Friend) -> some View {
         HStack(spacing: LuminaSpacing.md) {
             avatar(for: friend)
@@ -163,5 +185,6 @@ struct PeopleHubView: View {
 
 #Preview {
     NavigationStack { PeopleHubView() }
+        .environment(AppRouter(storage: .inMemory()))
         .modelContainer(for: Friend.self, inMemory: true)
 }

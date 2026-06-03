@@ -13,6 +13,7 @@ struct ChartHubView: View {
     @State private var mode: ChartMode = .astrology
     @State private var selectedPlanet: NatalChart.PlanetPosition?
     @State private var selectedCenter: HumanDesignCenter?
+    @State private var pendingPlanetName: String?
     @Environment(AppRouter.self) private var router
 
     var body: some View {
@@ -25,9 +26,16 @@ struct ChartHubView: View {
         }
         .background(LuminaColors.parchment)
         .navigationTitle("Chart")
-        .task { await viewModel.loadIfNeeded() }
+        .task {
+            await viewModel.loadIfNeeded()
+            // Consume any deep link present at first appear (cold launch) and
+            // resolve it now that the chart has loaded.
+            consumePending(router.pendingPresentation)
+            resolvePendingPlanet()
+        }
         .onChange(of: router.pendingPresentation) { _, link in
-            handlePending(link)
+            consumePending(link)
+            resolvePendingPlanet()
         }
         .sheet(item: $selectedPlanet) { planet in
             if case .ready(let chart) = viewModel.state {
@@ -211,23 +219,25 @@ struct ChartHubView: View {
     }
 
     private func handleOpenSettings() {
-        // TODO(lumina): present SettingsView with focus on "Your info" (Phase 12)
+        router.handle(deepLink: .settings)
     }
 
-    /// Consumes a pending `AppRouter.pendingPresentation`. We only react
-    /// to chart-tab links so we don't steal sheets meant for other tabs.
-    private func handlePending(_ link: LuminaDeepLink?) {
-        guard let link else { return }
-        switch link {
-        case .chart(let planetName):
-            mode = .astrology
-            if let name = planetName, case .ready(let chart) = viewModel.state {
-                selectedPlanet = chart.planets.first { $0.planet.caseInsensitiveCompare(name) == .orderedSame }
-            }
-            router.pendingPresentation = nil
-        default:
-            break
-        }
+    /// Consumes a pending chart deep link. We only react to chart-tab links so
+    /// we don't steal presentations meant for other tabs. The target planet
+    /// name is stashed and resolved by `resolvePendingPlanet()` once the chart
+    /// is `.ready` — so a link that arrives before the chart loads (cold
+    /// launch) isn't dropped.
+    private func consumePending(_ link: LuminaDeepLink?) {
+        guard let link, case .chart(let planetName) = link else { return }
+        mode = .astrology
+        pendingPlanetName = planetName
+        router.pendingPresentation = nil
+    }
+
+    private func resolvePendingPlanet() {
+        guard let name = pendingPlanetName, case .ready(let chart) = viewModel.state else { return }
+        selectedPlanet = chart.planets.first { $0.planet.caseInsensitiveCompare(name) == .orderedSame }
+        pendingPlanetName = nil
     }
 }
 
@@ -237,4 +247,5 @@ extension NatalChart.PlanetPosition: Identifiable {
 
 #Preview {
     NavigationStack { ChartHubView().environment(GlossaryStore.shared) }
+        .environment(AppRouter(storage: .inMemory()))
 }
