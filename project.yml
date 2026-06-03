@@ -72,7 +72,9 @@ targets:
         UIUserInterfaceStyle: Light
         ITSAppUsesNonExemptEncryption: false
         NSFaceIDUsageDescription: "Lumina uses Face ID to keep your reflections private on this device."
-        LuminaAnthropicAPIKey: $(ANTHROPIC_API_KEY)
+        # NOTE: the Anthropic key is intentionally NOT embedded in the app —
+        # LLM interpretation runs server-side via the backend. Shipping the key
+        # in Info.plist would make it extractable from the IPA.
         LuminaElevenLabsAPIKey: $(ELEVENLABS_API_KEY)
         LuminaElevenLabsVoiceID: $(ELEVENLABS_VOICE_ID)
         LuminaRevenueCatAPIKeyIOS: $(REVENUECAT_API_KEY_IOS)
