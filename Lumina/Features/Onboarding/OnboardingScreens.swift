@@ -176,7 +176,9 @@ enum OnboardingScreens {
                         Spacer()
                         WhyWeAsk(
                             title: "Why we ask for your birth time",
-                            body: "The exact time decides your rising sign and which house each planet falls into. With time, every reading is sharper. Without it, the rest of your chart is still real."
+                            body: "The exact time decides your rising sign and which house each planet "
+                                + "falls into. With time, every reading is sharper. Without it, the rest "
+                                + "of your chart is still real."
                         )
                     }
                 }

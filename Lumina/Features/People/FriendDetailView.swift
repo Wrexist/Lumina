@@ -91,7 +91,9 @@ struct FriendDetailView: View {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 Text("Full synastry chart")
                     .font(LuminaTypography.heading)
-                Text("The bi-wheel + 5-dimension narrative report ships with the backend `/synastry` endpoint in Phase 7. The score above is deterministic so you can already compare friends meaningfully.")
+                Text("The bi-wheel + 5-dimension narrative report ships with the backend `/synastry` "
+                    + "endpoint in Phase 7. The score above is deterministic so you can already compare "
+                    + "friends meaningfully.")
                     .font(LuminaTypography.body)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
             }

@@ -66,7 +66,9 @@ struct PlanetDetailSheet: View {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 Text("What this means")
                     .font(LuminaTypography.heading)
-                Text("The RAG-backed interpretation lands in Phase 5 of the roadmap. It pulls from a curated corpus (Liz Greene, Steven Forrest, Robert Hand) keyed to your placement, and is grounded in your full chart — never generic horoscope copy.")
+                Text("The RAG-backed interpretation lands in Phase 5 of the roadmap. It pulls from a "
+                    + "curated corpus (Liz Greene, Steven Forrest, Robert Hand) keyed to your placement, "
+                    + "and is grounded in your full chart — never generic horoscope copy.")
                     .font(LuminaTypography.body)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.8))
             }

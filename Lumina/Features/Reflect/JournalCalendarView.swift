@@ -173,4 +173,3 @@ struct JournalCalendarView: View {
         return entry
     }
 }
-

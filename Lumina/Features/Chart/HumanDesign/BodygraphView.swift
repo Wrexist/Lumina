@@ -11,7 +11,9 @@ import SwiftUI
 /// doesn't yet expose. The "see what's missing" footer makes that
 /// transparent.
 struct BodygraphView: View {
-    static let designSideMissingNote = "Type, Profile, and Authority require the design-side chart (88° before birth). That endpoint ships with Phase 8 — until then we render only the personality-side activations."
+    static let designSideMissingNote = "Type, Profile, and Authority require the design-side chart "
+        + "(88° before birth). That endpoint ships with Phase 8 — until then we render only the "
+        + "personality-side activations."
 
     let activation: HumanDesignActivation
     var onTapCenter: ((HumanDesignCenter) -> Void)?

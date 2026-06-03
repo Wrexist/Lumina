@@ -154,7 +154,9 @@ struct ChartHubView: View {
                     Text("Houses are hidden")
                         .font(LuminaTypography.body)
                         .bold()
-                    Text("Without your birth time we can't compute the Ascendant, MC, or house cusps. Add a time in Settings → Your info to unlock them — your sign and planets are accurate either way.")
+                    Text("Without your birth time we can't compute the Ascendant, MC, or house cusps. "
+                        + "Add a time in Settings → Your info to unlock them — your sign and planets are "
+                        + "accurate either way.")
                         .font(LuminaTypography.bodyLight)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                 }
