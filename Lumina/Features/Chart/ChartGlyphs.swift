@@ -58,9 +58,28 @@ enum ChartGlyphs {
         let degree = Int(longitude.truncatingRemainder(dividingBy: 30))
         let signGlyph = signGlyph(sign)
         if let house {
-            return "\(degree)° \(sign) \(signGlyph) · \(house)th house"
+            return "\(degree)° \(sign) \(signGlyph) · \(ordinal(house)) house"
         }
         return "\(degree)° \(sign) \(signGlyph)"
+    }
+
+    /// English ordinal — "1st", "2nd", "3rd", "4th"… (fixes the "1th house" bug).
+    static func ordinal(_ number: Int) -> String {
+        let ones = number % 10
+        let tens = (number / 10) % 10
+        let suffix: String
+        if tens == 1 {
+            suffix = "th"
+        } else if ones == 1 {
+            suffix = "st"
+        } else if ones == 2 {
+            suffix = "nd"
+        } else if ones == 3 {
+            suffix = "rd"
+        } else {
+            suffix = "th"
+        }
+        return "\(number)\(suffix)"
     }
 
     static let signOrder: [String] = [

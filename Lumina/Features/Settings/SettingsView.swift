@@ -134,9 +134,9 @@ private struct SettingsRow: View {
             case nil:
                 EmptyView()
             }
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.3))
+            // No manual chevron: NavigationLink rows get the system disclosure
+            // indicator automatically, so the inert "Soon" rows correctly show
+            // none rather than a misleading affordance.
         }
         .accessibilityElement(children: .combine)
     }

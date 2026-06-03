@@ -45,11 +45,11 @@ struct CenterDetailSheet: View {
     }
 
     private var statusHeader: some View {
-        let isDefined = activation.definedCenters.contains(center)
+        let isActivated = activation.definedCenters.contains(center)
         return HStack(spacing: LuminaSpacing.sm) {
-            LuminaBadge(title: isDefined ? "Defined" : "Open", tone: isDefined ? .premium : .neutral)
-            Text(isDefined
-                ? "Consistent energy here — you can rely on it."
+            LuminaBadge(title: isActivated ? "Activated" : "Open", tone: isActivated ? .premium : .neutral)
+            Text(isActivated
+                ? "Your personality side activates gates here. Full HD definition also needs the design side."
                 : "Open energy here — you take in others' input.")
                 .font(LuminaTypography.body)
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))

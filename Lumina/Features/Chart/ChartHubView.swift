@@ -187,7 +187,7 @@ struct ChartHubView: View {
 
     private func definedCentersSummary(_ activation: HumanDesignActivation) -> some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-            Text("DEFINED CENTERS")
+            Text("ACTIVATED CENTERS")
                 .font(LuminaTypography.mono)
                 .tracking(1.4)
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))

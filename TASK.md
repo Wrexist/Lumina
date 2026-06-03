@@ -337,6 +337,20 @@
 - [x] **[2026-05-08]** Phase 1 starter scaffolding landed: `AppRouter`, `LuminaTab`, `LuminaDeepLink`, `MainTabsView`, design-system v2 components (`LuminaButton`, `LuminaCard`, `LuminaTextField`, `LuminaSegmentedControl`, `LuminaSkeleton`, `LuminaEmptyState`, `LuminaErrorState`, `LuminaBadge`, `LuminaError`, `GlossaryLink`/`GlossaryStore`)
 - [x] **[2026-05-08]** Phase 1 sprint follow-up: `LuminaRadii` + `LuminaShadows` tokens, `Haptics` wrapper, `LuminaConfirmationDialog` extension, `LuminaError.from(_:)` mapping for `EphemerisService.ServiceError` and `URLError`. Migrated existing components to the new tokens. Added `DesignTokensAndErrorTests` covering token monotonicity, error mapping, and analytics-key uniqueness.
 
+### ✅ Audit remediation pass — [2026-06-03], branch `claude/adoring-euler-yEDvq`
+
+Full audit at `docs/AUDIT-2026-06-03.md`; fixes (all CI-verified once build settles):
+
+- [x] **CI unblocked** — root-caused 369 pre-existing SwiftLint violations from `brew`-latest pulling rules the codebase never satisfied (207 `switch_case_on_newline` alone). Reconciled `.swiftlint.yml` to the house style; lint + backend green again.
+- [x] **R0 launch integrity** — added `Assets.xcassets` (AppIcon + AccentColor), `Localizable.xcstrings`, `PrivacyInfo.xcprivacy`; `UIUserInterfaceStyle: Light`.
+- [x] **R1 data integrity** — fixed the journal blank-entry insert (`NavigationLink` eager destination), `ModelContext.saveOrLog`, cusp-count guards, `@Attribute(.unique)`, future-day calendar guard, score-out-of-body.
+- [x] **R2 security** — Reflect Face ID re-locks on background; share QR carries reduced `SharedBirthData` (no exact time/precise coords) via base64url; Anthropic key removed from the shipped Info.plist.
+- [x] **R3 paywall** — rescue offer now actually presents (in-place variant swap); honest trust copy; `PaywallTracker` seen/declined split.
+- [x] **R4 navigation** — `settings`/`help`/`share` deep links resolve; pending links replayed post-onboarding; ChartHubView cold-launch race fixed; QR share round-trip implemented (`AcceptShareView`); HelpView nested-stack removed.
+- [x] **R5/R6** — stable `CompatibilityScorer` hash; Today renders all 4 states (sample fallback `#if DEBUG`); accessible error color; Dynamic Type scaling; secure-field a11y; "1th house" ordinal; Settings dead-end chevrons removed; HD "defined → activated (personality-side)" honesty copy.
+- [x] **R7 backend** — noon-local timezone correctness, host-TZ-independent CLI, constant-time secret compare, rate limiter, security headers, body-size cap, birthDate bounds, Dockerfile + fly.toml (30 → 43 tests).
+- [ ] Remaining backlog (R5/R6/R8): onboarding per-field persistence, WhatNext card routing, planet-glyph de-clustering, soft-delete-with-undo, gitleaks/coverage CI gates, snapshot tests, native iOS 26 glass API.
+
 ---
 
 ## 🚧 Blockers
