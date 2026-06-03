@@ -103,3 +103,14 @@ jobs:
             -skipPackagePluginValidation \
             -derivedDataPath build/DerivedData \
             2>&1 | xcbeautify --renderer github-actions
+
+      # `ScreenshotTests` renders key screens to PNGs via ImageRenderer; upload
+      # them so the UI is reviewable without a Mac. `always()` so they surface
+      # even if a later test fails.
+      - name: Upload UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots
+          path: LuminaTests/__Screenshots__/*.png
+          if-no-files-found: warn
