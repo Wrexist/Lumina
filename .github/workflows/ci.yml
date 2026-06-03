@@ -114,3 +114,18 @@ jobs:
           name: ui-screenshots
           path: LuminaTests/__Screenshots__/*.png
           if-no-files-found: warn
+
+      # The Claude Code remote runner's egress allowlist blocks the artifact
+      # storage host, so also emit each PNG as base64 in the job log — the one
+      # channel that environment can read back (via the GitHub API). `openssl`
+      # base64 -A is used because macOS `base64` lacks GNU's `-w0`.
+      - name: Emit screenshots as base64 (sandbox retrieval)
+        if: always()
+        run: |
+          shopt -s nullglob
+          for f in LuminaTests/__Screenshots__/*.png; do
+            echo "===SHOT_BEGIN $(basename "$f")==="
+            openssl base64 -A -in "$f"
+            echo ""
+            echo "===SHOT_END==="
+          done
