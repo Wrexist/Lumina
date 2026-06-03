@@ -2,6 +2,7 @@ import { Body, Ecliptic, GeoVector } from "astronomy-engine";
 import { computeAspects } from "../lib/aspects.ts";
 import { placidusHouses, tropicalAngles, wholeSignHouses } from "../lib/houses.ts";
 import { lahiriAyanamsha, tropicalToSidereal } from "../lib/sidereal.ts";
+import { noonLocalAsUTC } from "../lib/timezone.ts";
 import type { BirthData, HouseCusps, HouseSystem, NatalChart, PlanetPosition } from "../types.ts";
 import type { ChartOptions, EphemerisService } from "./ephemeris.ts";
 
@@ -60,9 +61,12 @@ export class AstronomyEngineEphemeris implements EphemerisService {
 }
 
 function effectiveInstant(birthData: BirthData): Date {
-  // If birthTime is null we use noon UT on the birth date — see LEARNINGS.md.
-  const source = birthData.birthTime ?? noonUTOf(birthData.birthDate);
-  return new Date(source);
+  // A known birth time is already an absolute instant (the iOS client encodes
+  // a `Date`). For an unknown time we use the astrological convention of noon
+  // *local* time on the birth date — resolved through the birth time zone so
+  // we neither shift the calendar day nor silently use noon UTC.
+  if (birthData.birthTime != null) return new Date(birthData.birthTime);
+  return noonLocalAsUTC(new Date(birthData.birthDate), birthData.timeZoneIdentifier);
 }
 
 function housesFor(
@@ -84,12 +88,6 @@ function housesFor(
   const mc = ayanamsha === 0 ? tropical.midheaven : tropicalToSidereal(tropical.midheaven, ayanamsha);
   const houses = wholeSignHouses(asc, mc);
   return { ...houses, system: houseSystem };
-}
-
-function noonUTOf(isoDate: string): string {
-  const date = new Date(isoDate);
-  date.setUTCHours(12, 0, 0, 0);
-  return date.toISOString();
 }
 
 function geocentricEclipticLongitude(body: Body, instant: Date): number {

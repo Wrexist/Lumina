@@ -4,6 +4,8 @@ const ConfigSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3001),
   HOST: z.string().default("127.0.0.1"),
   LUMINA_API_SECRET: z.string().min(16, "LUMINA_API_SECRET must be at least 16 chars"),
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(120),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
   LOG_LEVEL: z
     .enum(["trace", "debug", "info", "warn", "error", "fatal", "silent"])
     .default("info"),

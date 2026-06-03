@@ -1,5 +1,6 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import { loadConfig, type Config } from "./config.ts";
+import { createRateLimiter } from "./lib/rateLimit.ts";
 import { chartRoutes } from "./routes/chart.ts";
 import { AstronomyEngineEphemeris } from "./services/astronomyEngineEphemeris.ts";
 
@@ -12,6 +13,27 @@ export async function buildServer(config: Config): Promise<FastifyInstance> {
           ? { target: "pino-pretty", options: { translateTime: "HH:MM:ss.l", ignore: "pid,hostname" } }
           : undefined,
     },
+  });
+
+  // Baseline security headers (helmet-lite — no extra dependency).
+  app.addHook("onSend", async (_request, reply, payload) => {
+    reply.header("x-content-type-options", "nosniff");
+    reply.header("x-frame-options", "DENY");
+    reply.header("referrer-policy", "no-referrer");
+    reply.header("cross-origin-resource-policy", "same-origin");
+    return payload;
+  });
+
+  // Fixed-window per-IP rate limit. `/health` is exempt so probes never trip it.
+  const rateLimit = createRateLimiter({ max: config.RATE_LIMIT_MAX, windowMs: config.RATE_LIMIT_WINDOW_MS });
+  app.addHook("onRequest", async (request, reply) => {
+    if (request.url === "/health") return;
+    const result = rateLimit(request.ip);
+    if (!result.ok) {
+      reply.header("retry-after", Math.ceil(result.retryAfterMs / 1000));
+      reply.code(429);
+      throw new Error("rate limit exceeded");
+    }
   });
 
   app.get("/health", async () => ({ status: "ok" }));

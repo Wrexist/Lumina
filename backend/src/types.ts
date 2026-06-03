@@ -1,15 +1,31 @@
 import { z } from "zod";
 
+// astronomy-engine is accurate roughly 1700-2200; bound inputs to a sane
+// range so a typo'd year fails loudly instead of returning junk positions.
+const MIN_BIRTH_MS = Date.UTC(1800, 0, 1);
+const MAX_BIRTH_MS = Date.UTC(2200, 0, 1);
+
+const plausibleInstant = z
+  .string()
+  .datetime({ offset: true })
+  .refine(
+    (s) => {
+      const t = Date.parse(s);
+      return Number.isFinite(t) && t >= MIN_BIRTH_MS && t <= MAX_BIRTH_MS;
+    },
+    { message: "must be a date between 1800 and 2200" },
+  );
+
 /**
  * Mirrors `Lumina/Core/Ephemeris/Models/BirthData.swift`.
  * The Swift `Date` fields are encoded as ISO-8601 strings on the wire.
  */
 export const BirthDataSchema = z.object({
-  birthDate: z.string().datetime({ offset: true }),
+  birthDate: plausibleInstant,
   // The iOS encoder always emits this key (null when no birth time is
   // captured). Older clients and ad-hoc CLI callers may omit the key
   // entirely, so accept both via `.nullable().optional()`.
-  birthTime: z.string().datetime({ offset: true }).nullable().optional(),
+  birthTime: plausibleInstant.nullable().optional(),
   placeName: z.string().min(1).max(200),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),

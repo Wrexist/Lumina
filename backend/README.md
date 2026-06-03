@@ -52,7 +52,21 @@ curl -X POST http://127.0.0.1:3001/chart \
 npm run chart -- --date 1990-06-15 --time 14:30 --tz Europe/Stockholm
 ```
 
-Pipes the same chart JSON to stdout — no server needed.
+Pipes the same chart JSON to stdout — no server needed. `--time` is
+interpreted in `--tz` (not the host's local zone), so output is identical
+on any machine.
+
+## Deploy (Fly.io)
+
+```bash
+fly launch --no-deploy                       # creates the app from fly.toml
+fly secrets set LUMINA_API_SECRET=$(openssl rand -hex 32)
+fly deploy                                   # builds Dockerfile, health-checks /health
+```
+
+`Dockerfile` runs the `.ts` sources directly on Node 22 (no build step) as the
+unprivileged `node` user; `fly.toml` binds `0.0.0.0`, forces HTTPS, and
+auto-suspends idle machines.
 
 ## Tests
 
@@ -71,13 +85,17 @@ Tests inject HTTP requests via `app.inject`, no real port binding.
 - Whole-Sign and Lahiri-sidereal `houseSystem` variants.
 - Major Ptolemaic aspects (conjunction / sextile / square / trine /
   opposition) with luminary-widened orbs. See `src/lib/aspects.ts`.
+- Unknown-birth-time charts use **noon local time** in the birth zone
+  (`src/lib/timezone.ts`), resolved to UTC — no calendar-day shift.
+- Hardening: constant-time secret comparison, per-IP fixed-window rate
+  limiting, baseline security headers, a per-route body-size cap, and
+  1800–2200 birth-date bounds.
+- Container + Fly.io deploy scaffolding (`Dockerfile`, `fly.toml`).
 
 ## What's intentionally **not** here yet
 
-- Transits & progressions
-- Production deploy (Fly.io setup, Dockerfile, healthcheck wiring)
+- Transits & progressions; synastry / composite / davison
 - Caching (Redis or in-memory LRU for repeat birth-data queries)
-- Rate limiting
 - OpenTelemetry / Sentry instrumentation
 - Swiss Ephemeris precision — gated on Swiss Eph Pro license (CHF 1,550,
   see TASK.md Blockers)
