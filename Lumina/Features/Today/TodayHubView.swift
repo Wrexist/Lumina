@@ -12,6 +12,7 @@ struct TodayHubView: View {
     @State private var viewModel = TodayViewModel()
     @Environment(AppRouter.self) private var router
     @ScaledMetric private var iconSize: CGFloat = 28
+    @State private var showingWhy = false
 
     var body: some View {
         ScrollView {
@@ -24,6 +25,9 @@ struct TodayHubView: View {
         .background(LuminaColors.parchment)
         .navigationTitle("Today")
         .task { await viewModel.loadIfNeeded() }
+        .sheet(isPresented: $showingWhy) {
+            TodayTransparencySheet(transits: viewModel.transits)
+        }
     }
 
     // MARK: - View building blocks
@@ -53,6 +57,7 @@ struct TodayHubView: View {
             if !lines.secondary.isEmpty {
                 Divider()
                 whatsHappeningSection(lines.secondary)
+                LuminaButton(title: "Why these?", variant: .ghost) { showingWhy = true }
             }
             Divider()
             quickActionsSection
