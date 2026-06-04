@@ -381,8 +381,11 @@ All CI-verified (runs #63, #66 green):
 - [x] **`PlacementInterpreter`** — per-placement readings (planet × sign × house × retrograde); wired into `PlanetDetailSheet`, replacing the "coming soon" card.
 - [x] **`AspectInterpreter`** + Chart-tab "Your strongest aspects" card — every real aspect interpreted in plain language.
 - [x] **Synastry depth** — `CompatibilityScorer.score(fromSynastry:)` (real aspect-weighted 0–100, replaces the date heuristic in Friend detail) + `SynastrySummary` (relationship-dynamic headline) in `FriendDetailView`.
-- [ ] Next (unblocked): "Why this reading?" transparency sheet (COMPETITIVE-ANALYSIS gap G7); Big-3 tappable interpretations; transit-tied Reflect prompts.
-- [!] Blocked (need provisioning): conversational "ask your chart" + RAG daily reading (Supabase + Anthropic key); narrated audio (ElevenLabs); palm pipeline (Core ML model).
+- [x] **"Ask your chart"** (deterministic) — `ChartOracle` + `ChartQAView`: tap a curated question, get an answer read from the real chart (Big 3 / strongest aspect / dominant element / retrogrades / focal planet). The honest, unblocked version of the category's #1 gap.
+- [x] **"Why these?" transparency sheet** (Today) — shows the exact transit data behind the reading (COMPETITIVE-ANALYSIS gap G7).
+- [x] **Browsable Glossary screen** — surfaces the previously-unused `Glossary.json` content, linked from Help.
+- [ ] Next (unblocked): Big-3 tappable interpretations; transit-tied Reflect prompts; soft-delete-with-undo.
+- [!] Blocked (need provisioning): conversational free-text "ask your chart" + RAG daily reading (Supabase + Anthropic key); narrated audio (ElevenLabs); palm pipeline (Core ML model).
 
 ---
 

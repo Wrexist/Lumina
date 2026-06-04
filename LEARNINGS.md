@@ -371,3 +371,19 @@ The People tab showed real synastry aspects but a date-only heuristic *number* �
 
 **[2026-06] `ForEach` can't key on a tuple element**
 `ForEach(tuples, id: \.0)` doesn't compile — tuples have no key paths. Map to `[String]` (or a small Identifiable struct) and `ForEach(strings, id: \.self)`.
+
+---
+
+## 🧩 "Ask your chart" + surfacing batch (2026-06-04, branch `claude/adoring-euler-yEDvq`)
+
+**[2026-06] Watch `type_body_length` when adding cards to a hub View — extract components**
+Adding two cards to `ChartHubView` pushed its type body to 260 (>250), and `swiftlint --strict` failed *before the build ran*, so the new code's compile/test was never reached and CI burned two cycles (fail + fix). Lesson: when a `*HubView` grows, extract each card into its own `struct …Card: View` file rather than another `private func …Card() -> some View`. Cleaner, reusable, and keeps the hub under budget. Before pushing a View-heavy change, measure the *struct's own* body (not the file) — a file can hold several structs (e.g. HelpView + ArticleView + FeedbackView) so file length misleads.
+
+**[2026-06] Ship "ask your chart" deterministically — the LLM is the upgrade, not the feature**
+The category's #1 gap is one-way content (you can't ask). The conversational version needs Supabase + the Anthropic key (unprovisioned), but a *curated-question* oracle (`ChartOracle` + `ChartQAView`) answers Big-3 / strongest-aspect / dominant-element / retrogrades / focal-planet straight from the real chart — no LLM, nothing invented. Free-text conversation layers on the same contract later. Don't let a blocked enhancement block the honest core.
+
+**[2026-06] Surface a glossary as a *screen*, not inline links**
+`GlossaryLink` is a `Button`, so it can't sit inside a flowing `Text` run — which is why it had zero call sites despite a full `Glossary.json`. A browsable `GlossaryView` (terms by category → existing `GlossarySheet`) surfaces the content cleanly and sidesteps the inline-composition gap.
+
+**[2026-06] CI screenshot retrieval: emit order is alphabetical; size the log tail accordingly**
+The base64 emit step lists `__Screenshots__/*.png` alphabetically, so a small `tail_lines` drops the *first* images (`ask-your-chart`, `aspects`). Use `tail_lines ≈ 90+` (each PNG is one ~150 KB line) to capture all of them, or grep the saved file for every `===SHOT_BEGIN===`.
