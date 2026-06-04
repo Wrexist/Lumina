@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Planet-tap detail. Phase-4 starter: degree, sign, house, retrograde
-/// flag, and a copy-stub interpretation. The full RAG-backed interpretation
-/// ships alongside the daily-reading pipeline (Phase 5 of the roadmap).
+/// Planet-tap detail: degree, sign, house, retrograde flag, and a grounded
+/// interpretation of the placement (`PlacementInterpreter`). A richer narrated
+/// reading layers on later, server-side, without changing this surface.
 struct PlanetDetailSheet: View {
     let planet: NatalChart.PlanetPosition
     let chart: NatalChart
@@ -16,7 +16,7 @@ struct PlanetDetailSheet: View {
                 VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
                     header
                     factsCard
-                    placeholderInterpretation
+                    interpretationCard
                 }
                 .padding(LuminaSpacing.lg)
             }
@@ -64,16 +64,19 @@ struct PlanetDetailSheet: View {
         }
     }
 
-    private var placeholderInterpretation: some View {
+    private var interpretationCard: some View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 Text("What this means")
                     .font(LuminaTypography.heading)
-                Text("A written interpretation for this placement is coming soon. It draws on a curated "
-                    + "library of master astrologers (Liz Greene, Steven Forrest, Robert Hand) and is "
-                    + "grounded in your full chart — never generic horoscope copy.")
-                    .font(LuminaTypography.body)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.8))
+                Text(PlacementInterpreter.interpretation(
+                    planet: planet.planet,
+                    longitude: planet.longitude,
+                    house: house,
+                    isRetrograde: planet.isRetrograde
+                ))
+                .font(LuminaTypography.body)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.8))
             }
         }
     }

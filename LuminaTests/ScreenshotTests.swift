@@ -43,6 +43,13 @@ final class ScreenshotTests: XCTestCase {
         try render(view, named: "synastry")
     }
 
+    func testDRenderPlanetReading() throws {
+        let view = planetReadingComposition()
+            .frame(width: 393)
+            .background(LuminaColors.parchment)
+        try render(view, named: "planet-reading")
+    }
+
     // MARK: - Composition
 
     /// Reassembles the Today loaded layout from the real components + sample
@@ -107,6 +114,34 @@ final class ScreenshotTests: XCTestCase {
                             Text(SynastryPhrasing.sentence(for: aspect)).font(LuminaTypography.body)
                         }
                     }
+                }
+            }
+        }
+        .padding(LuminaSpacing.lg)
+    }
+
+    /// Mirrors the Planet-detail sheet: real glyph + summary + the real
+    /// grounded `PlacementInterpreter` reading for Venus in Gemini, 9th house.
+    private func planetReadingComposition() -> some View {
+        let longitude = 75.0
+        return VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
+            HStack(spacing: LuminaSpacing.md) {
+                Text(ChartGlyphs.planetGlyph("Venus"))
+                    .font(.system(size: 64))
+                    .foregroundStyle(LuminaColors.mutedGold)
+                Text(ChartGlyphs.summary(planet: "Venus", longitude: longitude, house: 9))
+                    .font(LuminaTypography.heading)
+                Spacer()
+            }
+            LuminaCard {
+                VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                    Text("What this means")
+                        .font(LuminaTypography.heading)
+                    Text(PlacementInterpreter.interpretation(
+                        planet: "Venus", longitude: longitude, house: 9, isRetrograde: false
+                    ))
+                    .font(LuminaTypography.body)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.8))
                 }
             }
         }

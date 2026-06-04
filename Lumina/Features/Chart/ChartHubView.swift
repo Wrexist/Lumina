@@ -122,7 +122,7 @@ struct ChartHubView: View {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 Text("Tap any planet to learn more")
                     .font(LuminaTypography.heading)
-                Text("Written interpretations for each planet, your Big 3, and the aspect lines are coming soon.")
+                Text("Each reading is grounded in your exact placement — the planet, its sign, its house, and whether it's retrograde. Never a generic horoscope.")
                     .font(LuminaTypography.bodyLight)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
             }
