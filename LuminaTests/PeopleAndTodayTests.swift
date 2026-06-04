@@ -43,6 +43,52 @@ final class PeopleAndTodayTests: XCTestCase {
         XCTAssertEqual(CompatibilityScorer.Label(score: 10).displayName, "Challenging")
     }
 
+    // MARK: - Synastry-weighted score (real cross-aspects)
+
+    func testSynastryScoreEmptyIsNeutral() {
+        XCTAssertEqual(CompatibilityScorer.score(fromSynastry: []), 50)
+    }
+
+    func testHarmoniousAspectsScoreAboveHardAspects() {
+        let harmonious = [synAspect("Sun", "Moon", .trine, orb: 1), synAspect("Venus", "Mars", .sextile, orb: 1)]
+        let hard = [synAspect("Sun", "Moon", .square, orb: 1), synAspect("Venus", "Mars", .opposition, orb: 1)]
+        XCTAssertGreaterThan(CompatibilityScorer.score(fromSynastry: harmonious), 50)
+        XCTAssertLessThan(CompatibilityScorer.score(fromSynastry: hard), 50)
+        XCTAssertGreaterThan(
+            CompatibilityScorer.score(fromSynastry: harmonious),
+            CompatibilityScorer.score(fromSynastry: hard)
+        )
+    }
+
+    func testTighterAspectsCountMore() {
+        let tight = [synAspect("Sun", "Moon", .trine, orb: 0.5)]
+        let wide = [synAspect("Sun", "Moon", .trine, orb: 9.5)]
+        XCTAssertGreaterThan(
+            CompatibilityScorer.score(fromSynastry: tight),
+            CompatibilityScorer.score(fromSynastry: wide)
+        )
+    }
+
+    func testRelationshipPlanetsWeightedMore() {
+        let personal = [synAspect("Venus", "Mars", .trine, orb: 1)]
+        let outer = [synAspect("Saturn", "Jupiter", .trine, orb: 1)]
+        XCTAssertGreaterThan(
+            CompatibilityScorer.score(fromSynastry: personal),
+            CompatibilityScorer.score(fromSynastry: outer)
+        )
+    }
+
+    func testSynastryScoreStaysInRange() {
+        let flood = Array(repeating: synAspect("Venus", "Mars", .trine, orb: 0.5), count: 60)
+        let score = CompatibilityScorer.score(fromSynastry: flood)
+        XCTAssertGreaterThanOrEqual(score, 0)
+        XCTAssertLessThanOrEqual(score, 100)
+    }
+
+    private func synAspect(_ a: String, _ b: String, _ type: AspectType, orb: Double) -> SynastryAspect {
+        SynastryAspect(planetA: a, planetB: b, type: type, exactAngle: 0, orb: orb)
+    }
+
     // MARK: - Friend round-trip
 
     @MainActor

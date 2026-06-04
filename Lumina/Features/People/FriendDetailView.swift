@@ -192,14 +192,26 @@ struct FriendDetailView: View {
         synastry = .loading
         do {
             let result = try await ephemeris.synastry(personA: mine, personB: theirs)
-            synastry = .loaded(result.aspects)
+            applyLoadedAspects(result.aspects)
         } catch {
             #if DEBUG
-            synastry = .loaded(Self.sampleSynastry)
+            applyLoadedAspects(Self.sampleSynastry)
             #else
             synastry = .unavailable
             #endif
         }
+    }
+
+    /// Shows the real aspects and upgrades the displayed score from the
+    /// Sun-sign heuristic to the synastry-weighted one, caching it on the
+    /// friend so the People list reflects it next launch too.
+    private func applyLoadedAspects(_ aspects: [SynastryAspect]) {
+        synastry = .loaded(aspects)
+        guard !aspects.isEmpty else { return }
+        let synastryScore = CompatibilityScorer.score(fromSynastry: aspects)
+        score = synastryScore
+        friend.compatibilityScore = synastryScore
+        modelContext.saveOrLog(category: "People")
     }
 
     #if DEBUG

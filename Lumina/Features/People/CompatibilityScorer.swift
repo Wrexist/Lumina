@@ -74,6 +74,41 @@ enum CompatibilityScorer {
         return max(0, min(100, score))
     }
 
+    /// Real synastry-weighted score (0–100) from the backend cross-aspects —
+    /// the grounded successor to the Sun-sign heuristic above, used in Friend
+    /// detail once `/synastry` has loaded. Harmonious aspects (trine/sextile)
+    /// and bonding conjunctions lift the score; squares/oppositions lower it.
+    /// Tighter aspects count more, and contacts between the relationship
+    /// planets (Sun/Moon/Venus/Mars) are weighted 1.5×. Order-independent, so
+    /// it's symmetric. Empty aspect list → a neutral 50.
+    static func score(fromSynastry aspects: [SynastryAspect]) -> Int {
+        guard !aspects.isEmpty else { return 50 }
+        var total = 50.0
+        for aspect in aspects {
+            let tightness = max(0, 1 - aspect.orb / maxSynastryOrb)
+            let multiplier = bothRelationshipPlanets(aspect) ? 1.5 : 1.0
+            total += aspectWeight(aspect.type) * tightness * multiplier
+        }
+        return max(0, min(100, Int(total.rounded())))
+    }
+
+    private static let maxSynastryOrb = 10.0
+    private static let relationshipPlanets: Set<String> = ["Sun", "Moon", "Venus", "Mars"]
+
+    private static func aspectWeight(_ type: AspectType) -> Double {
+        switch type {
+        case .trine: 6
+        case .conjunction: 4
+        case .sextile: 3
+        case .opposition: -2
+        case .square: -4
+        }
+    }
+
+    private static func bothRelationshipPlanets(_ aspect: SynastryAspect) -> Bool {
+        relationshipPlanets.contains(aspect.planetA) && relationshipPlanets.contains(aspect.planetB)
+    }
+
     /// FNV-1a 64-bit hash — deterministic across processes. `String.hashValue`
     /// is seeded per app run, so using it here drifted the cached
     /// `Friend.compatibilityScore` on every cold launch.
