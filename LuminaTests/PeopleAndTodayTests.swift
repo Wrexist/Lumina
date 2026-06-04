@@ -85,6 +85,23 @@ final class PeopleAndTodayTests: XCTestCase {
         XCTAssertLessThanOrEqual(score, 100)
     }
 
+    // MARK: - Synastry relationship summary
+
+    func testSummaryEmptyReadsIndependent() {
+        XCTAssertTrue(SynastrySummary.headline(for: []).contains("independent"))
+    }
+
+    func testSummaryClassifiesTheDynamic() {
+        let flow = [synAspect("Sun", "Moon", .trine, orb: 1), synAspect("Venus", "Mars", .sextile, orb: 1)]
+        XCTAssertTrue(SynastrySummary.headline(for: flow).contains("flow"))
+
+        let charged = [synAspect("Sun", "Moon", .square, orb: 1), synAspect("Venus", "Mars", .opposition, orb: 1)]
+        XCTAssertTrue(SynastrySummary.headline(for: charged).contains("charged"))
+
+        let intertwined = [synAspect("Sun", "Moon", .conjunction, orb: 1), synAspect("Venus", "Mars", .conjunction, orb: 1)]
+        XCTAssertTrue(SynastrySummary.headline(for: intertwined).contains("intertwined"))
+    }
+
     private func synAspect(_ a: String, _ b: String, _ type: AspectType, orb: Double) -> SynastryAspect {
         SynastryAspect(planetA: a, planetB: b, type: type, exactAngle: 0, orb: orb)
     }

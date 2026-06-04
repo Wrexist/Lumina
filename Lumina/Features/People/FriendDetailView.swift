@@ -123,8 +123,11 @@ struct FriendDetailView: View {
                 .font(LuminaTypography.body)
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
         case .loaded(let aspects):
-            Text("The real chart-to-chart contacts between you.")
-                .font(LuminaTypography.bodyLight)
+            Text(SynastrySummary.headline(for: aspects))
+                .font(LuminaTypography.body)
+                .foregroundStyle(LuminaColors.inkBlack)
+            Text("The real contacts behind it:")
+                .font(LuminaTypography.caption)
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
             ForEach(Array(aspects.prefix(6))) { aspect in
                 HStack(alignment: .top, spacing: LuminaSpacing.sm) {

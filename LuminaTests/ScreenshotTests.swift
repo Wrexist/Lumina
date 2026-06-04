@@ -112,8 +112,11 @@ final class ScreenshotTests: XCTestCase {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                     Text("Between your charts")
                         .font(LuminaTypography.heading)
-                    Text("The real chart-to-chart contacts between you.")
-                        .font(LuminaTypography.bodyLight)
+                    Text(SynastrySummary.headline(for: aspects))
+                        .font(LuminaTypography.body)
+                        .foregroundStyle(LuminaColors.inkBlack)
+                    Text("The real contacts behind it:")
+                        .font(LuminaTypography.caption)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
                     ForEach(aspects) { aspect in
                         HStack(alignment: .top, spacing: LuminaSpacing.sm) {
