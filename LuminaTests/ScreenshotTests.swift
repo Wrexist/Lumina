@@ -57,6 +57,13 @@ final class ScreenshotTests: XCTestCase {
         try render(view, named: "aspects")
     }
 
+    func testFRenderAskYourChart() throws {
+        let view = askChartComposition()
+            .frame(width: 393)
+            .background(LuminaColors.parchment)
+        try render(view, named: "ask-your-chart")
+    }
+
     // MARK: - Composition
 
     /// Reassembles the Today loaded layout from the real components + sample
@@ -179,6 +186,43 @@ final class ScreenshotTests: XCTestCase {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
+            }
+        }
+        .padding(LuminaSpacing.lg)
+    }
+
+    /// Mirrors the "Ask your chart" screen with a real `ChartOracle` answer.
+    private func askChartComposition() -> some View {
+        let chart = BirthChartViewModel.sampleChart()
+        let shown: [ChartQuestion] = [.bigThree, .strongestAspect, .dominantElement]
+        return VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
+            Text("Ask your chart")
+                .font(LuminaTypography.display)
+            VStack(spacing: LuminaSpacing.sm) {
+                ForEach(shown, id: \.self) { question in
+                    HStack {
+                        Text(question.rawValue).font(LuminaTypography.body)
+                        Spacer()
+                        if question == .bigThree {
+                            Image(systemName: "checkmark").foregroundStyle(LuminaColors.celestialBlue)
+                        }
+                    }
+                    .padding(LuminaSpacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LuminaRadii.sm, style: .continuous)
+                            .stroke(
+                                question == .bigThree ? LuminaColors.celestialBlue : LuminaColors.inkBlack.opacity(0.15),
+                                lineWidth: question == .bigThree ? 2 : 1
+                            )
+                    )
+                }
+            }
+            LuminaCard {
+                Text(ChartOracle.answer(to: .bigThree, chart: chart))
+                    .font(LuminaTypography.body)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(LuminaSpacing.lg)
