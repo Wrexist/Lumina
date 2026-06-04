@@ -281,4 +281,4 @@ No Alamofire — use native `URLSession` with async/await actors. No RxSwift/Com
 - [iOS 26 Liquid Glass HIG](https://developer.apple.com/design/human-interface-guidelines/) — Liquid Glass design guidance
 - [OneSignal iOS](https://documentation.onesignal.com/docs/ios-sdk-setup) — Push notification setup
 - [Supabase Swift](https://supabase.com/docs/reference/swift/introduction) — Backend client
-- Competitive research: `docs/PRODUCT_SPEC.md`
+- Competitive research: `docs/COMPETITIVE-ANALYSIS.md` (per-competitor pros/cons, premium-feature map, category gaps, prioritized recommendations)
