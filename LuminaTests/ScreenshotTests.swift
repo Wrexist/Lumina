@@ -50,6 +50,13 @@ final class ScreenshotTests: XCTestCase {
         try render(view, named: "planet-reading")
     }
 
+    func testERenderAspects() throws {
+        let view = aspectsComposition()
+            .frame(width: 393)
+            .background(LuminaColors.parchment)
+        try render(view, named: "aspects")
+    }
+
     // MARK: - Composition
 
     /// Reassembles the Today loaded layout from the real components + sample
@@ -142,6 +149,32 @@ final class ScreenshotTests: XCTestCase {
                     ))
                     .font(LuminaTypography.body)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.8))
+                }
+            }
+        }
+        .padding(LuminaSpacing.lg)
+    }
+
+    /// Mirrors the Chart-tab "Your strongest aspects" card with real
+    /// `AspectInterpreter` readings.
+    private func aspectsComposition() -> some View {
+        let readings = [
+            AspectInterpreter.interpretation(planet1: "Sun", planet2: "Moon", type: .trine),
+            AspectInterpreter.interpretation(planet1: "Venus", planet2: "Mars", type: .conjunction),
+            AspectInterpreter.interpretation(planet1: "Mercury", planet2: "Saturn", type: .square),
+            AspectInterpreter.interpretation(planet1: "Moon", planet2: "Jupiter", type: .opposition),
+        ]
+        return VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
+            Text("Your strongest aspects")
+                .font(LuminaTypography.display)
+            LuminaCard {
+                VStack(alignment: .leading, spacing: LuminaSpacing.md) {
+                    ForEach(readings, id: \.self) { reading in
+                        Text(reading)
+                            .font(LuminaTypography.body)
+                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
             }
         }
