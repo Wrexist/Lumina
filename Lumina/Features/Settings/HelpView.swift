@@ -85,6 +85,16 @@ struct HelpView: View {
             if !query.isEmpty {
                 searchResults
             } else {
+                Section {
+                    NavigationLink {
+                        GlossaryView()
+                    } label: {
+                        HStack {
+                            Image(systemName: "character.book.closed")
+                            Text("Glossary — every term, explained")
+                        }
+                    }
+                }
                 ForEach(Topic.allCases) { topic in
                     Section(topic.displayName) {
                         ForEach(articles(for: topic)) { article in
