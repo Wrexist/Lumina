@@ -137,63 +137,13 @@ struct ChartHubView: View {
                 unknownTimeBanner
             }
             BigThreeBand(chart: chart)
-            askYourChartCard(chart)
+            AskYourChartCard(chart: chart)
             ChartWheelView(chart: chart, onTapPlanet: handleTap)
                 .padding(LuminaSpacing.sm)
             houseSystemPicker
             AspectLegend()
-            strongestAspectsCard(chart)
+            StrongestAspectsCard(chart: chart)
             interpretationsPlaceholder
-        }
-    }
-
-    private func askYourChartCard(_ chart: NatalChart) -> some View {
-        NavigationLink {
-            ChartQAView(chart: chart)
-        } label: {
-            LuminaCard(surface: .glass) {
-                HStack(spacing: LuminaSpacing.md) {
-                    Image(systemName: "sparkles")
-                        .foregroundStyle(LuminaColors.celestialBlue)
-                    VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
-                        Text("Ask your chart")
-                            .font(LuminaTypography.heading)
-                        Text("Real answers, read straight from your placements.")
-                            .font(LuminaTypography.bodyLight)
-                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.3))
-                }
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Ask your chart")
-    }
-
-    private func strongestAspectsCard(_ chart: NatalChart) -> some View {
-        LuminaCard {
-            VStack(alignment: .leading, spacing: LuminaSpacing.md) {
-                Text("Your strongest aspects")
-                    .font(LuminaTypography.heading)
-                if chart.aspects.isEmpty {
-                    Text("Your planets sit largely on their own right now — few major aspects between them.")
-                        .font(LuminaTypography.bodyLight)
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-                } else {
-                    ForEach(Array(chart.aspects.prefix(5)), id: \.self) { aspect in
-                        Text(AspectInterpreter.interpretation(
-                            planet1: aspect.planet1,
-                            planet2: aspect.planet2,
-                            type: aspect.type
-                        ))
-                        .font(LuminaTypography.body)
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-            }
         }
     }
 
