@@ -26,6 +26,25 @@ final class ChartTests: XCTestCase {
         XCTAssertEqual(ChartGlyphs.signOrder.count, 12)
     }
 
+    func testGlyphsForceMonochromeTextPresentation() {
+        // Zodiac signs (U+2648–2653) default to colour-emoji; we append the
+        // text-presentation selector (U+FE0E) so they render as premium
+        // monochrome type in the brand colour. Guard against regressing.
+        let textPresentation: Unicode.Scalar = "\u{FE0E}"
+        for sign in ChartGlyphs.signOrder {
+            XCTAssertTrue(
+                ChartGlyphs.signGlyph(sign).unicodeScalars.contains(textPresentation),
+                "\(sign) glyph must carry the text-presentation selector (no emoji)"
+            )
+        }
+        for planet in ChartGlyphs.planetOrder {
+            XCTAssertTrue(
+                ChartGlyphs.planetGlyph(planet).unicodeScalars.contains(textPresentation),
+                "\(planet) glyph must carry the text-presentation selector (no emoji)"
+            )
+        }
+    }
+
     // MARK: - BirthChartViewModel.sampleChart
 
     @MainActor

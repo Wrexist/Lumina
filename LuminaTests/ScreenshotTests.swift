@@ -30,6 +30,19 @@ final class ScreenshotTests: XCTestCase {
         try render(view, named: "today")
     }
 
+    func testCRenderSynastry() throws {
+        let aspects = [
+            SynastryAspect(planetA: "Venus", planetB: "Mars", type: .conjunction, exactAngle: 0, orb: 1.1),
+            SynastryAspect(planetA: "Sun", planetB: "Moon", type: .trine, exactAngle: 120, orb: 1.6),
+            SynastryAspect(planetA: "Moon", planetB: "Venus", type: .sextile, exactAngle: 60, orb: 2.0),
+            SynastryAspect(planetA: "Mars", planetB: "Saturn", type: .square, exactAngle: 90, orb: 2.4),
+        ]
+        let view = synastryComposition(aspects: aspects)
+            .frame(width: 393)
+            .background(LuminaColors.parchment)
+        try render(view, named: "synastry")
+    }
+
     // MARK: - Composition
 
     /// Reassembles the Today loaded layout from the real components + sample
@@ -63,6 +76,36 @@ final class ScreenshotTests: XCTestCase {
                     HStack(alignment: .top, spacing: LuminaSpacing.sm) {
                         Text("•").font(LuminaTypography.body)
                         Text(line).font(LuminaTypography.body)
+                    }
+                }
+            }
+        }
+        .padding(LuminaSpacing.lg)
+    }
+
+    /// Mirrors the People-tab "Between your charts" card with sample synastry.
+    private func synastryComposition(aspects: [SynastryAspect]) -> some View {
+        VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
+            VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
+                Text("REFLECTION ON")
+                    .font(LuminaTypography.mono)
+                    .tracking(1.4)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                Text("Sam")
+                    .font(LuminaTypography.display)
+            }
+            LuminaCard {
+                VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                    Text("Between your charts")
+                        .font(LuminaTypography.heading)
+                    Text("The real chart-to-chart contacts between you.")
+                        .font(LuminaTypography.bodyLight)
+                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                    ForEach(aspects) { aspect in
+                        HStack(alignment: .top, spacing: LuminaSpacing.sm) {
+                            Text("•").font(LuminaTypography.body)
+                            Text(SynastryPhrasing.sentence(for: aspect)).font(LuminaTypography.body)
+                        }
                     }
                 }
             }

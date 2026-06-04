@@ -51,6 +51,12 @@ actor EphemerisService {
         }
     }
 
+    /// Request body for `POST /synastry` — the two people to compare.
+    private struct SynastryRequestBody: Encodable {
+        let personA: SynastryPerson
+        let personB: SynastryPerson
+    }
+
     private static let chartEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -151,5 +157,29 @@ actor EphemerisService {
             throw ServiceError.httpError(status: http.statusCode, body: errorBody)
         }
         return try Self.chartDecoder.decode(TransitsResult.self, from: data)
+    }
+
+    /// Synastry (relationship) cross-aspects between two people's charts.
+    /// Real positions only — see CLAUDE.md "Critical Rules". Wire format is
+    /// defined in `backend/src/routes/synastry.ts`.
+    func synastry(personA: SynastryPerson, personB: SynastryPerson) async throws -> SynastryResult {
+        guard let baseURL, let apiSecret, !apiSecret.isEmpty else {
+            throw ServiceError.missingConfiguration
+        }
+        let body = SynastryRequestBody(personA: personA, personB: personB)
+        var request = URLRequest(url: baseURL.appendingPathComponent("synastry"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
+        request.httpBody = try Self.chartEncoder.encode(body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
+        guard (200..<300).contains(http.statusCode) else {
+            let errorBody = String(data: data, encoding: .utf8) ?? ""
+            throw ServiceError.httpError(status: http.statusCode, body: errorBody)
+        }
+        return try Self.chartDecoder.decode(SynastryResult.self, from: data)
     }
 }

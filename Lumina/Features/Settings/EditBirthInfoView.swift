@@ -97,7 +97,7 @@ struct EditBirthInfoView: View {
             placeholder: "Stockholm, Sweden",
             helper: resolved == nil
                 ? "Pick a city for an exact chart."
-                : "Found ✓ \(resolved?.displayName ?? "")",
+                : "Using \(resolved?.displayName ?? "")",
             textContentType: .addressCityAndState
         )
     }

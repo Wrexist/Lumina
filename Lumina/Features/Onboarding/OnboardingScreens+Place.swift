@@ -21,7 +21,7 @@ extension OnboardingScreens {
                     placeholder: "Stockholm, Sweden",
                     helper: state.birthLatitude == nil
                         ? "Start typing — pick a city from the list."
-                        : "Found ✓ — your time zone is set.",
+                        : "Time zone set automatically.",
                     error: resolveError ?? state.validationMessage(for: .birthPlace),
                     textContentType: .addressCityAndState
                 )

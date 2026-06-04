@@ -11,6 +11,10 @@ enum ChartGlyphs {
     ]
 
     static func planetGlyph(_ name: String) -> String {
+        textPresented(rawPlanetGlyph(name))
+    }
+
+    private static func rawPlanetGlyph(_ name: String) -> String {
         switch name {
         case "Sun": "☉"
         case "Moon": "☾"
@@ -26,6 +30,14 @@ enum ChartGlyphs {
         }
     }
 
+    /// Forces monochrome **text** presentation (U+FE0E) so a glyph renders in
+    /// the brand ink/gold colour, never as the OS's colour-emoji tile. The
+    /// zodiac signs (U+2648–2653) default to emoji presentation otherwise.
+    /// DECISION: Lumina uses premium editorial type — never emoji.
+    private static func textPresented(_ glyph: String) -> String {
+        glyph == "•" ? glyph : glyph + "\u{FE0E}"
+    }
+
     /// Sign at the given ecliptic longitude (0–360°).
     static func sign(forLongitude longitude: Double) -> String {
         let normalised = (longitude.truncatingRemainder(dividingBy: 360) + 360)
@@ -35,6 +47,10 @@ enum ChartGlyphs {
     }
 
     static func signGlyph(_ name: String) -> String {
+        textPresented(rawSignGlyph(name))
+    }
+
+    private static func rawSignGlyph(_ name: String) -> String {
         switch name {
         case "Aries": "♈"
         case "Taurus": "♉"

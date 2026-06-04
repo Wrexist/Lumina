@@ -96,7 +96,7 @@ struct AddFriendView: View {
                 placeholder: "Stockholm, Sweden",
                 helper: resolved == nil
                     ? "Optional — pick a city for an exact chart."
-                    : "Found ✓ \(resolved?.displayName ?? "")",
+                    : "Using \(resolved?.displayName ?? "")",
                 textContentType: .addressCityAndState
             )
         }
