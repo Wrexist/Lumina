@@ -112,7 +112,7 @@ struct TodayHubView: View {
                         Text("Today's reading, narrated")
                             .font(LuminaTypography.body)
                     }
-                    Text("Lands with the Anthropic + ElevenLabs wire-up in Phase 5.")
+                    Text("Narrated daily readings are coming soon.")
                         .font(LuminaTypography.caption)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
                 }

@@ -70,7 +70,7 @@ struct NotificationSettingsView: View {
                     Spacer()
                     LuminaBadge(title: "Soon", tone: .neutral)
                 }
-                Text("Default 9pm–7am. Adjustable per Phase 11 of the roadmap.")
+                Text("Default 9pm–7am. Custom quiet hours are coming soon.")
                     .font(LuminaTypography.caption)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
             }
@@ -86,7 +86,7 @@ struct NotificationSettingsView: View {
                     Spacer()
                     LuminaBadge(title: "Soon", tone: .neutral)
                 }
-                Text("Eclipse, retrograde, ingress — capped at 5 per week. Ships in Phase 11.")
+                Text("Eclipse, retrograde, and ingress alerts — capped at 5 per week. Coming soon.")
                     .font(LuminaTypography.caption)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
             }

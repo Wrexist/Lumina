@@ -93,7 +93,7 @@ struct PeopleHubView: View {
                     Text("Privacy")
                         .font(LuminaTypography.heading)
                 }
-                Text("Friends live on this device only. We don't sync names, birthdays, or photos to a server unless you explicitly turn on friend discovery (Phase 10 — currently disabled).")
+                Text("Friends live on this device only. We don't sync names, birthdays, or photos to a server unless you explicitly turn on friend discovery, which is currently off.")
                     .font(LuminaTypography.bodyLight)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
             }

@@ -14,13 +14,13 @@ struct PalmTransparencyView: View {
                     hero
                     LuminaCard {
                         VStack(alignment: .leading, spacing: LuminaSpacing.md) {
-                            row("01", title: "Camera frame", body: "AVFoundation gives us a live preview. Your phone never starts recording — we look at frames in memory only.")
-                            row("02", title: "Hand pose", body: "Apple's Vision framework finds the 21 "
-                                + "hand-pose landmarks (wrist, finger joints) in each frame. Used only to "
-                                + "know when your hand is positioned right.")
-                            row("03", title: "Line segmentation", body: "A small Core ML model — bundled "
-                                + "with the app — traces the four major lines on a 256×256 grayscale crop. "
-                                + "Inference runs entirely on the Neural Engine.")
+                            row("01", title: "Camera frame", body: "Your camera shows a live preview. Your phone never starts recording — we read frames in memory only.")
+                            row("02", title: "Hand position", body: "Your phone finds the 21 hand "
+                                + "landmarks (wrist, finger joints) in each frame — only to know when your "
+                                + "hand is held in the right spot.")
+                            row("03", title: "Line tracing", body: "A small model bundled with the app "
+                                + "traces the four major lines, entirely on your phone. Nothing is "
+                                + "uploaded during this step.")
                             row("04", title: "Feature extraction", body: "We turn the trace into about 50 numbers (line lengths, curvature, branch counts). The image is dropped from memory.")
                             row("05", title: "Reading", body: "Only those numbers + your chart go to the server for the narrated reading. The photo never leaves your phone.")
                         }
@@ -44,7 +44,7 @@ struct PalmTransparencyView: View {
 
     private var hero: some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-            Text("Real palm CV")
+            Text("Real palm analysis")
                 .font(LuminaTypography.heading)
             Text("Most apps in this category fake the analysis with a generic illustration. Lumina actually traces your hand on-device.")
                 .font(LuminaTypography.body)
@@ -61,9 +61,9 @@ struct PalmTransparencyView: View {
                     Text("Our privacy promise")
                         .font(LuminaTypography.heading)
                 }
-                Text("No palm photo bytes ever leave your device. We invite anyone to verify with "
-                    + "Charles or Proxyman — see the network log entry in Settings → Privacy dashboard "
-                    + "once it ships (Phase 12).")
+                Text("No palm-photo data ever leaves your device. The Privacy dashboard in Settings "
+                    + "shows exactly what does — only your chart and the line measurements, never the "
+                    + "image itself.")
                     .font(LuminaTypography.body)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
             }

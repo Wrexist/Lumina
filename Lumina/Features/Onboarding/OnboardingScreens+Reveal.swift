@@ -22,8 +22,8 @@ extension OnboardingScreens {
                     revealCircle
                     Spacer()
                     Text(state.chartReady
-                        ? "The full animated chart wheel ships in Phase 4. For now your chart is computed and cached."
-                        : "Crunching planetary positions for your moment in time.")
+                        ? "Your chart is calculated and saved — explore the full wheel in the Chart tab."
+                        : "Calculating the exact planetary positions for your moment in time.")
                         .font(LuminaTypography.caption)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
                         .multilineTextAlignment(.center)

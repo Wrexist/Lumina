@@ -43,8 +43,8 @@ struct PalmHubView: View {
                         .font(LuminaTypography.heading)
                 }
                 Text("Every other major app in this category overlays a generic illustration on top of "
-                    + "your palm and writes a generic reading. Lumina actually traces your lines with a "
-                    + "Core ML model trained on real palm images.")
+                    + "your palm and writes a generic reading. Lumina actually traces your lines with an "
+                    + "on-device model trained on real palm images.")
                     .font(LuminaTypography.body)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
             }
@@ -70,13 +70,12 @@ struct PalmHubView: View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 HStack(spacing: LuminaSpacing.sm) {
-                    LuminaBadge(title: "Phase 6", tone: .neutral)
+                    LuminaBadge(title: "Soon", tone: .neutral)
                     Text("Where we are")
                         .font(LuminaTypography.body)
                 }
-                Text("The capture session, line-segmentation Core ML model, and trace overlay land in "
-                    + "Phase 6. The model is the gating item — we're balancing the training set across "
-                    + "Fitzpatrick skin tones before shipping.")
+                Text("Palm scanning is coming soon. We're making sure the on-device line tracing works "
+                    + "fairly across every skin tone before we ship it — that's the part we won't rush.")
                     .font(LuminaTypography.bodyLight)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
             }

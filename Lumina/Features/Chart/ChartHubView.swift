@@ -122,7 +122,7 @@ struct ChartHubView: View {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 Text("Tap any planet to learn more")
                     .font(LuminaTypography.heading)
-                Text("Phase 5 of the roadmap wires the RAG-backed interpretations under each planet, the Big 3, and the aspect lines.")
+                Text("Written interpretations for each planet, your Big 3, and the aspect lines are coming soon.")
                     .font(LuminaTypography.bodyLight)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
             }
@@ -173,7 +173,7 @@ struct ChartHubView: View {
             LuminaCard {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                     HStack {
-                        LuminaBadge(title: "Phase 8", tone: .neutral)
+                        LuminaBadge(title: "Soon", tone: .neutral)
                         Text("Type, Profile, and Authority")
                             .font(LuminaTypography.body)
                     }

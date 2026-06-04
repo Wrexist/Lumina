@@ -36,7 +36,7 @@ struct HelpView: View {
     private static let allArticles: [Article] = [
         .init(id: "what-is-lumina", topic: .gettingStarted, title: "What is Lumina?",
               body: "Lumina is a premium astrology and palm-reading app. We use real Swiss-Ephemeris chart math, "
-                  + "on-device computer-vision palm analysis, and RAG-grounded language-model interpretations — "
+                  + "on-device palm analysis, and interpretations grounded in your actual chart — "
                   + "never generic horoscope copy."),
         .init(id: "what-time-do-i-need", topic: .gettingStarted, title: "Why do you need my birth time?",
               body: "The exact time decides your rising sign and which house each planet falls into. Without time "
@@ -54,20 +54,20 @@ struct HelpView: View {
               body: "It's the traditional retrograde marker — the planet appears to move backwards from Earth's "
                   + "vantage point. Astrologers read it as an invitation to revisit, review, or revise rather "
                   + "than initiate."),
-        .init(id: "palm-when", topic: .palm, title: "When does palm scanning ship?",
-              body: "Palm scanning ships in Phase 6 of the roadmap once the on-device Core ML model is balanced "
-                  + "across skin tones. The transparency walkthrough in the Palm tab shows exactly how the "
-                  + "pipeline runs locally."),
+        .init(id: "palm-when", topic: .palm, title: "When does palm scanning arrive?",
+              body: "It's coming soon. We're making sure the on-device line tracing works fairly across every "
+                  + "skin tone before we ship it — that's the part we won't rush. The walkthrough in the Palm "
+                  + "tab shows exactly how it will run on your phone."),
         .init(id: "palm-photo", topic: .palm, title: "Does my palm photo leave my phone?",
-              body: "No. Vision detects your hand; a Core ML model traces the lines; we extract about 50 numbers "
-                  + "(line lengths, curvature). Only those numbers go to our server — never the photo. Read the "
-                  + "full pipeline in Palm → How this works."),
+              body: "No. Your phone finds your hand and traces the lines on-device, then turns them into about "
+                  + "50 numbers (line lengths, curvature). Only those numbers go to our server — never the "
+                  + "photo. See the full walkthrough in Palm → How this works."),
         .init(id: "add-friend", topic: .people, title: "How do I add someone?",
               body: "Open the People tab and tap the + menu. \"Add someone\" opens a manual form; \"Share my chart\" generates a QR a friend can scan with any camera app."),
-        .init(id: "compatibility-score", topic: .people, title: "How is the compatibility score calculated?",
-              body: "Today's score uses a deterministic algorithm based on Sun-sign element + modality. The full "
-                  + "synastry score (with cross-chart aspects, weighted by orb) ships in Phase 7 once the backend "
-                  + "`/synastry` endpoint is live."),
+        .init(id: "compatibility-score", topic: .people, title: "How is compatibility calculated?",
+              body: "The headline score is a quick read from your Sun signs' element and modality. Open any "
+                  + "friend to see the real chart-to-chart aspects between you — \"your Venus conjunct their "
+                  + "Mars\" — and a fuller weighted score is coming soon."),
         .init(id: "data-storage", topic: .privacy, title: "Where does my data live?",
               body: "Your chart, friends, and Reflect entries live on this device only. Open Settings → Privacy → Privacy dashboard to see exactly what's where."),
         .init(id: "subscription", topic: .billing, title: "How do I cancel my subscription?",
