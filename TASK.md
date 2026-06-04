@@ -373,6 +373,17 @@ Full audit at `docs/AUDIT-2026-06-04.md`. Landed:
 - [x] **No-Mac UI preview** — `ScreenshotTests` renders key screens to PNGs; CI uploads them as artifacts and emits base64 in the log for retrieval through the egress allowlist.
 - [ ] Remaining: glossary inline-term affordance (R-GLOSS-1); soft-delete-with-undo (R-NAV-1); gitleaks + coverage CI gates.
 
+### ✅ Grounded interpretation engine + synastry depth — [2026-06-04], branch `claude/adoring-euler-yEDvq`
+
+The unblocked grounding layer beneath the (blocked) conversational/RAG reading.
+All CI-verified (runs #63, #66 green):
+
+- [x] **`PlacementInterpreter`** — per-placement readings (planet × sign × house × retrograde); wired into `PlanetDetailSheet`, replacing the "coming soon" card.
+- [x] **`AspectInterpreter`** + Chart-tab "Your strongest aspects" card — every real aspect interpreted in plain language.
+- [x] **Synastry depth** — `CompatibilityScorer.score(fromSynastry:)` (real aspect-weighted 0–100, replaces the date heuristic in Friend detail) + `SynastrySummary` (relationship-dynamic headline) in `FriendDetailView`.
+- [ ] Next (unblocked): "Why this reading?" transparency sheet (COMPETITIVE-ANALYSIS gap G7); Big-3 tappable interpretations; transit-tied Reflect prompts.
+- [!] Blocked (need provisioning): conversational "ask your chart" + RAG daily reading (Supabase + Anthropic key); narrated audio (ElevenLabs); palm pipeline (Core ML model).
+
 ---
 
 ## 🚧 Blockers

@@ -358,3 +358,16 @@ The chart wheel rendered the zodiac signs (U+2648–2653) as the OS's purple col
 
 **[2026-06] `LuminaTypography` already scales; only fixed `.system(size:)` didn't**
 The type tokens are anchored to Dynamic Type text styles (`.system(.body)`, `.system(.title)`…), so body/heading/caption text already scales — don't "fix" what isn't broken. The only Dynamic Type gap was 8 hero/icon `.font(.system(size: N))` sites. Fix with `@ScaledMetric private var x: CGFloat = N` (the `: CGFloat` annotation is required — `44` alone infers `Int`). For displays inside `HStack`s, add `.minimumScaleFactor(0.6).lineLimit(1)` so they shrink instead of overflowing at accessibility sizes. Adding a defaulted `@ScaledMetric` to a struct with the implicit memberwise init just adds a defaulted parameter — existing call sites keep working.
+
+---
+
+## 🔮 Grounded interpretation engine (2026-06-04, branch `claude/adoring-euler-yEDvq`)
+
+**[2026-06] Ship the deterministic grounding layer when the LLM is blocked**
+The differentiating "ask your chart" / RAG daily reading need Supabase (corpus) + the Anthropic key, which aren't provisioned. Rather than stall, ship the *grounding layer* the LLM would sit on: deterministic, per-placement interpretations composed from real building blocks. `PlacementInterpreter` = planet drive × sign manner × house arena × retrograde; `AspectInterpreter` = planet theme × aspect dynamic; `SynastrySummary` = the aspect mix → a one-line verdict. No LLM ⇒ no hallucination, and it's keyed to the user's *actual* placement so it beats the category's generic horoscopes (COMPETITIVE-ANALYSIS gap G2). The richer narrated version later can only *enrich* facts already true here. Pattern: ~30 curated building blocks + a composition template reads specific and premium, and is fully unit-testable (assert it names the placement and never emits a fallback string).
+
+**[2026-06] Make the score match what's shown**
+The People tab showed real synastry aspects but a date-only heuristic *number* — incongruous. `CompatibilityScorer.score(fromSynastry:)` derives the 0–100 from the same aspects (trine/sextile + bonding conjunctions up, squares/oppositions down, tighter counts more, Sun/Moon/Venus/Mars contacts ×1.5). Validate weighting distributions with a quick Python port before pushing (sample → 63 "Harmonious", all-hard 23, all-harmonious 90) so the constants aren't arbitrary. Keep the fast offline heuristic only for list badges on never-opened friends.
+
+**[2026-06] `ForEach` can't key on a tuple element**
+`ForEach(tuples, id: \.0)` doesn't compile — tuples have no key paths. Map to `[String]` (or a small Identifiable struct) and `ForEach(strings, id: \.self)`.
