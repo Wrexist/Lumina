@@ -8,6 +8,7 @@ struct PlanetDetailSheet: View {
     let chart: NatalChart
 
     @Environment(\.dismiss) private var dismiss
+    @ScaledMetric private var glyphSize: CGFloat = 64
 
     var body: some View {
         NavigationStack {
@@ -35,8 +36,10 @@ struct PlanetDetailSheet: View {
     private var header: some View {
         HStack(spacing: LuminaSpacing.md) {
             Text(ChartGlyphs.planetGlyph(planet.planet))
-                .font(.system(size: 64))
+                .font(.system(size: glyphSize))
                 .foregroundStyle(LuminaColors.mutedGold)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
             VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
                 Text(ChartGlyphs.summary(planet: planet.planet, longitude: planet.longitude, house: house))
                     .font(LuminaTypography.heading)

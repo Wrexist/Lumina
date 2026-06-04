@@ -73,7 +73,7 @@ struct OnboardingFlowView: View {
             Spacer()
 
             // Keep chevron-shaped placeholder so the title is centered.
-            Image(systemName: "chevron.left").opacity(0)
+            Image(systemName: "chevron.left").opacity(0).accessibilityHidden(true)
         }
     }
 

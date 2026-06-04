@@ -362,6 +362,17 @@ All CI-verified (runs #52, #54 green on Xcode 26.3 / iOS 26; backend 56 tests):
 - [x] **Chart-wheel glyph de-clustering** — `ChartWheelLayout` stacks conjunct planet glyphs at staggered radii (circle cut at largest gap to handle the 0°/360° seam) so each stays legible and tappable.
 - [x] **Shared backend auth** — extracted constant-time `requireSharedSecret` used by `/chart` and `/transits`.
 
+### ✅ Audit pass 2 — premium / clarity / a11y — [2026-06-04], branch `claude/adoring-euler-yEDvq`
+
+Full audit at `docs/AUDIT-2026-06-04.md`. Landed:
+
+- [x] **Premium glyphs** — zodiac/planet glyphs forced to monochrome text (U+FE0E) so they render in brand gold, never OS colour-emoji. Caught by the new CI screenshot render. Regression-tested.
+- [x] **Copy clarity** — purged all user-facing roadmap phase numbers + dev jargon ("Anthropic/ElevenLabs", "RAG", "Core ML", "endpoint", "Export to JSON", "Phase N" badges) across ~10 screens; refreshed stale synastry copy.
+- [x] **Real synastry in People** — `FriendDetailView` shows real chart-to-chart aspects (`SynastryPhrasing`) via the backend `/synastry` endpoint, replacing the date-only placeholder.
+- [x] **Dynamic Type** — `LuminaTypography` already scales (text styles); fixed the 8 remaining hero/icon `.system(size:)` sites with `@ScaledMetric` (+ `minimumScaleFactor` in HStacks). VoiceOver labels swept — only an invisible placeholder needed hiding.
+- [x] **No-Mac UI preview** — `ScreenshotTests` renders key screens to PNGs; CI uploads them as artifacts and emits base64 in the log for retrieval through the egress allowlist.
+- [ ] Remaining: glossary inline-term affordance (R-GLOSS-1); soft-delete-with-undo (R-NAV-1); gitleaks + coverage CI gates.
+
 ---
 
 ## 🚧 Blockers

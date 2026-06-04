@@ -5,6 +5,7 @@ import SwiftUI
 /// they recognise before the full wheel decoder-ring sets in.
 struct BigThreeBand: View {
     let chart: NatalChart
+    @ScaledMetric private var glyphSize: CGFloat = 36
 
     var body: some View {
         HStack(spacing: LuminaSpacing.md) {
@@ -26,8 +27,10 @@ struct BigThreeBand: View {
                     .tracking(1.4)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
                 Text(longitude.map(signGlyph) ?? "—")
-                    .font(.system(size: 36))
+                    .font(.system(size: glyphSize))
                     .foregroundStyle(LuminaColors.mutedGold)
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
                 Text(longitude.map(signName) ?? "Hidden")
                     .font(LuminaTypography.body)
                     .foregroundStyle(LuminaColors.inkBlack)

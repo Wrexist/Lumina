@@ -345,3 +345,16 @@ Planets within the conjunction orb were drawn at one radius → glyphs stacked i
 
 **[2026-06] `async let` for best-effort parallelism with a clean failure path**
 Today loads the natal chart (critical) and transits (best-effort) concurrently: `async let chart…; async let transits…; natalChart = try await chart; transits = (try? await transits)?.transits ?? []`. If the critical `try await` throws, the un-awaited `async let` is implicitly cancelled+awaited at scope exit (SE-0317) — no warning, no leak. `try?` on the best-effort one means a transit failure just hides the rows instead of failing the whole screen.
+
+---
+
+## 🔍 Audit pass 2 — premium / clarity / a11y (2026-06-04, branch `claude/adoring-euler-yEDvq`)
+
+**[2026-06] Zodiac Unicode glyphs default to colour-emoji — force text presentation**
+The chart wheel rendered the zodiac signs (U+2648–2653) as the OS's purple colour-emoji tiles — the CI screenshot caught it. Those scalars have `Emoji_Presentation=Yes`. Append U+FE0E (text variation selector) to force monochrome text that honours the brand colour. ♀/♂ (U+2640/2642) are the other emoji-capable glyphs — the selector covers them too. We only saw this because we now render screens to PNGs in CI; "premium, never emoji" needs a visual gate, not just a code rule.
+
+**[2026-06] Internal roadmap jargon was leaking into user-facing copy**
+~20 strings showed users "Phase 5", "Anthropic + ElevenLabs wire-up", "RAG-backed", "Core ML model", "endpoint", "Export to JSON" — even literal `LuminaBadge(title: "Phase 8")`. Rule: phase numbers and framework/service names never belong in shipped copy; they read like a leaked dev ticket and mean nothing to a normal user. Use "coming soon" + plain language. Keep genuine credibility signals (Swiss Ephemeris; the named astrologer corpus; "on-device"). Also a reminder to re-grep copy after shipping a feature — the synastry Help article still said "ships in Phase 7" after synastry shipped.
+
+**[2026-06] `LuminaTypography` already scales; only fixed `.system(size:)` didn't**
+The type tokens are anchored to Dynamic Type text styles (`.system(.body)`, `.system(.title)`…), so body/heading/caption text already scales — don't "fix" what isn't broken. The only Dynamic Type gap was 8 hero/icon `.font(.system(size: N))` sites. Fix with `@ScaledMetric private var x: CGFloat = N` (the `: CGFloat` annotation is required — `44` alone infers `Int`). For displays inside `HStack`s, add `.minimumScaleFactor(0.6).lineLimit(1)` so they shrink instead of overflowing at accessibility sizes. Adding a defaulted `@ScaledMetric` to a struct with the implicit memberwise init just adds a defaulted parameter — existing call sites keep working.

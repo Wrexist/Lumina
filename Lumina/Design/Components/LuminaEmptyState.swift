@@ -13,6 +13,7 @@ struct LuminaEmptyState: View {
     let message: String
     var primaryCTA: CTA?
     var secondaryCTA: CTA?
+    @ScaledMetric private var iconSize: CGFloat = 48
 
     init(
         systemImage: String,
@@ -31,7 +32,7 @@ struct LuminaEmptyState: View {
     var content: some View {
         VStack(spacing: LuminaSpacing.lg) {
             Image(systemName: systemImage)
-                .font(.system(size: 48, weight: .light))
+                .font(.system(size: iconSize, weight: .light))
                 .foregroundStyle(LuminaColors.celestialBlue)
                 .accessibilityHidden(true)
 

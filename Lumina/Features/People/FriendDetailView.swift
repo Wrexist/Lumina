@@ -10,6 +10,7 @@ struct FriendDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var confirmingRemove = false
     @State private var score = 50
+    @ScaledMetric private var scoreSize: CGFloat = 56
     @State private var ephemeris = EphemerisService()
     @State private var synastry: SynastryLoad = .idle
 
@@ -66,8 +67,10 @@ struct FriendDetailView: View {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 HStack(alignment: .firstTextBaseline) {
                     Text("\(score)")
-                        .font(.system(size: 56, weight: .light, design: .serif))
+                        .font(.system(size: scoreSize, weight: .light, design: .serif))
                         .foregroundStyle(LuminaColors.celestialBlue)
+                        .minimumScaleFactor(0.6)
+                        .lineLimit(1)
                     Text("/100")
                         .font(LuminaTypography.bodyLight)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))

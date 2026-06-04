@@ -17,6 +17,7 @@ struct ReflectHubView: View {
     @State private var unlockError: LuminaError?
     @State private var unlocking = false
     @State private var openedEntry: JournalEntry?
+    @ScaledMetric private var lockIconSize: CGFloat = 56
 
     var body: some View {
         Group {
@@ -36,7 +37,7 @@ struct ReflectHubView: View {
         VStack(spacing: LuminaSpacing.lg) {
             Spacer()
             Image(systemName: "lock.shield")
-                .font(.system(size: 56))
+                .font(.system(size: lockIconSize))
                 .foregroundStyle(LuminaColors.celestialBlue)
             Text("Reflect is locked")
                 .font(LuminaTypography.heading)

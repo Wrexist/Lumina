@@ -11,6 +11,7 @@ import SwiftUI
 struct TodayHubView: View {
     @State private var viewModel = TodayViewModel()
     @Environment(AppRouter.self) private var router
+    @ScaledMetric private var iconSize: CGFloat = 28
 
     var body: some View {
         ScrollView {
@@ -104,7 +105,7 @@ struct TodayHubView: View {
         LuminaCard(surface: .glass) {
             HStack(spacing: LuminaSpacing.md) {
                 Image(systemName: "headphones")
-                    .font(.system(size: 28))
+                    .font(.system(size: iconSize))
                     .foregroundStyle(LuminaColors.celestialBlue)
                 VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
                     HStack(spacing: LuminaSpacing.sm) {
@@ -165,7 +166,7 @@ struct TodayHubView: View {
             LuminaCard(padding: LuminaSpacing.md) {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                     Image(systemName: systemImage)
-                        .font(.system(size: 28, weight: .light))
+                        .font(.system(size: iconSize, weight: .light))
                         .foregroundStyle(LuminaColors.celestialBlue)
                     Text(title).font(LuminaTypography.body)
                 }
