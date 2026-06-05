@@ -44,7 +44,7 @@ Legend: ✅ done · 🔨 building · ⏳ queued · 🔒 blocked (needs provision
 
 ## 3. Differentiators ("better than anyone")
 
-- ⏳ **Palm — real, no fakery.** Phase A (unblocked): `VNDetectHumanHandPoseRequest` capture + a **geometric** hand-shape reading (finger ratios, hand type) — real palmistry from Apple Vision, no custom model. Pure reading logic is unit-testable; the capture UI needs device testing. Phase B (🔒): the line-segmentation U-Net for the four major lines.
+- 🔨 **Palm — real, no fakery.** Phase A engine **done** (unblocked): `PalmReader` + `PalmFeatureExtractor` derive the four classical hand types from real geometry (palm proportions + finger length), with a compile-checked `VNDetectHumanHandPoseRequest` adapter — all unit-tested. Remaining: the live capture UI (camera + overlay) needs on-device testing. Phase B (🔒): the line-segmentation U-Net for the four major lines.
 - ✅ **Transparency everywhere** — show the real data behind every claim (started; extend to synastry & interpretations).
 - ✅ **Honest, kind notifications** (see §2) — the explicit anti-Co-Star stance, shipped.
 
