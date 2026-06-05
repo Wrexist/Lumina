@@ -10,6 +10,9 @@ import UIKit
 /// Apple won't show it twice anyway.
 struct NotificationSettingsView: View {
     @State private var permission = NotificationPermission.shared
+    @State private var preferences = AppPreferences.shared
+    @State private var ephemeris = EphemerisService()
+    @State private var alertsError: String?
 
     var body: some View {
         ScrollView {
@@ -17,7 +20,7 @@ struct NotificationSettingsView: View {
                 statusCard
                 primaryAction
                 quietHoursPlaceholder
-                eventsPlaceholder
+                transitAlertsCard
             }
             .padding(LuminaSpacing.lg)
         }
@@ -77,18 +80,24 @@ struct NotificationSettingsView: View {
         }
     }
 
-    private var eventsPlaceholder: some View {
+    private var transitAlertsCard: some View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                HStack {
-                    Text("Event-triggered pushes")
-                        .font(LuminaTypography.body)
-                    Spacer()
-                    LuminaBadge(title: "Soon", tone: .neutral)
+                Toggle(isOn: transitAlertsBinding) {
+                    VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
+                        Text("Transit alerts")
+                            .font(LuminaTypography.body)
+                        Text("A gentle heads-up the morning of each meaningful transit. On-device, opt-in, and capped at \(TransitNotificationPlanner.defaultLimit) — never doom, never spam.")
+                            .font(LuminaTypography.caption)
+                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                    }
                 }
-                Text("Eclipse, retrograde, and ingress alerts — capped at 5 per week. Coming soon.")
-                    .font(LuminaTypography.caption)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                .tint(LuminaColors.celestialBlue)
+                if let alertsError {
+                    Text(alertsError)
+                        .font(LuminaTypography.caption)
+                        .foregroundStyle(LuminaColors.error)
+                }
             }
         }
     }
@@ -124,6 +133,53 @@ struct NotificationSettingsView: View {
         case .notDetermined:
             return "Turn on notifications and we'll wake you with tomorrow's reading."
         }
+    }
+
+    private var transitAlertsBinding: Binding<Bool> {
+        Binding(
+            get: { preferences.transitAlertsEnabled },
+            set: { newValue in
+                preferences.transitAlertsEnabled = newValue
+                Task { await applyTransitAlerts(enabled: newValue) }
+            }
+        )
+    }
+
+    /// Turning on: ensure permission, then fetch the forecast and schedule a
+    /// capped set of on-device alerts. Turning off: cancel ours. Any blocker
+    /// (denied permission, no birth data, offline) reverts the toggle and shows
+    /// a plain reason rather than silently doing nothing.
+    private func applyTransitAlerts(enabled: Bool) async {
+        alertsError = nil
+        guard enabled else {
+            await TransitNotificationScheduler.shared.cancelAll()
+            return
+        }
+        var status = permission.status
+        if status == .notDetermined {
+            status = await permission.request()
+        }
+        guard isAuthorized(status) else {
+            preferences.transitAlertsEnabled = false
+            alertsError = "Turn on notifications above first, then enable transit alerts."
+            return
+        }
+        guard let birth = UserBirthDataStore.userDefaults.load() else {
+            preferences.transitAlertsEnabled = false
+            alertsError = "Add your birth info in Settings first, then turn this on."
+            return
+        }
+        do {
+            let forecast = try await ephemeris.forecast(for: birth)
+            await TransitNotificationScheduler.shared.reschedule(TransitNotificationPlanner.plan(from: forecast))
+        } catch {
+            preferences.transitAlertsEnabled = false
+            alertsError = "Couldn't reach the sky just now. Try again in a moment."
+        }
+    }
+
+    private func isAuthorized(_ status: NotificationPermission.Status) -> Bool {
+        status == .granted || status == .provisional || status == .ephemeral
     }
 
     private func openSystemSettings() {

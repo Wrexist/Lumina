@@ -14,6 +14,7 @@ final class AppPreferences {
     private enum Keys {
         static let lockReflectWithFaceID = "luminaLockReflectWithFaceID"
         static let reduceMotionOverride = "luminaReduceMotionOverride"
+        static let transitAlertsEnabled = "luminaTransitAlertsEnabled"
     }
 
     static let shared = AppPreferences()
@@ -35,9 +36,18 @@ final class AppPreferences {
         }
     }
 
+    /// Opt-in: schedule on-device notifications for upcoming exact transits.
+    var transitAlertsEnabled: Bool {
+        didSet {
+            guard oldValue != transitAlertsEnabled else { return }
+            defaults.set(transitAlertsEnabled, forKey: Keys.transitAlertsEnabled)
+        }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.lockReflectWithFaceID = defaults.bool(forKey: Keys.lockReflectWithFaceID)
         self.reduceMotionOverride = defaults.bool(forKey: Keys.reduceMotionOverride)
+        self.transitAlertsEnabled = defaults.bool(forKey: Keys.transitAlertsEnabled)
     }
 }
