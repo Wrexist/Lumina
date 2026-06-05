@@ -47,6 +47,13 @@ struct ChartHubView: View {
                 CenterDetailSheet(center: center, activation: HumanDesignActivation.compute(from: chart))
             }
         }
+        .toolbar {
+            if case .ready(let chart) = viewModel.state, mode == .astrology {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ChartShareButton(chart: chart)
+                }
+            }
+        }
     }
 
     private var modePicker: some View {

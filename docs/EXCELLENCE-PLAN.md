@@ -40,7 +40,7 @@ Legend: ✅ done · 🔨 building · ⏳ queued · 🔒 blocked (needs provision
 - ⏳ **Secondary progressions** — your evolving chart. Backend `/progressions`.
 - ⏳ **Returns & retrogrades** — Saturn/Jupiter return dates, current/next retrograde windows (deterministic, age- & ephemeris-based).
 - ✅ **Local transit notifications** — opt-in, on-device (`UNUserNotificationCenter`, no OneSignal), capped at 5, delivered 9am on the transit's day (never the exact minute), never doom. `TransitNotificationPlanner` + `TransitNotificationScheduler` + Settings toggle.
-- ⏳ **Share your chart as an image** — render the wheel to a shareable card (`ImageRenderer` + share sheet).
+- ✅ **Share your chart as an image** — `ChartShareCard` rendered via `ImageRenderer` to a PNG, shared through a `ShareLink` from the Chart toolbar (`ChartShareButton`).
 
 ## 3. Differentiators ("better than anyone")
 
@@ -67,7 +67,7 @@ Legend: ✅ done · 🔨 building · ⏳ queued · 🔒 blocked (needs provision
 ### Working order (this push onward)
 1. Soft-delete + Undo → 2. ✅ "What's coming" transits → 3. ✅ Composite chart →
 4. ✅ Moon phase → 5. ✅ Big-3 taps → 6. ✅ Transit-tied Reflect prompt →
-7. ✅ Local notifications → 8. Chart image share → 9. Palm Phase A →
+7. ✅ Local notifications → 8. ✅ Chart image share → 9. 🔨 Palm Phase A (engine done) →
 10. empty-state/motion/icon polish → 11. infra gates.
 
 I update this file as each lands.
