@@ -51,6 +51,16 @@ struct JournalPromptGenerator {
         return Self.pool[index]
     }
 
+    /// The day's prompt keyed to the strongest current transit (so the Reflect
+    /// prompt responds to the real sky), falling back to the date-keyed pool
+    /// when no transit is available. Transits are expected tightest-first.
+    func prompt(forTransits transits: [TransitReading], on date: Date, calendar: Calendar = .current) -> String {
+        guard let top = TransitPrompt.strongest(in: transits) else {
+            return prompt(for: date, calendar: calendar)
+        }
+        return TransitPrompt.prompt(for: top)
+    }
+
     /// Returns the softer-prompt counterpart for the same date so the
     /// user's "skip — give me a softer prompt" tap is also deterministic.
     func softerPrompt(for date: Date, calendar: Calendar = .current) -> String {
@@ -65,5 +75,14 @@ struct JournalPromptGenerator {
     func transitKey(for date: Date, calendar: Calendar = .current) -> String {
         let components = calendar.dateComponents([.year, .month, .day], from: date)
         return "date:\(components.year ?? 0)-\(components.month ?? 0)-\(components.day ?? 0)"
+    }
+
+    /// The transit-keyed counterpart so an entry created from a transit-tied
+    /// prompt groups by that transit; falls back to the date key otherwise.
+    func transitKey(forTransits transits: [TransitReading], on date: Date, calendar: Calendar = .current) -> String {
+        guard let top = TransitPrompt.strongest(in: transits) else {
+            return transitKey(for: date, calendar: calendar)
+        }
+        return TransitPrompt.key(for: top)
     }
 }

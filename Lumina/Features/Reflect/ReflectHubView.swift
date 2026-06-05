@@ -17,6 +17,8 @@ struct ReflectHubView: View {
     @State private var unlockError: LuminaError?
     @State private var unlocking = false
     @State private var openedEntry: JournalEntry?
+    @State private var ephemeris = EphemerisService()
+    @State private var transits: [TransitReading] = []
     @ScaledMetric private var lockIconSize: CGFloat = 56
 
     var body: some View {
@@ -74,6 +76,7 @@ struct ReflectHubView: View {
         .navigationDestination(item: $openedEntry) { entry in
             JournalEntryView(entry: entry)
         }
+        .task { await loadTransits() }
     }
 
     private var todaysPromptCard: some View {
@@ -83,7 +86,7 @@ struct ReflectHubView: View {
                     .font(LuminaTypography.mono)
                     .tracking(1.4)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-                Text(JournalPromptGenerator.shared.prompt(for: .now))
+                Text(todaysPrompt)
                     .font(LuminaTypography.heading)
                 Text("Auto-saved on this device only.")
                     .font(LuminaTypography.caption)
@@ -155,10 +158,33 @@ struct ReflectHubView: View {
         return entries.first { calendar.isDateInToday($0.date) }
     }
 
+    /// The prompt shown on the card. Once today's entry exists, it shows the
+    /// entry's frozen prompt so the card and the entry never disagree; before
+    /// that, it's the live transit-tied prompt (falling back to the date pool
+    /// until transits load).
+    private var todaysPrompt: String {
+        if let existing = todayEntry {
+            return existing.prompt
+        }
+        return JournalPromptGenerator.shared.prompt(forTransits: transits, on: .now)
+    }
+
     // MARK: - Methods
 
     private func openTodayEntry() {
         openedEntry = todayEntry ?? createTodayEntry()
+    }
+
+    /// Best-effort load of today's real transits so the prompt reflects the
+    /// actual sky. On any failure (no birth data, offline) `transits` stays
+    /// empty and the prompt falls back to the date-keyed pool — no error shown.
+    private func loadTransits() async {
+        guard transits.isEmpty, let birth = UserBirthDataStore.userDefaults.load() else { return }
+        do {
+            transits = try await ephemeris.transits(for: birth).transits
+        } catch {
+            transits = []
+        }
     }
 
     private func unlock() async {
@@ -200,8 +226,8 @@ struct ReflectHubView: View {
 
     private func createTodayEntry() -> JournalEntry {
         let date = Date.now
-        let prompt = JournalPromptGenerator.shared.prompt(for: date)
-        let key = JournalPromptGenerator.shared.transitKey(for: date)
+        let prompt = JournalPromptGenerator.shared.prompt(forTransits: transits, on: date)
+        let key = JournalPromptGenerator.shared.transitKey(forTransits: transits, on: date)
         let entry = JournalEntry(date: date, prompt: prompt, transitKey: key)
         modelContext.insert(entry)
         modelContext.saveOrLog(category: "Reflect")
