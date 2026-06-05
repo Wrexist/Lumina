@@ -34,9 +34,9 @@ Legend: ✅ done · 🔨 building · ⏳ queued · 🔒 blocked (needs provision
 
 ## 2. New grounded features (unblocked, deterministic — no LLM/keys)
 
-- ⏳ **"What's coming"** — upcoming **exact** transit dates (root-find when each transiting aspect perfects). The category's "timing" promise, done for real. Backend `/forecast`.
+- ✅ **"What's coming"** — upcoming **exact** transit dates (root-find when each transiting aspect perfects). The category's "timing" promise, done for real. Backend `/forecast` + Today "What's coming" card.
 - ⏳ **Moon phase + void-of-course** — today's lunar phase, illumination, next new/full. Backend + Today surface.
-- ⏳ **Composite chart** (relationship midpoints) — deepens People beyond synastry. Backend `/composite`.
+- ✅ **Composite chart** (relationship midpoints) — deepens People beyond synastry. Backend `/composite` + Friend "relationship as one chart" card.
 - ⏳ **Secondary progressions** — your evolving chart. Backend `/progressions`.
 - ⏳ **Returns & retrogrades** — Saturn/Jupiter return dates, current/next retrograde windows (deterministic, age- & ephemeris-based).
 - ⏳ **Local transit notifications** — opt-in, kind, timely (a transit perfects → a gentle, useful nudge). Uses `UNUserNotificationCenter` only — no OneSignal needed. Explicitly anti-anxiety-bait.
@@ -65,7 +65,7 @@ Legend: ✅ done · 🔨 building · ⏳ queued · 🔒 blocked (needs provision
 ---
 
 ### Working order (this push onward)
-1. Soft-delete + Undo → 2. "What's coming" transits → 3. Composite chart →
+1. Soft-delete + Undo → 2. ✅ "What's coming" transits → 3. ✅ Composite chart →
 4. Moon phase → 5. Big-3 taps → 6. Transit-tied Reflect prompt →
 7. Local notifications → 8. Chart image share → 9. Palm Phase A →
 10. empty-state/motion/icon polish → 11. infra gates.

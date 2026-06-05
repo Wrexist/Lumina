@@ -202,6 +202,30 @@ actor EphemerisService {
         return try Self.chartDecoder.decode(SynastryResult.self, from: data)
     }
 
+    /// The composite (midpoint) relationship chart of two people — a single
+    /// merged chart. Reuses the two-person synastry payload. Real positions
+    /// only. Wire format: `backend/src/routes/composite.ts`.
+    func composite(personA: SynastryPerson, personB: SynastryPerson) async throws -> CompositeResult {
+        guard let baseURL, let apiSecret, !apiSecret.isEmpty else {
+            throw ServiceError.missingConfiguration
+        }
+        let body = SynastryRequestBody(personA: personA, personB: personB)
+        var request = URLRequest(url: baseURL.appendingPathComponent("composite"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
+        request.httpBody = try Self.chartEncoder.encode(body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
+        guard (200..<300).contains(http.statusCode) else {
+            let errorBody = String(data: data, encoding: .utf8) ?? ""
+            throw ServiceError.httpError(status: http.statusCode, body: errorBody)
+        }
+        return try Self.chartDecoder.decode(CompositeResult.self, from: data)
+    }
+
     /// Upcoming exact transit dates over a window (default 30 days from now).
     /// Real positions only. Wire format: `backend/src/routes/forecast.ts`.
     func forecast(for birthData: BirthData, from: Date? = nil, days: Int? = nil) async throws -> ForecastResult {

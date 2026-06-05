@@ -28,6 +28,7 @@ struct FriendDetailView: View {
                 scoreCard
                 birthInfoCard
                 synastrySection
+                CompositeCard(friend: friend)
             }
             .padding(LuminaSpacing.lg)
         }
