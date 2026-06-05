@@ -72,6 +72,23 @@ actor EphemerisService {
         }
     }
 
+    /// Request body for `POST /progressions` — `BirthData` plus an optional
+    /// target date (`on`); omitted when nil so the backend defaults to now.
+    private struct ProgressionsRequestBody: Encodable {
+        enum CodingKeys: String, CodingKey {
+            case on
+        }
+
+        let birthData: BirthData
+        let on: Date?
+
+        func encode(to encoder: any Encoder) throws {
+            try birthData.encode(to: encoder)
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encodeIfPresent(on, forKey: .on)
+        }
+    }
+
     /// Request body for `POST /forecast` — `BirthData` plus the window.
     private struct ForecastRequestBody: Encodable {
         enum CodingKeys: String, CodingKey {
@@ -262,6 +279,29 @@ actor EphemerisService {
             throw ServiceError.httpError(status: http.statusCode, body: errorBody)
         }
         return try Self.chartDecoder.decode(MoonPhaseResult.self, from: data)
+    }
+
+    /// The secondary-progressed chart for `date` (defaults to now). Real
+    /// positions only. Wire format: `backend/src/routes/progressions.ts`.
+    func progressions(for birthData: BirthData, on date: Date? = nil) async throws -> ProgressionsResult {
+        guard let baseURL, let apiSecret, !apiSecret.isEmpty else {
+            throw ServiceError.missingConfiguration
+        }
+        let body = ProgressionsRequestBody(birthData: birthData, on: date)
+        var request = URLRequest(url: baseURL.appendingPathComponent("progressions"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
+        request.httpBody = try Self.chartEncoder.encode(body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
+        guard (200..<300).contains(http.statusCode) else {
+            let errorBody = String(data: data, encoding: .utf8) ?? ""
+            throw ServiceError.httpError(status: http.statusCode, body: errorBody)
+        }
+        return try Self.chartDecoder.decode(ProgressionsResult.self, from: data)
     }
 
     /// Upcoming exact transit dates over a window (default 30 days from now).
