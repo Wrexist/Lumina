@@ -5,6 +5,7 @@ import type {
   HouseSystem,
   MoonPhaseResult,
   NatalChart,
+  ProgressionsResult,
   SynastryPerson,
   SynastryResult,
   TransitsResult,
@@ -28,6 +29,13 @@ export interface EphemerisService {
   composite(personA: SynastryPerson, personB: SynastryPerson): Promise<CompositeResult>;
   /** Tonight's Moon — phase, illumination, next new/full (global sky data). */
   moonPhase(at?: Date): Promise<MoonPhaseResult>;
+  /** Secondary-progressed chart for a target date (day-for-a-year). */
+  progressions(birthData: BirthData, options?: ProgressionsOptions): Promise<ProgressionsResult>;
+}
+
+export interface ProgressionsOptions {
+  /** The target date to progress to; defaults to now. */
+  readonly on?: Date;
 }
 
 export interface ForecastOptions {

@@ -7,6 +7,7 @@ import { synastryRoutes } from "./routes/synastry.ts";
 import { compositeRoutes } from "./routes/composite.ts";
 import { forecastRoutes } from "./routes/forecast.ts";
 import { moonRoutes } from "./routes/moon.ts";
+import { progressionsRoutes } from "./routes/progressions.ts";
 import { AstronomyEngineEphemeris } from "./services/astronomyEngineEphemeris.ts";
 
 export async function buildServer(config: Config): Promise<FastifyInstance> {
@@ -50,6 +51,7 @@ export async function buildServer(config: Config): Promise<FastifyInstance> {
   await app.register(compositeRoutes, { ephemeris, config });
   await app.register(forecastRoutes, { ephemeris, config });
   await app.register(moonRoutes, { ephemeris, config });
+  await app.register(progressionsRoutes, { ephemeris, config });
 
   return app;
 }

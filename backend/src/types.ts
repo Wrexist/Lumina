@@ -268,3 +268,26 @@ export const MoonPhaseResultSchema = z.object({
 });
 
 export type MoonPhaseResult = z.infer<typeof MoonPhaseResultSchema>;
+
+/** Wire format for `POST /progressions`: birth data + an optional target date. */
+export const ProgressionsRequestSchema = BirthDataSchema.extend({
+  on: plausibleInstant.optional(),
+});
+
+export type ProgressionsRequest = z.infer<typeof ProgressionsRequestSchema>;
+
+/**
+ * Secondary-progressed chart — the natal chart "evolved" to a target date via
+ * the day-for-a-year technique. Mirrors `ProgressionsResult` in the iOS models.
+ */
+export const ProgressionsResultSchema = z.object({
+  calculatedAt: z.string().datetime({ offset: true }),
+  /** The target date the progression was computed for. */
+  on: z.string().datetime({ offset: true }),
+  /** The progressed instant (birth + age-in-years days) actually sampled. */
+  progressedAt: z.string().datetime({ offset: true }),
+  /** Progressed positions of all ten bodies. */
+  planets: z.array(PlanetPositionSchema),
+});
+
+export type ProgressionsResult = z.infer<typeof ProgressionsResultSchema>;

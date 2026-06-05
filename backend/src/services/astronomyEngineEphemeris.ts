@@ -8,6 +8,7 @@ import { computeTransits } from "../lib/transits.ts";
 import { computeSynastry } from "../lib/synastry.ts";
 import { computeComposite } from "../lib/composite.ts";
 import { findCrossings } from "../lib/forecast.ts";
+import { progressedInstant } from "../lib/progressions.ts";
 import type {
   AspectType,
   BirthData,
@@ -19,11 +20,18 @@ import type {
   MoonPhaseResult,
   NatalChart,
   PlanetPosition,
+  ProgressionsResult,
   SynastryPerson,
   SynastryResult,
   TransitsResult,
 } from "../types.ts";
-import type { ChartOptions, EphemerisService, ForecastOptions, TransitOptions } from "./ephemeris.ts";
+import type {
+  ChartOptions,
+  EphemerisService,
+  ForecastOptions,
+  ProgressionsOptions,
+  TransitOptions,
+} from "./ephemeris.ts";
 
 /** The five major aspects, by exact angle, used for forecasting exact hits. */
 const FORECAST_ASPECTS: readonly { type: AspectType; exactAngle: number }[] = [
@@ -135,6 +143,19 @@ export class AstronomyEngineEphemeris implements EphemerisService {
       calculatedAt: new Date().toISOString(),
       planets,
       aspects: computeAspects(planets),
+    };
+  }
+
+  async progressions(birthData: BirthData, options: ProgressionsOptions = {}): Promise<ProgressionsResult> {
+    const on = options.on ?? new Date();
+    const birthInstant = effectiveInstant(birthData);
+    // Day-for-a-year: the progressed sky is `age-in-years` days after birth.
+    const progressed = new Date(progressedInstant(birthInstant.getTime(), on.getTime()));
+    return {
+      calculatedAt: new Date().toISOString(),
+      on: on.toISOString(),
+      progressedAt: progressed.toISOString(),
+      planets: PLANETS.map((spec) => positionAt(spec, progressed)),
     };
   }
 

@@ -37,7 +37,7 @@ Legend: ✅ done · 🔨 building · ⏳ queued · 🔒 blocked (needs provision
 - ✅ **"What's coming"** — upcoming **exact** transit dates (root-find when each transiting aspect perfects). The category's "timing" promise, done for real. Backend `/forecast` + Today "What's coming" card.
 - ✅ **Moon phase** — today's lunar phase, illumination, next new/full. Backend `/moon` + Today "Tonight's Moon" card. (Void-of-course deferred.)
 - ✅ **Composite chart** (relationship midpoints) — deepens People beyond synastry. Backend `/composite` + Friend "relationship as one chart" card.
-- ⏳ **Secondary progressions** — your evolving chart. Backend `/progressions`.
+- 🔨 **Secondary progressions** — your evolving chart (day-for-a-year). Backend `/progressions` **done** (`lib/progressions.ts`, 7 tests); iOS surface pending.
 - ⏳ **Returns & retrogrades** — Saturn/Jupiter return dates, current/next retrograde windows (deterministic, age- & ephemeris-based).
 - ✅ **Local transit notifications** — opt-in, on-device (`UNUserNotificationCenter`, no OneSignal), capped at 5, delivered 9am on the transit's day (never the exact minute), never doom. `TransitNotificationPlanner` + `TransitNotificationScheduler` + Settings toggle.
 - ✅ **Share your chart as an image** — `ChartShareCard` rendered via `ImageRenderer` to a PNG, shared through a `ShareLink` from the Chart toolbar (`ChartShareButton`).
