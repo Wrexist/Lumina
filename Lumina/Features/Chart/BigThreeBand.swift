@@ -1,23 +1,80 @@
 import SwiftUI
 
 /// Sun / Moon / Rising — the three placements every casual user can name.
-/// Sits at the top of the Chart tab so first-time users see something
-/// they recognise before the full wheel decoder-ring sets in.
+/// Each cell is tappable: Sun and Moon open the full placement reading, Rising
+/// opens the ascendant reading. Sits at the top of the Chart and Today tabs so
+/// first-time users see something they recognise — and can act on — before the
+/// full wheel decoder-ring sets in.
 struct BigThreeBand: View {
     let chart: NatalChart
+    @State private var selection: Selection?
     @ScaledMetric private var glyphSize: CGFloat = 36
 
-    var body: some View {
-        HStack(spacing: LuminaSpacing.md) {
-            cell(label: "Sun", longitude: planetLongitude("Sun"))
-            cell(label: "Moon", longitude: planetLongitude("Moon"))
-            cell(label: "Rising", longitude: chart.houses?.ascendant)
+    /// What the user tapped — a planet placement or the (non-planet) ascendant.
+    private enum Selection: Identifiable {
+        case planet(NatalChart.PlanetPosition)
+        case ascendant(Double)
+
+        var id: String {
+            switch self {
+            case .planet(let planet): planet.planet
+            case .ascendant: "Ascendant"
+            }
         }
     }
 
-    private func planetLongitude(_ name: String) -> Double? {
-        chart.planets.first(where: { $0.planet == name })?.longitude
+    var body: some View {
+        HStack(spacing: LuminaSpacing.md) {
+            planetCell("Sun")
+            planetCell("Moon")
+            risingCell
+        }
+        .sheet(item: $selection, content: detailSheet)
     }
+
+    // MARK: - Cells
+
+    @ViewBuilder
+    private func planetCell(_ name: String) -> some View {
+        if let planet = chart.planets.first(where: { $0.planet == name }) {
+            Button {
+                Haptics.light.play()
+                selection = .planet(planet)
+            } label: {
+                cell(label: name, longitude: planet.longitude)
+            }
+            .buttonStyle(.plain)
+        } else {
+            cell(label: name, longitude: nil)
+        }
+    }
+
+    @ViewBuilder
+    private var risingCell: some View {
+        if let ascendant = chart.houses?.ascendant {
+            Button {
+                Haptics.light.play()
+                selection = .ascendant(ascendant)
+            } label: {
+                cell(label: "Rising", longitude: ascendant)
+            }
+            .buttonStyle(.plain)
+        } else {
+            cell(label: "Rising", longitude: nil)
+        }
+    }
+
+    @ViewBuilder
+    private func detailSheet(_ selection: Selection) -> some View {
+        switch selection {
+        case .planet(let planet):
+            PlanetDetailSheet(planet: planet, chart: chart)
+        case .ascendant(let longitude):
+            AscendantDetailSheet(ascendant: longitude)
+        }
+    }
+
+    // MARK: - Cell rendering
 
     private func cell(label: String, longitude: Double?) -> some View {
         LuminaCard(padding: LuminaSpacing.sm) {
