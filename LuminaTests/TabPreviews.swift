@@ -78,9 +78,7 @@ enum TabPreviews {
             Text("Reflect").font(LuminaTypography.display)
             LuminaCard(surface: .glass) {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                    Text("TODAY'S PROMPT")
-                        .font(LuminaTypography.mono).tracking(1.4)
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                    kickerLabel("TODAY'S PROMPT")
                     Text("Where in your life are you being asked to slow down and revise rather than push?")
                         .font(LuminaTypography.heading)
                 }
@@ -123,20 +121,23 @@ enum TabPreviews {
 
     // MARK: - Shared building blocks
 
+    private static func kickerLabel(_ text: String) -> some View {
+        Text(text)
+            .font(LuminaTypography.mono)
+            .tracking(1.4)
+            .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+    }
+
     private static func sectionHeader(kicker: String, title: String) -> some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
-            Text(kicker)
-                .font(LuminaTypography.mono).tracking(1.4)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            kickerLabel(kicker)
             Text(title).font(LuminaTypography.display)
         }
     }
 
     private static func bulletSection(title: String, lines: [String]) -> some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-            Text(title)
-                .font(LuminaTypography.mono).tracking(1.4)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            kickerLabel(title)
             ForEach(lines, id: \.self) { line in
                 HStack(alignment: .top, spacing: LuminaSpacing.sm) {
                     Text("•").font(LuminaTypography.body)
