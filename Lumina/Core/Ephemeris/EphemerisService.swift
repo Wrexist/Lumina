@@ -57,6 +57,21 @@ actor EphemerisService {
         let personB: SynastryPerson
     }
 
+    /// Request body for `POST /moon` — an optional `at` moment. The key is
+    /// *omitted* when nil (the backend treats `at` as optional, not nullable).
+    private struct MoonRequestBody: Encodable {
+        enum CodingKeys: String, CodingKey {
+            case at
+        }
+
+        let at: Date?
+
+        func encode(to encoder: any Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encodeIfPresent(at, forKey: .at)
+        }
+    }
+
     /// Request body for `POST /forecast` — `BirthData` plus the window.
     private struct ForecastRequestBody: Encodable {
         enum CodingKeys: String, CodingKey {
@@ -224,6 +239,29 @@ actor EphemerisService {
             throw ServiceError.httpError(status: http.statusCode, body: errorBody)
         }
         return try Self.chartDecoder.decode(CompositeResult.self, from: data)
+    }
+
+    /// Tonight's Moon — phase, illumination, next new/full. Global sky data
+    /// (no birth input). Wire format: `backend/src/routes/moon.ts`.
+    func moonPhase(at moment: Date? = nil) async throws -> MoonPhaseResult {
+        guard let baseURL, let apiSecret, !apiSecret.isEmpty else {
+            throw ServiceError.missingConfiguration
+        }
+        let body = MoonRequestBody(at: moment)
+        var request = URLRequest(url: baseURL.appendingPathComponent("moon"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
+        request.httpBody = try Self.chartEncoder.encode(body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
+        guard (200..<300).contains(http.statusCode) else {
+            let errorBody = String(data: data, encoding: .utf8) ?? ""
+            throw ServiceError.httpError(status: http.statusCode, body: errorBody)
+        }
+        return try Self.chartDecoder.decode(MoonPhaseResult.self, from: data)
     }
 
     /// Upcoming exact transit dates over a window (default 30 days from now).

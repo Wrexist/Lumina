@@ -1,5 +1,6 @@
-import { Body, Ecliptic, GeoVector } from "astronomy-engine";
+import { Body, Ecliptic, GeoVector, Illumination, MoonPhase, SearchMoonPhase } from "astronomy-engine";
 import { computeAspects } from "../lib/aspects.ts";
+import { phaseName } from "../lib/moon.ts";
 import { placidusHouses, tropicalAngles, wholeSignHouses } from "../lib/houses.ts";
 import { lahiriAyanamsha, tropicalToSidereal } from "../lib/sidereal.ts";
 import { noonLocalAsUTC } from "../lib/timezone.ts";
@@ -15,6 +16,7 @@ import type {
   ForecastResult,
   HouseCusps,
   HouseSystem,
+  MoonPhaseResult,
   NatalChart,
   PlanetPosition,
   SynastryPerson,
@@ -58,6 +60,10 @@ const PLANETS: readonly PlanetSpec[] = [
 ];
 
 const RETROGRADE_PROBE_MS = 60 * 60 * 1000; // one hour earlier
+
+// A synodic month is ~29.53 days; 40 days guarantees the next new and full.
+const MOON_SEARCH_DAYS = 40;
+const MOON_FULL_ANGLE = 180;
 
 /**
  * Pure-JS ephemeris implementation backed by `astronomy-engine`.
@@ -129,6 +135,29 @@ export class AstronomyEngineEphemeris implements EphemerisService {
       calculatedAt: new Date().toISOString(),
       planets,
       aspects: computeAspects(planets),
+    };
+  }
+
+  async moonPhase(at: Date = new Date()): Promise<MoonPhaseResult> {
+    // Elongation angle (0 = new, 90 = first quarter, 180 = full) and the
+    // illuminated fraction of the disk, both for the given instant.
+    const angle = MoonPhase(at);
+    const illumination = Illumination(Body.Moon, at).phase_fraction;
+    // SearchMoonPhase finds the next time the Moon reaches a phase angle after
+    // `at`; 0° is the next new moon, 180° the next full.
+    const nextNew = SearchMoonPhase(0, at, MOON_SEARCH_DAYS);
+    const nextFull = SearchMoonPhase(MOON_FULL_ANGLE, at, MOON_SEARCH_DAYS);
+    if (nextNew === null || nextFull === null) {
+      throw new Error("moon phase search failed to converge");
+    }
+    return {
+      calculatedAt: new Date().toISOString(),
+      at: at.toISOString(),
+      angle,
+      phase: phaseName(angle),
+      illumination,
+      nextNewMoon: nextNew.date.toISOString(),
+      nextFullMoon: nextFull.date.toISOString(),
     };
   }
 

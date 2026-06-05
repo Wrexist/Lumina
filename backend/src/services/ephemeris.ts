@@ -3,6 +3,7 @@ import type {
   CompositeResult,
   ForecastResult,
   HouseSystem,
+  MoonPhaseResult,
   NatalChart,
   SynastryPerson,
   SynastryResult,
@@ -25,6 +26,8 @@ export interface EphemerisService {
   forecast(birthData: BirthData, options?: ForecastOptions): Promise<ForecastResult>;
   /** The composite (midpoint) chart of two people. */
   composite(personA: SynastryPerson, personB: SynastryPerson): Promise<CompositeResult>;
+  /** Tonight's Moon — phase, illumination, next new/full (global sky data). */
+  moonPhase(at?: Date): Promise<MoonPhaseResult>;
 }
 
 export interface ForecastOptions {

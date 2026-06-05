@@ -239,3 +239,32 @@ export const CompositeResultSchema = z.object({
 });
 
 export type CompositeResult = z.infer<typeof CompositeResultSchema>;
+
+/** Wire format for `POST /moon`: an optional moment (defaults to now). */
+export const MoonPhaseRequestSchema = z.object({
+  at: plausibleInstant.optional(),
+});
+
+export type MoonPhaseRequest = z.infer<typeof MoonPhaseRequestSchema>;
+
+/**
+ * Tonight's Moon — phase, illumination, and the next new/full dates. Global
+ * (not per-user) sky data. Mirrors `MoonPhaseResult` in the iOS models.
+ */
+export const MoonPhaseResultSchema = z.object({
+  calculatedAt: z.string().datetime({ offset: true }),
+  /** The moment the phase was computed for. */
+  at: z.string().datetime({ offset: true }),
+  /** Phase angle 0–360° (0 = new, 90 = first quarter, 180 = full). */
+  angle: z.number(),
+  /** Human-readable phase name ("Waxing Gibbous", …). */
+  phase: z.string(),
+  /** Illuminated fraction of the lunar disk, 0–1. */
+  illumination: z.number().min(0).max(1),
+  /** The next new moon at or after `at`. */
+  nextNewMoon: z.string().datetime({ offset: true }),
+  /** The next full moon at or after `at`. */
+  nextFullMoon: z.string().datetime({ offset: true }),
+});
+
+export type MoonPhaseResult = z.infer<typeof MoonPhaseResultSchema>;
