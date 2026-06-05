@@ -5,7 +5,7 @@ import XCTest
 /// quiet — skip the Moon, drop past slots, cap the count, and deliver at a
 /// humane hour with honest copy.
 final class TransitNotificationPlannerTests: XCTestCase {
-    func testPlanSkipsMoonAndPastAndKeepsUpcoming() {
+    func testPlanSkipsMoonAndPastAndKeepsUpcoming() throws {
         let now = date("2026-06-05T12:00:00Z")
         let forecast = ForecastResult(
             calculatedAt: now,
@@ -21,8 +21,9 @@ final class TransitNotificationPlannerTests: XCTestCase {
         )
         let planned = TransitNotificationPlanner.plan(from: forecast, now: now, calendar: utc())
         XCTAssertEqual(planned.count, 2)
-        XCTAssertEqual(planned.first?.title, "Mars trine your Venus")
-        XCTAssertTrue(planned.first?.body.contains("easeful") == true)
+        let first = try XCTUnwrap(planned.first)
+        XCTAssertEqual(first.title, "Mars trine your Venus")
+        XCTAssertTrue(first.body.contains("easeful"))
     }
 
     func testPlanDeliversAtNineAMOnTheTransitDay() {
@@ -49,7 +50,7 @@ final class TransitNotificationPlannerTests: XCTestCase {
         XCTAssertEqual(TransitNotificationPlanner.plan(from: forecast, now: now, limit: 3, calendar: utc()).count, 3)
     }
 
-    func testBodyReflectsAspectTone() {
+    func testBodyReflectsAspectTone() throws {
         let now = date("2026-06-05T00:00:00Z")
         func plannedBody(_ type: AspectType) -> String? {
             let forecast = ForecastResult(
@@ -60,9 +61,9 @@ final class TransitNotificationPlannerTests: XCTestCase {
             )
             return TransitNotificationPlanner.plan(from: forecast, now: now, calendar: utc()).first?.body
         }
-        XCTAssertTrue(plannedBody(.square)?.contains("friction") == true)
-        XCTAssertTrue(plannedBody(.conjunction)?.contains("charge") == true)
-        XCTAssertTrue(plannedBody(.trine)?.contains("easeful") == true)
+        XCTAssertTrue(try XCTUnwrap(plannedBody(.square)).contains("friction"))
+        XCTAssertTrue(try XCTUnwrap(plannedBody(.conjunction)).contains("charge"))
+        XCTAssertTrue(try XCTUnwrap(plannedBody(.trine)).contains("easeful"))
     }
 
     // MARK: - Helpers

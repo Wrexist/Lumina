@@ -41,8 +41,8 @@ final class PalmReaderTests: XCTestCase {
     func testExtractorComputesSpansFromLandmarks() {
         // A simple synthetic hand: bases on the y=10 line, tips 8 above them,
         // wrist at the origin straight below the middle base.
-        let features = PalmFeatureExtractor.features(
-            wrist: CGPoint(x: 0, y: 0),
+        let landmarks = HandLandmarks(
+            wrist: .zero,
             indexMCP: CGPoint(x: -4, y: 10),
             indexTip: CGPoint(x: -4, y: 18),
             middleMCP: CGPoint(x: 0, y: 10),
@@ -52,6 +52,7 @@ final class PalmReaderTests: XCTestCase {
             littleMCP: CGPoint(x: 4, y: 10),
             littleTip: CGPoint(x: 4, y: 18)
         )
+        let features = PalmFeatureExtractor.features(from: landmarks)
         XCTAssertEqual(features.palmWidth, 8, accuracy: 0.0001)      // -4 → 4
         XCTAssertEqual(features.palmLength, 10, accuracy: 0.0001)    // (0,0) → (0,10)
         XCTAssertEqual(features.averageFingerLength, 8, accuracy: 0.0001)

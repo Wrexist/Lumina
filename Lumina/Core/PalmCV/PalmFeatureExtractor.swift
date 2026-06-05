@@ -3,31 +3,36 @@ import Foundation
 import Vision
 #endif
 
+/// The nine hand landmarks the geometry needs, in one shared coordinate space.
+/// Grouping them keeps `PalmFeatureExtractor.features` to a single parameter
+/// (and well under the function-parameter-count budget).
+struct HandLandmarks: Equatable, Sendable {
+    let wrist: CGPoint
+    let indexMCP: CGPoint
+    let indexTip: CGPoint
+    let middleMCP: CGPoint
+    let middleTip: CGPoint
+    let ringMCP: CGPoint
+    let ringTip: CGPoint
+    let littleMCP: CGPoint
+    let littleTip: CGPoint
+}
+
 /// Pure geometry: turns the key hand landmarks into `PalmFeatures`. Deliberately
 /// free of Vision types so it's unit-testable with synthetic points; a thin
 /// device-only Vision adapter (below) maps a real hand-pose observation onto it.
 enum PalmFeatureExtractor {
-    static func features(
-        wrist: CGPoint,
-        indexMCP: CGPoint,
-        indexTip: CGPoint,
-        middleMCP: CGPoint,
-        middleTip: CGPoint,
-        ringMCP: CGPoint,
-        ringTip: CGPoint,
-        littleMCP: CGPoint,
-        littleTip: CGPoint
-    ) -> PalmFeatures {
+    static func features(from landmarks: HandLandmarks) -> PalmFeatures {
         let fingerLengths = [
-            distance(indexMCP, indexTip),
-            distance(middleMCP, middleTip),
-            distance(ringMCP, ringTip),
-            distance(littleMCP, littleTip),
+            distance(landmarks.indexMCP, landmarks.indexTip),
+            distance(landmarks.middleMCP, landmarks.middleTip),
+            distance(landmarks.ringMCP, landmarks.ringTip),
+            distance(landmarks.littleMCP, landmarks.littleTip),
         ]
         let average = fingerLengths.reduce(0, +) / Double(fingerLengths.count)
         return PalmFeatures(
-            palmWidth: distance(indexMCP, littleMCP),
-            palmLength: distance(wrist, middleMCP),
+            palmWidth: distance(landmarks.indexMCP, landmarks.littleMCP),
+            palmLength: distance(landmarks.wrist, landmarks.middleMCP),
             averageFingerLength: average
         )
     }
@@ -60,7 +65,7 @@ extension PalmFeatureExtractor {
             let ringMCP = point(.ringMCP), let ringTip = point(.ringTip),
             let littleMCP = point(.littleMCP), let littleTip = point(.littleTip)
         else { return nil }
-        return features(
+        return features(from: HandLandmarks(
             wrist: wrist,
             indexMCP: indexMCP,
             indexTip: indexTip,
@@ -70,7 +75,7 @@ extension PalmFeatureExtractor {
             ringTip: ringTip,
             littleMCP: littleMCP,
             littleTip: littleTip
-        )
+        ))
     }
 }
 #endif
