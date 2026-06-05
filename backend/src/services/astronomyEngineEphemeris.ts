@@ -5,8 +5,12 @@ import { lahiriAyanamsha, tropicalToSidereal } from "../lib/sidereal.ts";
 import { noonLocalAsUTC } from "../lib/timezone.ts";
 import { computeTransits } from "../lib/transits.ts";
 import { computeSynastry } from "../lib/synastry.ts";
+import { findCrossings } from "../lib/forecast.ts";
 import type {
+  AspectType,
   BirthData,
+  ForecastEvent,
+  ForecastResult,
   HouseCusps,
   HouseSystem,
   NatalChart,
@@ -15,7 +19,16 @@ import type {
   SynastryResult,
   TransitsResult,
 } from "../types.ts";
-import type { ChartOptions, EphemerisService, TransitOptions } from "./ephemeris.ts";
+import type { ChartOptions, EphemerisService, ForecastOptions, TransitOptions } from "./ephemeris.ts";
+
+/** The five major aspects, by exact angle, used for forecasting exact hits. */
+const FORECAST_ASPECTS: readonly { type: AspectType; exactAngle: number }[] = [
+  { type: "conjunction", exactAngle: 0 },
+  { type: "sextile", exactAngle: 60 },
+  { type: "square", exactAngle: 90 },
+  { type: "trine", exactAngle: 120 },
+  { type: "opposition", exactAngle: 180 },
+];
 
 /** The fields `effectiveInstant` needs — a `BirthData` or a synastry person. */
 interface InstantSource {
@@ -100,6 +113,58 @@ export class AstronomyEngineEphemeris implements EphemerisService {
     return {
       calculatedAt: new Date().toISOString(),
       aspects: computeSynastry(planetsA, planetsB),
+    };
+  }
+
+  async forecast(birthData: BirthData, options: ForecastOptions = {}): Promise<ForecastResult> {
+    const from = options.from ?? new Date();
+    const days = options.days ?? 30;
+    const natalInstant = effectiveInstant(birthData);
+    const natalPlanets = PLANETS.map((spec) => positionAt(spec, natalInstant));
+    const events: ForecastEvent[] = [];
+
+    for (const spec of PLANETS) {
+      // Memoise the transiting body's longitude so re-sampling the same
+      // instants across many natal targets is effectively free.
+      const cache = new Map<number, number>();
+      const longitudeAt = (time: number): number => {
+        const key = Math.round(time / 60_000);
+        const cached = cache.get(key);
+        if (cached !== undefined) return cached;
+        const lon = geocentricEclipticLongitude(spec.body, new Date(time));
+        cache.set(key, lon);
+        return lon;
+      };
+
+      for (const natal of natalPlanets) {
+        for (const aspect of FORECAST_ASPECTS) {
+          const targets = aspect.exactAngle === 0
+            ? [natal.longitude]
+            : [
+                normalizeLongitude(natal.longitude + aspect.exactAngle),
+                normalizeLongitude(natal.longitude - aspect.exactAngle),
+              ];
+          for (const target of targets) {
+            for (const at of findCrossings(longitudeAt, target, from.getTime(), days)) {
+              events.push({
+                transiting: spec.name,
+                natal: natal.planet,
+                type: aspect.type,
+                exactAngle: aspect.exactAngle,
+                exactAt: new Date(at).toISOString(),
+              });
+            }
+          }
+        }
+      }
+    }
+
+    events.sort((a, b) => a.exactAt.localeCompare(b.exactAt));
+    return {
+      calculatedAt: new Date().toISOString(),
+      from: from.toISOString(),
+      days,
+      events,
     };
   }
 }

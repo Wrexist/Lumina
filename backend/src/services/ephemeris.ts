@@ -1,5 +1,6 @@
 import type {
   BirthData,
+  ForecastResult,
   HouseSystem,
   NatalChart,
   SynastryPerson,
@@ -19,6 +20,15 @@ export interface EphemerisService {
   transits(birthData: BirthData, options?: TransitOptions): Promise<TransitsResult>;
   /** A↔B cross-aspects between two people's natal charts. */
   synastry(personA: SynastryPerson, personB: SynastryPerson): Promise<SynastryResult>;
+  /** Upcoming exact transit moments to the natal chart over a window. */
+  forecast(birthData: BirthData, options?: ForecastOptions): Promise<ForecastResult>;
+}
+
+export interface ForecastOptions {
+  /** Window start; defaults to now. */
+  readonly from?: Date;
+  /** Window length in days; defaults to 30. */
+  readonly days?: number;
 }
 
 export interface ChartOptions {

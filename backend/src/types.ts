@@ -191,3 +191,37 @@ export const SynastryResultSchema = z.object({
 });
 
 export type SynastryResult = z.infer<typeof SynastryResultSchema>;
+
+/**
+ * A single upcoming moment when a transiting planet's aspect to a natal
+ * planet becomes *exact* — the "timing" the rest of the category only gestures
+ * at. Mirrors `ForecastEvent` in the iOS models.
+ */
+export const ForecastEventSchema = z.object({
+  transiting: z.string(),
+  natal: z.string(),
+  type: AspectTypeSchema,
+  exactAngle: z.number(),
+  /** The instant the aspect perfects. */
+  exactAt: z.string().datetime({ offset: true }),
+});
+
+export type ForecastEvent = z.infer<typeof ForecastEventSchema>;
+
+/** Wire format for `POST /forecast`: birth data + window. */
+export const ForecastRequestSchema = BirthDataSchema.extend({
+  from: plausibleInstant.optional(),
+  days: z.number().int().min(1).max(120).optional(),
+});
+
+export type ForecastRequest = z.infer<typeof ForecastRequestSchema>;
+
+export const ForecastResultSchema = z.object({
+  calculatedAt: z.string().datetime({ offset: true }),
+  from: z.string().datetime({ offset: true }),
+  days: z.number(),
+  /** Exact transit moments in the window, sorted earliest first. */
+  events: z.array(ForecastEventSchema),
+});
+
+export type ForecastResult = z.infer<typeof ForecastResultSchema>;
