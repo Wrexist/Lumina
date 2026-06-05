@@ -53,7 +53,7 @@ struct TodayHubView: View {
                 BigThreeBand(chart: chart)
             }
             headlineCard(lines.headline)
-            readingPlaceholder
+            dailyReadingCard
             if !lines.secondary.isEmpty {
                 Divider()
                 whatsHappeningSection(lines.secondary)
@@ -106,22 +106,19 @@ struct TodayHubView: View {
         }
     }
 
-    private var readingPlaceholder: some View {
-        LuminaCard(surface: .glass) {
-            HStack(spacing: LuminaSpacing.md) {
-                Image(systemName: "headphones")
-                    .font(.system(size: iconSize))
-                    .foregroundStyle(LuminaColors.celestialBlue)
-                VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
-                    HStack(spacing: LuminaSpacing.sm) {
-                        LuminaBadge(title: "Soon", tone: .neutral)
-                        Text("Today's reading, narrated")
-                            .font(LuminaTypography.body)
-                    }
-                    Text("Narrated daily readings are coming soon.")
-                        .font(LuminaTypography.caption)
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+    private var dailyReadingCard: some View {
+        LuminaCard {
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                HStack(spacing: LuminaSpacing.sm) {
+                    Text("Your reading")
+                        .font(LuminaTypography.heading)
+                    Spacer()
+                    LuminaBadge(title: "Audio soon", tone: .neutral)
                 }
+                Text(DailyReading.compose(from: viewModel.transits))
+                    .font(LuminaTypography.body)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
