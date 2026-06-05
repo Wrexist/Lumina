@@ -54,6 +54,7 @@ struct TodayHubView: View {
             }
             headlineCard(lines.headline)
             dailyReadingCard
+            WhatsComingCard()
             if !lines.secondary.isEmpty {
                 Divider()
                 whatsHappeningSection(lines.secondary)

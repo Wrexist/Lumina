@@ -57,6 +57,25 @@ actor EphemerisService {
         let personB: SynastryPerson
     }
 
+    /// Request body for `POST /forecast` — `BirthData` plus the window.
+    private struct ForecastRequestBody: Encodable {
+        enum CodingKeys: String, CodingKey {
+            case from
+            case days
+        }
+
+        let birthData: BirthData
+        let from: Date?
+        let days: Int?
+
+        func encode(to encoder: any Encoder) throws {
+            try birthData.encode(to: encoder)
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encodeIfPresent(from, forKey: .from)
+            try container.encodeIfPresent(days, forKey: .days)
+        }
+    }
+
     private static let chartEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -181,5 +200,28 @@ actor EphemerisService {
             throw ServiceError.httpError(status: http.statusCode, body: errorBody)
         }
         return try Self.chartDecoder.decode(SynastryResult.self, from: data)
+    }
+
+    /// Upcoming exact transit dates over a window (default 30 days from now).
+    /// Real positions only. Wire format: `backend/src/routes/forecast.ts`.
+    func forecast(for birthData: BirthData, from: Date? = nil, days: Int? = nil) async throws -> ForecastResult {
+        guard let baseURL, let apiSecret, !apiSecret.isEmpty else {
+            throw ServiceError.missingConfiguration
+        }
+        let body = ForecastRequestBody(birthData: birthData, from: from, days: days)
+        var request = URLRequest(url: baseURL.appendingPathComponent("forecast"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
+        request.httpBody = try Self.chartEncoder.encode(body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
+        guard (200..<300).contains(http.statusCode) else {
+            let errorBody = String(data: data, encoding: .utf8) ?? ""
+            throw ServiceError.httpError(status: http.statusCode, body: errorBody)
+        }
+        return try Self.chartDecoder.decode(ForecastResult.self, from: data)
     }
 }
