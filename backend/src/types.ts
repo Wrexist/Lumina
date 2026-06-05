@@ -225,3 +225,17 @@ export const ForecastResultSchema = z.object({
 });
 
 export type ForecastResult = z.infer<typeof ForecastResultSchema>;
+
+/**
+ * The composite (midpoint) chart of two people — a single merged relationship
+ * chart. Reuses the synastry person payload for input.
+ */
+export const CompositeResultSchema = z.object({
+  calculatedAt: z.string().datetime({ offset: true }),
+  /** Composite planets (midpoints of the two charts). */
+  planets: z.array(PlanetPositionSchema),
+  /** Major aspects within the composite chart, sorted ascending by orb. */
+  aspects: z.array(AspectSchema),
+});
+
+export type CompositeResult = z.infer<typeof CompositeResultSchema>;

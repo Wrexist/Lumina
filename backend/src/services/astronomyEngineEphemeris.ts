@@ -5,10 +5,12 @@ import { lahiriAyanamsha, tropicalToSidereal } from "../lib/sidereal.ts";
 import { noonLocalAsUTC } from "../lib/timezone.ts";
 import { computeTransits } from "../lib/transits.ts";
 import { computeSynastry } from "../lib/synastry.ts";
+import { computeComposite } from "../lib/composite.ts";
 import { findCrossings } from "../lib/forecast.ts";
 import type {
   AspectType,
   BirthData,
+  CompositeResult,
   ForecastEvent,
   ForecastResult,
   HouseCusps,
@@ -113,6 +115,20 @@ export class AstronomyEngineEphemeris implements EphemerisService {
     return {
       calculatedAt: new Date().toISOString(),
       aspects: computeSynastry(planetsA, planetsB),
+    };
+  }
+
+  async composite(personA: SynastryPerson, personB: SynastryPerson): Promise<CompositeResult> {
+    // The composite *merges* the two charts into one: each planet sits at the
+    // midpoint of the pair, then we run the same aspect engine over the merged
+    // set. Like synastry, this needs only date (+ optional time) per person.
+    const planetsA = PLANETS.map((spec) => positionAt(spec, effectiveInstant(personA)));
+    const planetsB = PLANETS.map((spec) => positionAt(spec, effectiveInstant(personB)));
+    const planets = computeComposite(planetsA, planetsB);
+    return {
+      calculatedAt: new Date().toISOString(),
+      planets,
+      aspects: computeAspects(planets),
     };
   }
 

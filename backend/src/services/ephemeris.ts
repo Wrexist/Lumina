@@ -1,5 +1,6 @@
 import type {
   BirthData,
+  CompositeResult,
   ForecastResult,
   HouseSystem,
   NatalChart,
@@ -22,6 +23,8 @@ export interface EphemerisService {
   synastry(personA: SynastryPerson, personB: SynastryPerson): Promise<SynastryResult>;
   /** Upcoming exact transit moments to the natal chart over a window. */
   forecast(birthData: BirthData, options?: ForecastOptions): Promise<ForecastResult>;
+  /** The composite (midpoint) chart of two people. */
+  composite(personA: SynastryPerson, personB: SynastryPerson): Promise<CompositeResult>;
 }
 
 export interface ForecastOptions {
