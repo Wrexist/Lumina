@@ -399,7 +399,9 @@ Worked top-down through `docs/EXCELLENCE-PLAN.md`. All CI-verified (runs #77–#
 - [x] **Local transit notifications** — opt-in, on-device (`UNUserNotificationCenter`, no OneSignal), capped at 5, delivered 9am on the day, never doom. `TransitNotificationPlanner` + `TransitNotificationScheduler` + Settings toggle.
 - [x] **Palm Phase A engine** — `PalmReader` + `PalmFeatureExtractor` derive the four classical hand types from real geometry, with a compile-checked `VNHumanHandPoseObservation` adapter. Fully unit-tested; live capture UI is the remaining device-gated piece.
 - [x] **Share your chart** — `ChartShareCard` rendered via `ImageRenderer` → PNG → `ShareLink` from the Chart toolbar (`ChartShareButton`).
-- [ ] Next (unblocked): soft-delete + undo; empty-state pass; motion/haptics polish; app icon; gitleaks + coverage CI gates; palm live-capture UI (device).
+- [x] **Secondary progressions** — backend `/progressions` (day-for-a-year) + Today "Your current chapter" card (progressed Moon/Sun, `ProgressedChapter`).
+- [x] **Gitleaks secret-scan CI gate** — new `secrets` job + `.gitleaks.toml` allowlist; enforces "no keys in source" automatically (CI-verified green).
+- [ ] Next (unblocked): soft-delete + undo; empty-state pass; motion/haptics polish; app icon; coverage CI gate; returns/retrogrades; palm live-capture UI (device).
 
 ---
 

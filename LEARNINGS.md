@@ -412,3 +412,12 @@ Render a SwiftUI card with `ImageRenderer` → `uiImage.pngData()` → write to 
 
 **[2026-06] 1-char identifiers fail `--strict`**
 `identifier_name` min_length warns at <2, and `--strict` makes warnings fatal. Only `id,x,y,z,i,j,a,b,g` are excluded — rename ad-hoc `p`/`f` to `recognized`/`forecast` etc. Bit me twice writing fast (a Vision point binding and a test fixture).
+
+**[2026-06] `function_parameter_count` is a *default* rule (max 5) — it bit a 9-CGPoint extractor**
+Lint passed every other new source file but flagged `PalmFeatureExtractor.features(wrist:…9 points…)`. Group related params into a struct (`HandLandmarks`) — the synthesized memberwise init isn't in source, so it isn't counted, and call sites never are. Scan new funcs for >5 params before pushing.
+
+**[2026-06] Batch across *jobs*, not commits — CI signal is per-job**
+The CI workflow has independent jobs (`backend`, `secrets`/gitleaks, `ios`). A risky new job (gitleaks) can be pushed in the *same* run as unrelated feature commits: each job reports independently, so a gitleaks false-positive wouldn't obscure the iOS build result. This collapses what I'd planned as separate runs into one. (And: a fresh push supersedes the in-flight run and re-validates the whole tree, so there's no need to wait for a redundant run to finish before pushing the next thing.)
+
+**[2026-06] gitleaks gate: scan the working tree, allowlist templates**
+`gitleaks detect --no-git --source . --config .gitleaks.toml` (binary pinned, installed from the GitHub release on the runner — the runner has open egress even though this dev container doesn't). `.gitleaks.toml` with `[extend] useDefault=true` + an allowlist for `.env.example` and `$(VAR)`/`YOUR_KEY_HERE` placeholders passed first try with zero false positives.
