@@ -38,6 +38,27 @@ jobs:
       - name: Test
         run: npm test
 
+  secrets:
+    name: Secret scan — gitleaks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install gitleaks
+        run: |
+          VERSION=8.18.4
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" -o gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz gitleaks
+          sudo install gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      # Scan the working tree (--no-git) so the gate is about what's *in* the
+      # source now; the .gitleaks.toml allowlist keeps templates from tripping it.
+      - name: Scan for secrets
+        run: gitleaks detect --no-git --redact --verbose --config .gitleaks.toml --source .
+
   ios:
     name: iOS — generate · build · lint · test
     runs-on: macos-15

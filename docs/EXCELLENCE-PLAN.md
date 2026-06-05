@@ -50,7 +50,7 @@ Legend: ✅ done · 🔨 building · ⏳ queued · 🔒 blocked (needs provision
 
 ## 4. Quality & infra (unblocked)
 
-- ⏳ Gitleaks + coverage CI gates.
+- 🔨 Gitleaks secret-scan CI gate **done** (`secrets` job + `.gitleaks.toml`); coverage gate pending.
 - ⏳ Expand snapshot coverage; refactor the screenshot harness so it scales.
 - ⏳ More edge-case tests across the new deterministic engines.
 
