@@ -387,6 +387,20 @@ All CI-verified (runs #63, #66 green):
 - [ ] Next (unblocked): Big-3 tappable interpretations; transit-tied Reflect prompts; soft-delete-with-undo.
 - [!] Blocked (need provisioning): conversational free-text "ask your chart" + RAG daily reading (Supabase + Anthropic key); narrated audio (ElevenLabs); palm pipeline (Core ML model).
 
+### ✅ Excellence sprint — timing / relationships / palm / sharing / notifications — [2026-06-05], branch `claude/adoring-euler-yEDvq`
+
+Worked top-down through `docs/EXCELLENCE-PLAN.md`. All CI-verified (runs #77–#80 green; notifications + palm + share in #81). Backend 97 tests.
+
+- [x] **"What's coming" forecast** — backend `/forecast` root-finds the exact instant each transiting aspect perfects over a window (`lib/forecast.ts` sign-change + bisect); iOS `ForecastView` + Today "What's coming" card. The category's "timing" promise, done for real.
+- [x] **Composite chart** — backend `/composite` (shorter-arc midpoint merge + aspect engine, `lib/composite.ts`); iOS `CompositeCard` ("your relationship as one chart") in Friend detail.
+- [x] **Moon phase** — backend `/moon` (angle + illumination + next new/full via astronomy-engine); Today "Tonight's Moon" card with the matching SF Symbol.
+- [x] **Big-3 tappable readings** — Sun/Moon → `PlanetDetailSheet`, Rising → new `AscendantInterpreter` + `AscendantDetailSheet`.
+- [x] **Transit-tied Reflect prompt** — `TransitPrompt` shapes the journal prompt from the day's strongest transit; falls back to the date pool offline.
+- [x] **Local transit notifications** — opt-in, on-device (`UNUserNotificationCenter`, no OneSignal), capped at 5, delivered 9am on the day, never doom. `TransitNotificationPlanner` + `TransitNotificationScheduler` + Settings toggle.
+- [x] **Palm Phase A engine** — `PalmReader` + `PalmFeatureExtractor` derive the four classical hand types from real geometry, with a compile-checked `VNHumanHandPoseObservation` adapter. Fully unit-tested; live capture UI is the remaining device-gated piece.
+- [x] **Share your chart** — `ChartShareCard` rendered via `ImageRenderer` → PNG → `ShareLink` from the Chart toolbar (`ChartShareButton`).
+- [ ] Next (unblocked): soft-delete + undo; empty-state pass; motion/haptics polish; app icon; gitleaks + coverage CI gates; palm live-capture UI (device).
+
 ---
 
 ## 🚧 Blockers

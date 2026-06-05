@@ -387,3 +387,28 @@ The category's #1 gap is one-way content (you can't ask). The conversational ver
 
 **[2026-06] CI screenshot retrieval: emit order is alphabetical; size the log tail accordingly**
 The base64 emit step lists `__Screenshots__/*.png` alphabetically, so a small `tail_lines` drops the *first* images (`ask-your-chart`, `aspects`). Use `tail_lines ≈ 90+` (each PNG is one ~150 KB line) to capture all of them, or grep the saved file for every `===SHOT_BEGIN===`.
+
+---
+
+## 🚢 Excellence sprint — forecast/composite/moon/big3/reflect/notifications/palm/share (2026-06-05, branch `claude/adoring-euler-yEDvq`)
+
+**[2026-06] Pipeline against `cancel-in-progress` — never push while a run you care about is in flight**
+CI is serial (a new push to the same ref cancels the prior run) and ~10 min/run. Working pattern: build feature N+1 *locally* while CI validates N; push N+1 only after N's run goes green, so each feature gets a clean signal. When confident (a streak of first-try-green runs), batch 2–3 *low-risk, well-reviewed* features per push to save cycles, and isolate genuinely risky ones (camera/Vision/notifications) into their own run. A push only sends commits, so you can keep the next feature staged uncommitted while pushing the current batch.
+
+**[2026-06] `UNUserNotificationCenter` under Swift 6: use the async variants, not completion handlers**
+`center.pendingNotificationRequests()` / `center.add(_:)` have `async` forms — use them inside `@MainActor`. The completion-handler API calls back on an arbitrary queue, so touching `self`/`center` in that closure crosses isolation and fails strict concurrency. A plain `@MainActor final class Scheduler { static let shared = … }` is fine (MainActor classes are implicitly `Sendable`; mirrors `NotificationPermission`).
+
+**[2026-06] `no_magic_spacing_numbers` does NOT catch `.frame(width: NN)`**
+The custom regex's frame branch is `frame[^)]*\.\s*(width|height)` — it needs a literal `.width`/`.height` *after* a non-`)` run, which `.frame(width: 540, height: 540)` never has. So fixed render-card frames are lint-clean; only `padding:`/`spacing:` numeric literals (≥10) are caught. (Confirmed by the screenshot harness's `.frame(width: 393)` passing `--strict`.)
+
+**[2026-06] Composite (midpoint) chart must take the shorter arc**
+Averaging two ecliptic longitudes naively breaks at the 0/360 seam (10° & 350° → 180°, wrong). Use the signed delta `((b−a+540) % 360) − 180`, then `a + delta/2` normalized. Antipodal pairs (exactly 180° apart) are the one asymmetric tie-break — fine to accept. Backend `lib/composite.ts` + iOS share the rule; both unit-tested.
+
+**[2026-06] `ShareLink(item: fileURL)` is the robust render-and-share path**
+Render a SwiftUI card with `ImageRenderer` → `uiImage.pngData()` → write to `temporaryDirectory` → `ShareLink(item: url)`. A file `URL` is unambiguously `Transferable`; don't rely on SwiftUI `Image` being shareable or hand-roll a `UIActivityViewController`. Keep the renderer+ShareLink in a tiny dedicated `…Button: View` so the hub stays under `type_body_length` and the (untestable-headless) `ImageRenderer` code is isolated to one file.
+
+**[2026-06] Keep the palm/Vision split: pure geometry in, Vision adapter behind `#if canImport(Vision)`**
+`PalmFeatureExtractor.features(wrist:…tips:)` takes plain `CGPoint`s so the four-hand-type logic is fully unit-testable with synthetic points; a `#if canImport(Vision)` extension maps a real `VNHumanHandPoseObservation` onto it (compile-checked in CI, runs only on device). The honest core ships and is tested without a camera; the capture UI is the only device-gated remainder.
+
+**[2026-06] 1-char identifiers fail `--strict`**
+`identifier_name` min_length warns at <2, and `--strict` makes warnings fatal. Only `id,x,y,z,i,j,a,b,g` are excluded — rename ad-hoc `p`/`f` to `recognized`/`forecast` etc. Bit me twice writing fast (a Vision point binding and a test fixture).
