@@ -421,3 +421,28 @@ The CI workflow has independent jobs (`backend`, `secrets`/gitleaks, `ios`). A r
 
 **[2026-06] gitleaks gate: scan the working tree, allowlist templates**
 `gitleaks detect --no-git --source . --config .gitleaks.toml` (binary pinned, installed from the GitHub release on the runner — the runner has open egress even though this dev container doesn't). `.gitleaks.toml` with `[extend] useDefault=true` + an allowlist for `.env.example` and `$(VAR)`/`YOUR_KEY_HERE` placeholders passed first try with zero false positives.
+
+---
+
+## 🚀 Excellence sprint II — retrogrades/returns/soft-delete/icon/a11y (2026-06-06, branch `claude/adoring-euler-yEDvq`)
+
+**[2026-06] A growing actor/struct trips `type_body_length` — move nested helper types to file scope**
+Adding moon/composite/progressions/retrogrades/returns to the `EphemerisService` actor pushed its body to 267 (>250). The 7 private `*RequestBody` structs were nested *inside* the actor. Moving them to **file scope** (still `private` = file-private, so call sites are unchanged) drops them out of the actor's body count. Same trick for any `*HubView`: move helper methods into an `extension` — extension members don't count toward the primary declaration's `type_body_length`.
+
+**[2026-06] `extension_access_modifier` AND `no_extension_access_modifier` are both enabled — write bare `extension Foo {`**
+The two rules look contradictory but coexist: put **no** access modifier on the `extension` (satisfies `no_extension_access_modifier`) and **no** explicit modifier on its members (so there's nothing for `extension_access_modifier` to hoist). Same-file `extension Foo { func helper() {…} }` can still read the type's `private` (file-scoped) `@State`/`@Environment`. `private extension` fails lint.
+
+**[2026-06] Soft-delete + undo without Sendable hazards: drive the timer with `.task(id:)` calling a View method**
+A `ViewModifier` that stores `() -> Void` closures and calls them inside `.task` risks a Swift 6 "non-Sendable capture" error (the modifier isn't Sendable). The proven, hazard-free pattern: keep only the visual (`LuminaSnackbarView`), and inline `.overlay { bar }` + `.animation(.smooth, value: pending?.id)` + `.task(id: pending?.id) { await autoCommit() }` in each view, where `autoCommit()` is a method on the (MainActor) View. Filter the pending item out of the list so it vanishes immediately; commit on the timer or `onDisappear`; a newer delete commits the prior one.
+
+**[2026-06] `Button("…", systemImage:, role:, action:)` may not exist — use `Button(role:action:){ } label:{ Label(…) }`**
+The combined title+systemImage+role initializer isn't reliably available; the `Button(role:action:label:)` + `Label(_:systemImage:)` form always is. Used for `.swipeActions` (People) and `.contextMenu` (Reflect) destructive buttons.
+
+**[2026-06] Generate the app icon in code — Node `zlib` is enough for a PNG**
+No PIL/cairosvg/ImageMagick/sharp on the runner, but Node's `zlib.deflateSync` + a hand-rolled CRC32/PNG-chunk writer renders a 1024² icon. Render the crescent/star analytically with 3×3 supersampling for AA. **iOS rejects icons with an alpha channel** — encode RGB (PNG color type 2), not RGBA. `scripts/generate_app_icon.mjs` keeps the mark reproducible/editable.
+
+**[2026-06] A Settings toggle that nothing reads is a bug — `reduceMotionOverride` was dead**
+`AppPreferences.reduceMotionOverride` had a Settings toggle but components only read `@Environment(\.accessibilityReduceMotion)`. Added `LuminaMotion.isReduced(system:appOverride:)` and routed `LuminaButton`/`LuminaSkeleton` through it so the in-app override combines with the OS setting. When adding a preference, grep that something actually reads it.
+
+**[2026-06] Coverage CI gate deferred on purpose**
+A hard coverage gate needs a measured baseline to avoid breaking CI, and the test step's coverage flags can't be validated from Linux. Rather than risk the owner's only build loop with an unvalidated gate, leave it for a Mac run that can observe the baseline first.

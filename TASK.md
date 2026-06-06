@@ -403,6 +403,18 @@ Worked top-down through `docs/EXCELLENCE-PLAN.md`. All CI-verified (runs #77–#
 - [x] **Gitleaks secret-scan CI gate** — new `secrets` job + `.gitleaks.toml` allowlist; enforces "no keys in source" automatically (CI-verified green).
 - [ ] Next (unblocked): soft-delete + undo; empty-state pass; motion/haptics polish; app icon; coverage CI gate; returns/retrogrades; palm live-capture UI (device).
 
+### ✅ Excellence sprint II — timing depth / UX / brand — [2026-06-06], branch `claude/adoring-euler-yEDvq`
+
+Continued top-down through `docs/EXCELLENCE-PLAN.md`. All CI-verified green; backend 119 tests.
+
+- [x] **Retrogrades** — backend `/retrogrades` (apparent-velocity root-finding for current state + next station) + Today "Retrogrades" card (hidden when the sky is clear). The "is Mercury retrograde?" question, for real.
+- [x] **Returns** — backend `/returns` (next Jupiter/Saturn return, numbered by count since birth) + an imminent-only Today card (shows within a year).
+- [x] **Soft-delete + Undo** — `LuminaSnackbarView` + deferred-commit `.task(id:)`; swipe (People) / long-press (Reflect), recoverable for ~4s.
+- [x] **App icon** — refined gold crescent + sparkle on midnight (replaces the flat orb); `scripts/generate_app_icon.mjs` (dependency-free Node PNG encoder, opaque RGB).
+- [x] **Reduce-motion fix** — the in-app override was a dead toggle; `LuminaMotion` now combines it with the OS setting (LuminaButton/LuminaSkeleton).
+- [x] Empty-state pass verified (new cards hide when empty; lists have empty states); more backend edge tests (composite antipodal, direct-planet retrograde).
+- [ ] Deferred: coverage CI gate (needs a Mac-measured baseline to avoid breaking CI); snapshot-harness scale-up; palm live-capture UI (device).
+
 ---
 
 ## 🚧 Blockers
