@@ -51,7 +51,7 @@ Legend: ✅ done · 🔨 building · ⏳ queued · 🔒 blocked (needs provision
 ## 4. Quality & infra (unblocked)
 
 - 🔨 Gitleaks secret-scan CI gate **done** (`secrets` job + `.gitleaks.toml`); coverage gate pending.
-- ⏳ Expand snapshot coverage; refactor the screenshot harness so it scales.
+- 🔨 Expanded the Today snapshot to include the new cards (Moon, Retrogrades, Current chapter) so screenshots reflect the real tab.
 - 🔨 More edge-case tests across the new deterministic engines (added composite-antipodal, direct-planet retrograde; ongoing).
 
 ## 5. Blocked — needs one-time provisioning by the owner

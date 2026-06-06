@@ -47,6 +47,9 @@ enum TabPreviews {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
+            moonCard()
+            retrogradeCard()
+            chapterCard()
             bulletSection(title: "WHAT'S HAPPENING", lines: secondary)
         }
         .padding(LuminaSpacing.lg)
@@ -117,6 +120,59 @@ enum TabPreviews {
             )
         }
         .padding(LuminaSpacing.lg)
+    }
+
+    // MARK: - Today cards (facsimiles of the real self-loading cards)
+
+    private static func moonCard() -> some View {
+        LuminaCard {
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                kickerLabel("TONIGHT'S MOON")
+                HStack(spacing: LuminaSpacing.md) {
+                    Image(systemName: "moonphase.waning.gibbous")
+                        .font(.system(size: 40, weight: .light))
+                        .foregroundStyle(LuminaColors.mutedGold)
+                    VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
+                        Text("Waning Gibbous").font(LuminaTypography.heading)
+                        Text("78% illuminated")
+                            .font(LuminaTypography.body)
+                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                        Text("New moon in 9 days")
+                            .font(LuminaTypography.caption)
+                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                    }
+                }
+            }
+        }
+    }
+
+    private static func retrogradeCard() -> some View {
+        LuminaCard {
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                kickerLabel("RETROGRADES")
+                Text("Mercury is retrograde right now.")
+                    .font(LuminaTypography.body)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
+                HStack(alignment: .top, spacing: LuminaSpacing.sm) {
+                    Text("•").font(LuminaTypography.caption)
+                    Text("Mercury turns direct Jun 14")
+                        .font(LuminaTypography.caption)
+                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                }
+            }
+        }
+    }
+
+    private static func chapterCard() -> some View {
+        LuminaCard {
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                kickerLabel("YOUR CURRENT CHAPTER")
+                Text("Your progressed Moon is in Scorpio — the emotional season you're moving through now.")
+                    .font(LuminaTypography.body)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
     }
 
     // MARK: - Shared building blocks
