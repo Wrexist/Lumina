@@ -1,6 +1,116 @@
 import Foundation
 import OSLog
 
+// MARK: - Request bodies
+//
+// File-private request payloads, kept out of the actor body so the actor stays
+// focused on the API surface (and under the type-body-length budget). Each
+// encodes to the flat object the matching backend route expects, omitting nil
+// optional keys (the routes treat them as optional, not nullable).
+
+/// `POST /chart` — `BirthData` fields plus an optional `houseSystem`.
+private struct ChartRequestBody: Encodable {
+    enum CodingKeys: String, CodingKey {
+        case houseSystem
+    }
+
+    let birthData: BirthData
+    let houseSystem: HouseSystem?
+
+    func encode(to encoder: any Encoder) throws {
+        try birthData.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(houseSystem, forKey: .houseSystem)
+    }
+}
+
+/// `POST /transits` — `BirthData` plus an optional `at` moment.
+private struct TransitsRequestBody: Encodable {
+    enum CodingKeys: String, CodingKey {
+        case at
+    }
+
+    let birthData: BirthData
+    let at: Date?
+
+    func encode(to encoder: any Encoder) throws {
+        try birthData.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(at, forKey: .at)
+    }
+}
+
+/// `POST /synastry` — the two people to compare.
+private struct SynastryRequestBody: Encodable {
+    let personA: SynastryPerson
+    let personB: SynastryPerson
+}
+
+/// `POST /moon` and `POST /retrogrades` — an optional `at` moment.
+private struct MoonRequestBody: Encodable {
+    enum CodingKeys: String, CodingKey {
+        case at
+    }
+
+    let at: Date?
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(at, forKey: .at)
+    }
+}
+
+/// `POST /progressions` — `BirthData` plus an optional target date (`on`).
+private struct ProgressionsRequestBody: Encodable {
+    enum CodingKeys: String, CodingKey {
+        case on
+    }
+
+    let birthData: BirthData
+    let on: Date?
+
+    func encode(to encoder: any Encoder) throws {
+        try birthData.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(on, forKey: .on)
+    }
+}
+
+/// `POST /returns` — `BirthData` plus an optional window start (`from`).
+private struct ReturnsRequestBody: Encodable {
+    enum CodingKeys: String, CodingKey {
+        case from
+    }
+
+    let birthData: BirthData
+    let from: Date?
+
+    func encode(to encoder: any Encoder) throws {
+        try birthData.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(from, forKey: .from)
+    }
+}
+
+/// `POST /forecast` — `BirthData` plus the window (`from` + `days`).
+private struct ForecastRequestBody: Encodable {
+    enum CodingKeys: String, CodingKey {
+        case from
+        case days
+    }
+
+    let birthData: BirthData
+    let from: Date?
+    let days: Int?
+
+    func encode(to encoder: any Encoder) throws {
+        try birthData.encode(to: encoder)
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(from, forKey: .from)
+        try container.encodeIfPresent(days, forKey: .days)
+    }
+}
+
 /// Calls the self-hosted Swiss Ephemeris microservice. **Never** ask the LLM
 /// to compute planetary positions — see CLAUDE.md "Critical Rules".
 ///
@@ -13,117 +123,6 @@ actor EphemerisService {
         case invalidResponse
         case httpError(status: Int, body: String)
         case decoding(message: String)
-    }
-
-    /// Request body for `POST /chart`. Encodes to a flat object — `BirthData`
-    /// fields plus an optional `houseSystem`. Delegates to `BirthData`'s own
-    /// `Encodable` (which always emits `birthTime` as JSON null when nil),
-    /// then layers `houseSystem` on top.
-    private struct ChartRequestBody: Encodable {
-        enum CodingKeys: String, CodingKey {
-            case houseSystem
-        }
-
-        let birthData: BirthData
-        let houseSystem: HouseSystem?
-
-        func encode(to encoder: any Encoder) throws {
-            try birthData.encode(to: encoder)
-            var container = encoder.container(keyedBy: CodingKeys.self)
-            try container.encodeIfPresent(houseSystem, forKey: .houseSystem)
-        }
-    }
-
-    /// Request body for `POST /transits` — `BirthData` fields plus an
-    /// optional `at` moment (omitted means "now" on the server).
-    private struct TransitsRequestBody: Encodable {
-        enum CodingKeys: String, CodingKey {
-            case at
-        }
-
-        let birthData: BirthData
-        let at: Date?
-
-        func encode(to encoder: any Encoder) throws {
-            try birthData.encode(to: encoder)
-            var container = encoder.container(keyedBy: CodingKeys.self)
-            try container.encodeIfPresent(at, forKey: .at)
-        }
-    }
-
-    /// Request body for `POST /synastry` — the two people to compare.
-    private struct SynastryRequestBody: Encodable {
-        let personA: SynastryPerson
-        let personB: SynastryPerson
-    }
-
-    /// Request body for `POST /moon` and `POST /retrogrades` — an optional `at`
-    /// moment. The key is *omitted* when nil (the backend treats `at` as
-    /// optional, not nullable).
-    private struct MoonRequestBody: Encodable {
-        enum CodingKeys: String, CodingKey {
-            case at
-        }
-
-        let at: Date?
-
-        func encode(to encoder: any Encoder) throws {
-            var container = encoder.container(keyedBy: CodingKeys.self)
-            try container.encodeIfPresent(at, forKey: .at)
-        }
-    }
-
-    /// Request body for `POST /progressions` — `BirthData` plus an optional
-    /// target date (`on`); omitted when nil so the backend defaults to now.
-    private struct ProgressionsRequestBody: Encodable {
-        enum CodingKeys: String, CodingKey {
-            case on
-        }
-
-        let birthData: BirthData
-        let on: Date?
-
-        func encode(to encoder: any Encoder) throws {
-            try birthData.encode(to: encoder)
-            var container = encoder.container(keyedBy: CodingKeys.self)
-            try container.encodeIfPresent(on, forKey: .on)
-        }
-    }
-
-    /// Request body for `POST /returns` — `BirthData` plus an optional window
-    /// start (`from`); omitted when nil so the backend defaults to now.
-    private struct ReturnsRequestBody: Encodable {
-        enum CodingKeys: String, CodingKey {
-            case from
-        }
-
-        let birthData: BirthData
-        let from: Date?
-
-        func encode(to encoder: any Encoder) throws {
-            try birthData.encode(to: encoder)
-            var container = encoder.container(keyedBy: CodingKeys.self)
-            try container.encodeIfPresent(from, forKey: .from)
-        }
-    }
-
-    /// Request body for `POST /forecast` — `BirthData` plus the window.
-    private struct ForecastRequestBody: Encodable {
-        enum CodingKeys: String, CodingKey {
-            case from
-            case days
-        }
-
-        let birthData: BirthData
-        let from: Date?
-        let days: Int?
-
-        func encode(to encoder: any Encoder) throws {
-            try birthData.encode(to: encoder)
-            var container = encoder.container(keyedBy: CodingKeys.self)
-            try container.encodeIfPresent(from, forKey: .from)
-            try container.encodeIfPresent(days, forKey: .days)
-        }
     }
 
     private static let chartEncoder: JSONEncoder = {
