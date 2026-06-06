@@ -19,6 +19,7 @@ struct ReflectHubView: View {
     @State private var openedEntry: JournalEntry?
     @State private var ephemeris = EphemerisService()
     @State private var transits: [TransitReading] = []
+    @State private var pendingDelete: JournalEntry?
     @ScaledMetric private var lockIconSize: CGFloat = 56
 
     var body: some View {
@@ -77,6 +78,18 @@ struct ReflectHubView: View {
             JournalEntryView(entry: entry)
         }
         .task { await loadTransits() }
+        .overlay(alignment: .bottom) { undoBar }
+        .animation(.smooth, value: pendingDelete?.id)
+        .task(id: pendingDelete?.id) { await autoCommitPendingDelete() }
+        .onDisappear(perform: commitPendingDelete)
+    }
+
+    @ViewBuilder
+    private var undoBar: some View {
+        if pendingDelete != nil {
+            LuminaSnackbarView(message: "Entry removed", actionTitle: "Undo", onAction: cancelPendingDelete)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
     }
 
     private var todaysPromptCard: some View {
@@ -141,13 +154,20 @@ struct ReflectHubView: View {
                     }
                     .font(LuminaTypography.caption)
                 }
-                ForEach(entries.prefix(5)) { entry in
+                ForEach(Array(entries.filter { $0.id != pendingDelete?.id }.prefix(5))) { entry in
                     NavigationLink {
                         JournalEntryDetailView(entry: entry)
                     } label: {
                         entryRow(entry)
                     }
                     .buttonStyle(.plain)
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            softDelete(entry)
+                        } label: {
+                            Label("Remove", systemImage: "trash")
+                        }
+                    }
                 }
             }
         }
@@ -238,6 +258,38 @@ struct ReflectHubView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE · MMM d"
         return formatter.string(from: date).uppercased()
+    }
+}
+
+// MARK: - Soft delete
+
+extension ReflectHubView {
+    /// Soft-delete with an undo window; commits any prior pending delete first.
+    func softDelete(_ entry: JournalEntry) {
+        Haptics.warning.play()
+        commitPendingDelete()
+        pendingDelete = entry
+    }
+
+    func cancelPendingDelete() {
+        Haptics.light.play()
+        pendingDelete = nil
+    }
+
+    /// Waits out the undo window, then finalizes — cancelled when `pendingDelete`
+    /// changes (undo, or a newer deletion supersedes it).
+    func autoCommitPendingDelete() async {
+        guard pendingDelete != nil else { return }
+        try? await Task.sleep(for: .seconds(4))
+        guard !Task.isCancelled else { return }
+        commitPendingDelete()
+    }
+
+    func commitPendingDelete() {
+        guard let entry = pendingDelete else { return }
+        modelContext.delete(entry)
+        modelContext.saveOrLog(category: "Reflect")
+        pendingDelete = nil
     }
 }
 

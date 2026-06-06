@@ -17,6 +17,7 @@ struct PeopleHubView: View {
     @State private var addPresented = false
     @State private var qrPresented = false
     @State private var sharePayload: SharePayload?
+    @State private var pendingDelete: Friend?
 
     var body: some View {
         Group {
@@ -42,6 +43,22 @@ struct PeopleHubView: View {
         .onChange(of: router.pendingPresentation) { _, link in
             consumeShare(link)
         }
+        .overlay(alignment: .bottom) { undoBar }
+        .animation(.smooth, value: pendingDelete?.id)
+        .task(id: pendingDelete?.id) { await autoCommitPendingDelete() }
+        .onDisappear(perform: commitPendingDelete)
+    }
+
+    @ViewBuilder
+    private var undoBar: some View {
+        if let pendingDelete {
+            LuminaSnackbarView(
+                message: "Removed \(pendingDelete.name)",
+                actionTitle: "Undo",
+                onAction: cancelPendingDelete
+            )
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
     }
 
     // MARK: - View building blocks
@@ -65,11 +82,18 @@ struct PeopleHubView: View {
     private var friendsList: some View {
         List {
             Section {
-                ForEach(friends) { friend in
+                ForEach(friends.filter { $0.id != pendingDelete?.id }) { friend in
                     NavigationLink {
                         FriendDetailView(friend: friend)
                     } label: {
                         friendRow(friend)
+                    }
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            softDelete(friend)
+                        } label: {
+                            Label("Remove", systemImage: "trash")
+                        }
                     }
                 }
             }
@@ -120,6 +144,35 @@ struct PeopleHubView: View {
     }
 
     // MARK: - Methods
+
+    /// Soft-delete: hide the friend and start the undo window. Any already-
+    /// pending deletion is committed first (one undo at a time).
+    private func softDelete(_ friend: Friend) {
+        Haptics.warning.play()
+        commitPendingDelete()
+        pendingDelete = friend
+    }
+
+    private func cancelPendingDelete() {
+        Haptics.light.play()
+        pendingDelete = nil
+    }
+
+    /// Waits out the undo window, then finalizes — cancelled automatically when
+    /// `pendingDelete` changes (undo, or another deletion supersedes it).
+    private func autoCommitPendingDelete() async {
+        guard pendingDelete != nil else { return }
+        try? await Task.sleep(for: .seconds(4))
+        guard !Task.isCancelled else { return }
+        commitPendingDelete()
+    }
+
+    private func commitPendingDelete() {
+        guard let friend = pendingDelete else { return }
+        modelContext.delete(friend)
+        modelContext.saveOrLog(category: "People")
+        pendingDelete = nil
+    }
 
     private func presentAdd() {
         addPresented = true

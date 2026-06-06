@@ -25,7 +25,7 @@ Legend: ✅ done · 🔨 building · ⏳ queued · 🔒 blocked (needs provision
 
 ## 1. Premium polish (unblocked — building now)
 
-- 🔨 **Soft-delete + Undo** for friends & journal entries (swipe → undo snackbar; modern, recoverable, beats a blunt confirm dialog). New `LuminaSnackbar`.
+- ✅ **Soft-delete + Undo** for friends (swipe) & journal entries (long-press) — `LuminaSnackbarView` + a deferred-commit `.task(id:)` window; recoverable, beats a blunt confirm dialog.
 - ✅ **Big-3 tappable readings** — tap Sun/Moon → placement reading, Rising → ascendant reading (new `AscendantInterpreter` + `AscendantDetailSheet`).
 - ✅ **Transit-tied Reflect prompt** — the day's strongest transit shapes the journal prompt (`TransitPrompt`), so Today and Reflect cohere; falls back to the date pool offline.
 - ⏳ **Empty-state pass** — every list/section gets a premium, never-dead-end empty state.
@@ -65,7 +65,7 @@ Legend: ✅ done · 🔨 building · ⏳ queued · 🔒 blocked (needs provision
 ---
 
 ### Working order (this push onward)
-1. Soft-delete + Undo → 2. ✅ "What's coming" transits → 3. ✅ Composite chart →
+1. ✅ Soft-delete + Undo → 2. ✅ "What's coming" transits → 3. ✅ Composite chart →
 4. ✅ Moon phase → 5. ✅ Big-3 taps → 6. ✅ Transit-tied Reflect prompt →
 7. ✅ Local notifications → 8. ✅ Chart image share → 9. 🔨 Palm Phase A (engine done) →
 10. empty-state/motion/icon polish → 11. infra gates.
