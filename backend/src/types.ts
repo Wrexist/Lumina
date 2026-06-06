@@ -328,3 +328,37 @@ export const RetrogradesResultSchema = z.object({
 });
 
 export type RetrogradesResult = z.infer<typeof RetrogradesResultSchema>;
+
+/** Wire format for `POST /returns`: birth data + an optional window start. */
+export const ReturnsRequestSchema = BirthDataSchema.extend({
+  from: plausibleInstant.optional(),
+});
+
+export type ReturnsRequest = z.infer<typeof ReturnsRequestSchema>;
+
+/**
+ * One upcoming planetary return — when a slow planet next comes back to its
+ * natal longitude (the Saturn return at ~29, the Jupiter return every ~12).
+ * Mirrors `ReturnEvent` in the iOS models.
+ */
+export const ReturnEventSchema = z.object({
+  /** "Jupiter" or "Saturn". */
+  planet: z.string(),
+  /** Which return this is — 1 = first, 2 = second, … */
+  returnNumber: z.number().int().positive(),
+  /** The instant the return perfects. */
+  exactAt: z.string().datetime({ offset: true }),
+  /** The natal longitude the planet returns to. */
+  natalLongitude: z.number(),
+});
+
+export type ReturnEvent = z.infer<typeof ReturnEventSchema>;
+
+export const ReturnsResultSchema = z.object({
+  calculatedAt: z.string().datetime({ offset: true }),
+  from: z.string().datetime({ offset: true }),
+  /** Next Jupiter and Saturn returns, sorted earliest first. */
+  events: z.array(ReturnEventSchema),
+});
+
+export type ReturnsResult = z.infer<typeof ReturnsResultSchema>;

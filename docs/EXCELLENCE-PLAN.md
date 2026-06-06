@@ -38,7 +38,7 @@ Legend: ✅ done · 🔨 building · ⏳ queued · 🔒 blocked (needs provision
 - ✅ **Moon phase** — today's lunar phase, illumination, next new/full. Backend `/moon` + Today "Tonight's Moon" card. (Void-of-course deferred.)
 - ✅ **Composite chart** (relationship midpoints) — deepens People beyond synastry. Backend `/composite` + Friend "relationship as one chart" card.
 - ✅ **Secondary progressions** — your evolving chart (day-for-a-year). Backend `/progressions` + Today "Your current chapter" card (progressed Moon/Sun via `ProgressedChapter`).
-- 🔨 **Returns & retrogrades** — **retrogrades done**: backend `/retrogrades` (current state + next station via velocity root-finding) + Today "Retrogrades" card. Saturn/Jupiter return dates still to come.
+- ✅ **Returns & retrogrades** — `/retrogrades` (current state + next station via velocity root-finding) + Today card; `/returns` (next Jupiter/Saturn return, numbered) + an imminent-only Today card. Both real, both tested.
 - ✅ **Local transit notifications** — opt-in, on-device (`UNUserNotificationCenter`, no OneSignal), capped at 5, delivered 9am on the transit's day (never the exact minute), never doom. `TransitNotificationPlanner` + `TransitNotificationScheduler` + Settings toggle.
 - ✅ **Share your chart as an image** — `ChartShareCard` rendered via `ImageRenderer` to a PNG, shared through a `ShareLink` from the Chart toolbar (`ChartShareButton`).
 

@@ -7,6 +7,7 @@ import type {
   NatalChart,
   ProgressionsResult,
   RetrogradesResult,
+  ReturnsResult,
   SynastryPerson,
   SynastryResult,
   TransitsResult,
@@ -34,6 +35,13 @@ export interface EphemerisService {
   progressions(birthData: BirthData, options?: ProgressionsOptions): Promise<ProgressionsResult>;
   /** Which bodies are retrograde now and when each next stations (global). */
   retrogrades(at?: Date): Promise<RetrogradesResult>;
+  /** Upcoming Jupiter and Saturn returns to the natal chart. */
+  returns(birthData: BirthData, options?: ReturnsOptions): Promise<ReturnsResult>;
+}
+
+export interface ReturnsOptions {
+  /** Window start; defaults to now. */
+  readonly from?: Date;
 }
 
 export interface ProgressionsOptions {

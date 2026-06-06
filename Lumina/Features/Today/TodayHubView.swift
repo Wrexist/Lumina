@@ -58,6 +58,7 @@ struct TodayHubView: View {
             RetrogradeCard()
             ProgressedChapterCard()
             WhatsComingCard()
+            ReturnsCard()
             if !lines.secondary.isEmpty {
                 Divider()
                 whatsHappeningSection(lines.secondary)

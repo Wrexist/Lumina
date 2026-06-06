@@ -24,6 +24,8 @@ import type {
   ProgressionsResult,
   RetrogradeState,
   RetrogradesResult,
+  ReturnEvent,
+  ReturnsResult,
   SynastryPerson,
   SynastryResult,
   TransitsResult,
@@ -33,6 +35,7 @@ import type {
   EphemerisService,
   ForecastOptions,
   ProgressionsOptions,
+  ReturnsOptions,
   TransitOptions,
 } from "./ephemeris.ts";
 
@@ -80,6 +83,17 @@ const MOON_FULL_ANGLE = 180;
 // the next station even for a body that just turned (annual retrograde cycle).
 const RETROGRADE_BODIES = PLANETS.filter((spec) => spec.name !== "Sun" && spec.name !== "Moon");
 const RETROGRADE_SEARCH_DAYS = 400;
+
+// The two reachable, life-defining returns. Sidereal orbital periods (days);
+// the geocentric return lands within weeks of one period, so searching a
+// period plus a margin always brackets the next one.
+const RETURN_BODIES: readonly { spec: PlanetSpec; periodDays: number }[] = [
+  { spec: { body: Body.Jupiter, name: "Jupiter" }, periodDays: 4332.59 },
+  { spec: { body: Body.Saturn, name: "Saturn" }, periodDays: 10759.22 },
+];
+const RETURN_MARGIN_DAYS = 400;
+const RETURN_STEP_HOURS = 48;
+const DAY_MS = 86_400_000;
 
 /**
  * Pure-JS ephemeris implementation backed by `astronomy-engine`.
@@ -216,6 +230,41 @@ export class AstronomyEngineEphemeris implements EphemerisService {
       calculatedAt: new Date().toISOString(),
       at: at.toISOString(),
       planets,
+    };
+  }
+
+  async returns(birthData: BirthData, options: ReturnsOptions = {}): Promise<ReturnsResult> {
+    const from = options.from ?? new Date();
+    const birthInstant = effectiveInstant(birthData);
+    const events: ReturnEvent[] = [];
+
+    for (const { spec, periodDays } of RETURN_BODIES) {
+      const natalLongitude = positionAt(spec, birthInstant).longitude;
+      const longitudeAt = (time: number): number => geocentricEclipticLongitude(spec.body, new Date(time));
+      const crossings = findCrossings(
+        longitudeAt,
+        natalLongitude,
+        from.getTime(),
+        periodDays + RETURN_MARGIN_DAYS,
+        RETURN_STEP_HOURS,
+      );
+      const exactAtMs = crossings[0];
+      if (exactAtMs === undefined) continue;
+      // Which return this is: how many full periods since birth (≥ 1).
+      const returnNumber = Math.max(1, Math.round((exactAtMs - birthInstant.getTime()) / (periodDays * DAY_MS)));
+      events.push({
+        planet: spec.name,
+        returnNumber,
+        exactAt: new Date(exactAtMs).toISOString(),
+        natalLongitude,
+      });
+    }
+
+    events.sort((a, b) => a.exactAt.localeCompare(b.exactAt));
+    return {
+      calculatedAt: new Date().toISOString(),
+      from: from.toISOString(),
+      events,
     };
   }
 
