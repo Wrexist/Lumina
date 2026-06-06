@@ -28,8 +28,8 @@ Legend: ✅ done · 🔨 building · ⏳ queued · 🔒 blocked (needs provision
 - ✅ **Soft-delete + Undo** for friends (swipe) & journal entries (long-press) — `LuminaSnackbarView` + a deferred-commit `.task(id:)` window; recoverable, beats a blunt confirm dialog.
 - ✅ **Big-3 tappable readings** — tap Sun/Moon → placement reading, Rising → ascendant reading (new `AscendantInterpreter` + `AscendantDetailSheet`).
 - ✅ **Transit-tied Reflect prompt** — the day's strongest transit shapes the journal prompt (`TransitPrompt`), so Today and Reflect cohere; falls back to the date pool offline.
-- ⏳ **Empty-state pass** — every list/section gets a premium, never-dead-end empty state.
-- ⏳ **Motion & haptics polish** — `.smooth` cross-fades, light haptics on key taps, respect Reduce Motion.
+- ✅ **Empty-state pass** — every list/section has a premium empty/locked state; the new self-contained cards hide when empty (no dead-ends).
+- ✅ **Motion & haptics polish** — light haptics on key taps (buttons, Big-3, soft-delete), `.smooth` cross-fades, and the in-app Reduce-motion override now actually works (`LuminaMotion`).
 - ✅ **App icon** — refined gold crescent + sparkle on midnight (replaces the flat placeholder orb); reproducible via `scripts/generate_app_icon.mjs` (hand-rolled PNG, no deps).
 
 ## 2. New grounded features (unblocked, deterministic — no LLM/keys)
@@ -52,7 +52,7 @@ Legend: ✅ done · 🔨 building · ⏳ queued · 🔒 blocked (needs provision
 
 - 🔨 Gitleaks secret-scan CI gate **done** (`secrets` job + `.gitleaks.toml`); coverage gate pending.
 - ⏳ Expand snapshot coverage; refactor the screenshot harness so it scales.
-- ⏳ More edge-case tests across the new deterministic engines.
+- 🔨 More edge-case tests across the new deterministic engines (added composite-antipodal, direct-planet retrograde; ongoing).
 
 ## 5. Blocked — needs one-time provisioning by the owner
 

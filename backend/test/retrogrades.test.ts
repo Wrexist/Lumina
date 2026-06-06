@@ -107,6 +107,20 @@ describe("POST /retrogrades", () => {
     expect(mercury.nextStationDirection).toBe("direct");
   });
 
+  test("a direct planet reports isRetrograde false (Mercury, 2025-03-01)", async () => {
+    // Mercury stationed retrograde ~2025-03-15, so two weeks prior it's direct.
+    const response = await app.inject({
+      method: "POST",
+      url: "/retrogrades",
+      headers: { "x-lumina-secret": TEST_SECRET },
+      payload: { at: "2025-03-01T00:00:00Z" },
+    });
+    const mercury = response
+      .json()
+      .planets.find((p: { planet: string }) => p.planet === "Mercury");
+    expect(mercury.isRetrograde).toBe(false);
+  });
+
   test("rejects a malformed instant", async () => {
     const response = await app.inject({
       method: "POST",

@@ -26,6 +26,16 @@ describe("midpointLongitude (pure)", () => {
     expect(midpointLongitude(350, 10)).toBeCloseTo(0, 10);
   });
 
+  test("antipodal points resolve to a deterministic in-range midpoint", () => {
+    // 0° and 180° are exactly opposite — the midpoint is ambiguous (90 or 270);
+    // the rule must pick one consistently and stay in range.
+    const mid = midpointLongitude(0, 180);
+    expect(mid).toBeGreaterThanOrEqual(0);
+    expect(mid).toBeLessThan(360);
+    expect(midpointLongitude(0, 180)).toBe(mid);
+    expect([90, 270]).toContain(Math.round(mid));
+  });
+
   test("always returns a longitude in [0, 360)", () => {
     const pairs: [number, number][] = [
       [0, 0],

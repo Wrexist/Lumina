@@ -12,8 +12,13 @@ struct LuminaSkeleton: View {
 
     let shape: Shape
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @State private var preferences = AppPreferences.shared
     @State private var phase: CGFloat = -1
+
+    private var reduceMotion: Bool {
+        LuminaMotion.isReduced(system: systemReduceMotion, appOverride: preferences.reduceMotionOverride)
+    }
 
     var body: some View {
         Group {
