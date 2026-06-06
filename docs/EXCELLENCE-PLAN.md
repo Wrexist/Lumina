@@ -30,7 +30,7 @@ Legend: ✅ done · 🔨 building · ⏳ queued · 🔒 blocked (needs provision
 - ✅ **Transit-tied Reflect prompt** — the day's strongest transit shapes the journal prompt (`TransitPrompt`), so Today and Reflect cohere; falls back to the date pool offline.
 - ⏳ **Empty-state pass** — every list/section gets a premium, never-dead-end empty state.
 - ⏳ **Motion & haptics polish** — `.smooth` cross-fades, light haptics on key taps, respect Reduce Motion.
-- ⏳ **App icon** — replace the placeholder orb with a refined mark.
+- ✅ **App icon** — refined gold crescent + sparkle on midnight (replaces the flat placeholder orb); reproducible via `scripts/generate_app_icon.mjs` (hand-rolled PNG, no deps).
 
 ## 2. New grounded features (unblocked, deterministic — no LLM/keys)
 
