@@ -6,6 +6,7 @@ import type {
   MoonPhaseResult,
   NatalChart,
   ProgressionsResult,
+  RetrogradesResult,
   SynastryPerson,
   SynastryResult,
   TransitsResult,
@@ -31,6 +32,8 @@ export interface EphemerisService {
   moonPhase(at?: Date): Promise<MoonPhaseResult>;
   /** Secondary-progressed chart for a target date (day-for-a-year). */
   progressions(birthData: BirthData, options?: ProgressionsOptions): Promise<ProgressionsResult>;
+  /** Which bodies are retrograde now and when each next stations (global). */
+  retrogrades(at?: Date): Promise<RetrogradesResult>;
 }
 
 export interface ProgressionsOptions {

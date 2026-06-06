@@ -291,3 +291,40 @@ export const ProgressionsResultSchema = z.object({
 });
 
 export type ProgressionsResult = z.infer<typeof ProgressionsResultSchema>;
+
+/** Wire format for `POST /retrogrades`: an optional moment (defaults to now). */
+export const RetrogradesRequestSchema = z.object({
+  at: plausibleInstant.optional(),
+});
+
+export type RetrogradesRequest = z.infer<typeof RetrogradesRequestSchema>;
+
+export const StationDirectionSchema = z.enum(["retrograde", "direct"]);
+export type StationDirection = z.infer<typeof StationDirectionSchema>;
+
+/** One body's apparent-motion state and its next station. */
+export const RetrogradeStateSchema = z.object({
+  planet: z.string(),
+  isRetrograde: z.boolean(),
+  /** The next station instant, or null if none within the search window. */
+  nextStationAt: z.string().datetime({ offset: true }).nullable(),
+  /** The direction the body takes *after* the next station. */
+  nextStationDirection: StationDirectionSchema.nullable(),
+});
+
+export type RetrogradeState = z.infer<typeof RetrogradeStateSchema>;
+
+/**
+ * Which bodies are retrograde now and when each next turns — the culturally
+ * dominant "is Mercury retrograde?" question, answered for real. Global (not
+ * per-user) sky data. Mirrors `RetrogradesResult` in the iOS models.
+ */
+export const RetrogradesResultSchema = z.object({
+  calculatedAt: z.string().datetime({ offset: true }),
+  /** The moment the states were computed for. */
+  at: z.string().datetime({ offset: true }),
+  /** Mercury through Pluto (the Sun and Moon never retrograde). */
+  planets: z.array(RetrogradeStateSchema),
+});
+
+export type RetrogradesResult = z.infer<typeof RetrogradesResultSchema>;

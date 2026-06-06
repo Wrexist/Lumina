@@ -9,6 +9,7 @@ import { computeSynastry } from "../lib/synastry.ts";
 import { computeComposite } from "../lib/composite.ts";
 import { findCrossings } from "../lib/forecast.ts";
 import { progressedInstant } from "../lib/progressions.ts";
+import { angularVelocity, findNextStation } from "../lib/retrogrades.ts";
 import type {
   AspectType,
   BirthData,
@@ -21,6 +22,8 @@ import type {
   NatalChart,
   PlanetPosition,
   ProgressionsResult,
+  RetrogradeState,
+  RetrogradesResult,
   SynastryPerson,
   SynastryResult,
   TransitsResult,
@@ -72,6 +75,11 @@ const RETROGRADE_PROBE_MS = 60 * 60 * 1000; // one hour earlier
 // A synodic month is ~29.53 days; 40 days guarantees the next new and full.
 const MOON_SEARCH_DAYS = 40;
 const MOON_FULL_ANGLE = 180;
+
+// The Sun and Moon never retrograde; everything else can. 400 days guarantees
+// the next station even for a body that just turned (annual retrograde cycle).
+const RETROGRADE_BODIES = PLANETS.filter((spec) => spec.name !== "Sun" && spec.name !== "Moon");
+const RETROGRADE_SEARCH_DAYS = 400;
 
 /**
  * Pure-JS ephemeris implementation backed by `astronomy-engine`.
@@ -179,6 +187,35 @@ export class AstronomyEngineEphemeris implements EphemerisService {
       illumination,
       nextNewMoon: nextNew.date.toISOString(),
       nextFullMoon: nextFull.date.toISOString(),
+    };
+  }
+
+  async retrogrades(at: Date = new Date()): Promise<RetrogradesResult> {
+    const planets: RetrogradeState[] = RETROGRADE_BODIES.map((spec) => {
+      // Memoise the body's longitude so the overlapping ±6h velocity probes
+      // across the scan resolve to one ephemeris call per sampled instant.
+      const cache = new Map<number, number>();
+      const longitudeAt = (time: number): number => {
+        const key = Math.round(time / 60_000);
+        const cached = cache.get(key);
+        if (cached !== undefined) return cached;
+        const lon = geocentricEclipticLongitude(spec.body, new Date(time));
+        cache.set(key, lon);
+        return lon;
+      };
+      const velocityAt = (time: number): number => angularVelocity(longitudeAt, time);
+      const station = findNextStation(velocityAt, at.getTime(), RETROGRADE_SEARCH_DAYS);
+      return {
+        planet: spec.name,
+        isRetrograde: velocityAt(at.getTime()) < 0,
+        nextStationAt: station === null ? null : new Date(station.atMs).toISOString(),
+        nextStationDirection: station === null ? null : station.direction,
+      };
+    });
+    return {
+      calculatedAt: new Date().toISOString(),
+      at: at.toISOString(),
+      planets,
     };
   }
 

@@ -55,6 +55,7 @@ struct TodayHubView: View {
             headlineCard(lines.headline)
             dailyReadingCard
             MoonPhaseCard()
+            RetrogradeCard()
             ProgressedChapterCard()
             WhatsComingCard()
             if !lines.secondary.isEmpty {
