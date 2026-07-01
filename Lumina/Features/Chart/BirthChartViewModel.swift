@@ -99,14 +99,22 @@ final class BirthChartViewModel {
         state = .loading
         do {
             let chart = try await ephemeris.chart(for: birthData, houseSystem: houseSystem)
-            state = .ready(chart)
+            setReady(chart)
         } catch let serviceError as EphemerisService.ServiceError where serviceError == .missingConfiguration {
             // Dev path — surface a deterministic sample chart so the
             // UI is testable without a backend.
-            state = .ready(BirthChartViewModel.sampleChart())
+            setReady(BirthChartViewModel.sampleChart())
         } catch {
             logger.error("chart load failed: \(error.localizedDescription)")
             state = .failed(LuminaError.from(error))
         }
+    }
+
+    /// Moves to `.ready` and refreshes the home-screen widget from the same
+    /// chart, so the widget's Big-3 always reflects the latest computed chart
+    /// without needing its own network call.
+    private func setReady(_ chart: NatalChart) {
+        state = .ready(chart)
+        WidgetPublisher.publish(from: chart)
     }
 }

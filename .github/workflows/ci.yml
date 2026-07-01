@@ -113,6 +113,7 @@ jobs:
             -destination "platform=iOS Simulator,name=iPhone 16 Pro" \
             -skipPackagePluginValidation \
             -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
             build 2>&1 | xcbeautify --renderer github-actions
 
       - name: Test
@@ -123,6 +124,7 @@ jobs:
             -destination "platform=iOS Simulator,name=iPhone 16 Pro" \
             -skipPackagePluginValidation \
             -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
             2>&1 | xcbeautify --renderer github-actions
 
       # `ScreenshotTests` renders key screens to PNGs via ImageRenderer; upload
