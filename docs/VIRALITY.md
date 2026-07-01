@@ -36,7 +36,7 @@ Priority order — each ships as its own CI-verified commit:
 1. ✅ **Cosmic Profile + shareable Story cards** — dominant element + modality +
    Big-3 as a gorgeous portrait share card, plus an in-app "your cosmic signature"
    surface. Identity + virality in one. (`CosmicSignature`, `CosmicProfileCard`.)
-2. ⏳ **Shareable compatibility result** — a share card from a friend ("we're 84% —
+2. ✅ **Shareable compatibility result** — a share card from a friend ("we're 84% —
    here's why") + an invite loop, so the result travels to the other person.
 3. ⏳ **"Your next big moment" countdown** — reuses `/forecast` + `/returns`; an
    anticipation card ("Saturn return in 47 days", "Venus meets your Sun in 9 days").

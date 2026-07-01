@@ -26,6 +26,7 @@ struct FriendDetailView: View {
             VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
                 header
                 scoreCard
+                shareSection
                 birthInfoCard
                 synastrySection
                 CompositeCard(friend: friend)
@@ -99,6 +100,17 @@ struct FriendDetailView: View {
                 row("Birth place", value: friend.birthPlaceName ?? "Unknown")
                 row("Source", value: friend.source.rawValue.capitalized)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var shareSection: some View {
+        if case .loaded(let aspects) = synastry, !aspects.isEmpty {
+            CompatibilityShareButton(
+                friendName: friend.name,
+                score: score,
+                headline: SynastrySummary.headline(for: aspects)
+            )
         }
     }
 
