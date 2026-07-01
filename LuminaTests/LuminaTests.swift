@@ -144,7 +144,7 @@ final class LuminaTests: XCTestCase {
         do {
             _ = try await service.chart(for: Self.sampleBirthData)
             XCTFail("expected ServiceError.httpError")
-        } catch EphemerisService.ServiceError.httpError(let status, let body) {
+        } catch let EphemerisService.ServiceError.httpError(status, body) {
             XCTAssertEqual(status, 401)
             XCTAssertEqual(body, "unauthorized")
         } catch {

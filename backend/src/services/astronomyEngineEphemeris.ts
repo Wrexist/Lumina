@@ -1,9 +1,59 @@
-import { Body, Ecliptic, GeoVector } from "astronomy-engine";
+import { Body, Ecliptic, GeoVector, Illumination, MoonPhase, SearchMoonPhase } from "astronomy-engine";
 import { computeAspects } from "../lib/aspects.ts";
+import { phaseName } from "../lib/moon.ts";
 import { placidusHouses, tropicalAngles, wholeSignHouses } from "../lib/houses.ts";
 import { lahiriAyanamsha, tropicalToSidereal } from "../lib/sidereal.ts";
-import type { BirthData, HouseCusps, HouseSystem, NatalChart, PlanetPosition } from "../types.ts";
-import type { ChartOptions, EphemerisService } from "./ephemeris.ts";
+import { noonLocalAsUTC } from "../lib/timezone.ts";
+import { computeTransits } from "../lib/transits.ts";
+import { computeSynastry } from "../lib/synastry.ts";
+import { computeComposite } from "../lib/composite.ts";
+import { findCrossings } from "../lib/forecast.ts";
+import { progressedInstant } from "../lib/progressions.ts";
+import { angularVelocity, findNextStation } from "../lib/retrogrades.ts";
+import type {
+  AspectType,
+  BirthData,
+  CompositeResult,
+  ForecastEvent,
+  ForecastResult,
+  HouseCusps,
+  HouseSystem,
+  MoonPhaseResult,
+  NatalChart,
+  PlanetPosition,
+  ProgressionsResult,
+  RetrogradeState,
+  RetrogradesResult,
+  ReturnEvent,
+  ReturnsResult,
+  SynastryPerson,
+  SynastryResult,
+  TransitsResult,
+} from "../types.ts";
+import type {
+  ChartOptions,
+  EphemerisService,
+  ForecastOptions,
+  ProgressionsOptions,
+  ReturnsOptions,
+  TransitOptions,
+} from "./ephemeris.ts";
+
+/** The five major aspects, by exact angle, used for forecasting exact hits. */
+const FORECAST_ASPECTS: readonly { type: AspectType; exactAngle: number }[] = [
+  { type: "conjunction", exactAngle: 0 },
+  { type: "sextile", exactAngle: 60 },
+  { type: "square", exactAngle: 90 },
+  { type: "trine", exactAngle: 120 },
+  { type: "opposition", exactAngle: 180 },
+];
+
+/** The fields `effectiveInstant` needs — a `BirthData` or a synastry person. */
+interface InstantSource {
+  readonly birthDate: string;
+  readonly birthTime?: string | null;
+  readonly timeZoneIdentifier?: string | null;
+}
 
 interface PlanetSpec {
   readonly body: Body;
@@ -24,6 +74,26 @@ const PLANETS: readonly PlanetSpec[] = [
 ];
 
 const RETROGRADE_PROBE_MS = 60 * 60 * 1000; // one hour earlier
+
+// A synodic month is ~29.53 days; 40 days guarantees the next new and full.
+const MOON_SEARCH_DAYS = 40;
+const MOON_FULL_ANGLE = 180;
+
+// The Sun and Moon never retrograde; everything else can. 400 days guarantees
+// the next station even for a body that just turned (annual retrograde cycle).
+const RETROGRADE_BODIES = PLANETS.filter((spec) => spec.name !== "Sun" && spec.name !== "Moon");
+const RETROGRADE_SEARCH_DAYS = 400;
+
+// The two reachable, life-defining returns. Sidereal orbital periods (days);
+// the geocentric return lands within weeks of one period, so searching a
+// period plus a margin always brackets the next one.
+const RETURN_BODIES: readonly { spec: PlanetSpec; periodDays: number }[] = [
+  { spec: { body: Body.Jupiter, name: "Jupiter" }, periodDays: 4332.59 },
+  { spec: { body: Body.Saturn, name: "Saturn" }, periodDays: 10759.22 },
+];
+const RETURN_MARGIN_DAYS = 400;
+const RETURN_STEP_HOURS = 48;
+const DAY_MS = 86_400_000;
 
 /**
  * Pure-JS ephemeris implementation backed by `astronomy-engine`.
@@ -57,12 +127,208 @@ export class AstronomyEngineEphemeris implements EphemerisService {
       houses,
     };
   }
+
+  async transits(birthData: BirthData, options: TransitOptions = {}): Promise<TransitsResult> {
+    const at = options.at ?? new Date();
+    // Natal positions are tropical (J2000), matching the default chart; the
+    // sidereal/house-system choice doesn't affect transit longitudes.
+    const natalInstant = effectiveInstant(birthData);
+    const natalPlanets = PLANETS.map((spec) => positionAt(spec, natalInstant));
+    const transitingPlanets = PLANETS.map((spec) => positionAt(spec, at));
+    return {
+      calculatedAt: new Date().toISOString(),
+      transitAt: at.toISOString(),
+      transitingPlanets,
+      transits: computeTransits(transitingPlanets, natalPlanets),
+    };
+  }
+
+  async synastry(personA: SynastryPerson, personB: SynastryPerson): Promise<SynastryResult> {
+    // Synastry compares geocentric planet longitudes, which are independent
+    // of birth place — so each person needs only a date (+ optional time).
+    const planetsA = PLANETS.map((spec) => positionAt(spec, effectiveInstant(personA)));
+    const planetsB = PLANETS.map((spec) => positionAt(spec, effectiveInstant(personB)));
+    return {
+      calculatedAt: new Date().toISOString(),
+      aspects: computeSynastry(planetsA, planetsB),
+    };
+  }
+
+  async composite(personA: SynastryPerson, personB: SynastryPerson): Promise<CompositeResult> {
+    // The composite *merges* the two charts into one: each planet sits at the
+    // midpoint of the pair, then we run the same aspect engine over the merged
+    // set. Like synastry, this needs only date (+ optional time) per person.
+    const planetsA = PLANETS.map((spec) => positionAt(spec, effectiveInstant(personA)));
+    const planetsB = PLANETS.map((spec) => positionAt(spec, effectiveInstant(personB)));
+    const planets = computeComposite(planetsA, planetsB);
+    return {
+      calculatedAt: new Date().toISOString(),
+      planets,
+      aspects: computeAspects(planets),
+    };
+  }
+
+  async progressions(birthData: BirthData, options: ProgressionsOptions = {}): Promise<ProgressionsResult> {
+    const on = options.on ?? new Date();
+    const birthInstant = effectiveInstant(birthData);
+    // Day-for-a-year: the progressed sky is `age-in-years` days after birth.
+    const progressed = new Date(progressedInstant(birthInstant.getTime(), on.getTime()));
+    return {
+      calculatedAt: new Date().toISOString(),
+      on: on.toISOString(),
+      progressedAt: progressed.toISOString(),
+      planets: PLANETS.map((spec) => positionAt(spec, progressed)),
+    };
+  }
+
+  async moonPhase(at: Date = new Date()): Promise<MoonPhaseResult> {
+    // Elongation angle (0 = new, 90 = first quarter, 180 = full) and the
+    // illuminated fraction of the disk, both for the given instant.
+    const angle = MoonPhase(at);
+    const illumination = Illumination(Body.Moon, at).phase_fraction;
+    // SearchMoonPhase finds the next time the Moon reaches a phase angle after
+    // `at`; 0° is the next new moon, 180° the next full.
+    const nextNew = SearchMoonPhase(0, at, MOON_SEARCH_DAYS);
+    const nextFull = SearchMoonPhase(MOON_FULL_ANGLE, at, MOON_SEARCH_DAYS);
+    if (nextNew === null || nextFull === null) {
+      throw new Error("moon phase search failed to converge");
+    }
+    return {
+      calculatedAt: new Date().toISOString(),
+      at: at.toISOString(),
+      angle,
+      phase: phaseName(angle),
+      illumination,
+      nextNewMoon: nextNew.date.toISOString(),
+      nextFullMoon: nextFull.date.toISOString(),
+    };
+  }
+
+  async retrogrades(at: Date = new Date()): Promise<RetrogradesResult> {
+    const planets: RetrogradeState[] = RETROGRADE_BODIES.map((spec) => {
+      // Memoise the body's longitude so the overlapping ±6h velocity probes
+      // across the scan resolve to one ephemeris call per sampled instant.
+      const cache = new Map<number, number>();
+      const longitudeAt = (time: number): number => {
+        const key = Math.round(time / 60_000);
+        const cached = cache.get(key);
+        if (cached !== undefined) return cached;
+        const lon = geocentricEclipticLongitude(spec.body, new Date(time));
+        cache.set(key, lon);
+        return lon;
+      };
+      const velocityAt = (time: number): number => angularVelocity(longitudeAt, time);
+      const station = findNextStation(velocityAt, at.getTime(), RETROGRADE_SEARCH_DAYS);
+      return {
+        planet: spec.name,
+        isRetrograde: velocityAt(at.getTime()) < 0,
+        nextStationAt: station === null ? null : new Date(station.atMs).toISOString(),
+        nextStationDirection: station === null ? null : station.direction,
+      };
+    });
+    return {
+      calculatedAt: new Date().toISOString(),
+      at: at.toISOString(),
+      planets,
+    };
+  }
+
+  async returns(birthData: BirthData, options: ReturnsOptions = {}): Promise<ReturnsResult> {
+    const from = options.from ?? new Date();
+    const birthInstant = effectiveInstant(birthData);
+    const events: ReturnEvent[] = [];
+
+    for (const { spec, periodDays } of RETURN_BODIES) {
+      const natalLongitude = positionAt(spec, birthInstant).longitude;
+      const longitudeAt = (time: number): number => geocentricEclipticLongitude(spec.body, new Date(time));
+      const crossings = findCrossings(
+        longitudeAt,
+        natalLongitude,
+        from.getTime(),
+        periodDays + RETURN_MARGIN_DAYS,
+        RETURN_STEP_HOURS,
+      );
+      const exactAtMs = crossings[0];
+      if (exactAtMs === undefined) continue;
+      // Which return this is: how many full periods since birth (≥ 1).
+      const returnNumber = Math.max(1, Math.round((exactAtMs - birthInstant.getTime()) / (periodDays * DAY_MS)));
+      events.push({
+        planet: spec.name,
+        returnNumber,
+        exactAt: new Date(exactAtMs).toISOString(),
+        natalLongitude,
+      });
+    }
+
+    events.sort((a, b) => a.exactAt.localeCompare(b.exactAt));
+    return {
+      calculatedAt: new Date().toISOString(),
+      from: from.toISOString(),
+      events,
+    };
+  }
+
+  async forecast(birthData: BirthData, options: ForecastOptions = {}): Promise<ForecastResult> {
+    const from = options.from ?? new Date();
+    const days = options.days ?? 30;
+    const natalInstant = effectiveInstant(birthData);
+    const natalPlanets = PLANETS.map((spec) => positionAt(spec, natalInstant));
+    const events: ForecastEvent[] = [];
+
+    for (const spec of PLANETS) {
+      // Memoise the transiting body's longitude so re-sampling the same
+      // instants across many natal targets is effectively free.
+      const cache = new Map<number, number>();
+      const longitudeAt = (time: number): number => {
+        const key = Math.round(time / 60_000);
+        const cached = cache.get(key);
+        if (cached !== undefined) return cached;
+        const lon = geocentricEclipticLongitude(spec.body, new Date(time));
+        cache.set(key, lon);
+        return lon;
+      };
+
+      for (const natal of natalPlanets) {
+        for (const aspect of FORECAST_ASPECTS) {
+          const targets = aspect.exactAngle === 0
+            ? [natal.longitude]
+            : [
+                normalizeLongitude(natal.longitude + aspect.exactAngle),
+                normalizeLongitude(natal.longitude - aspect.exactAngle),
+              ];
+          for (const target of targets) {
+            for (const at of findCrossings(longitudeAt, target, from.getTime(), days)) {
+              events.push({
+                transiting: spec.name,
+                natal: natal.planet,
+                type: aspect.type,
+                exactAngle: aspect.exactAngle,
+                exactAt: new Date(at).toISOString(),
+              });
+            }
+          }
+        }
+      }
+    }
+
+    events.sort((a, b) => a.exactAt.localeCompare(b.exactAt));
+    return {
+      calculatedAt: new Date().toISOString(),
+      from: from.toISOString(),
+      days,
+      events,
+    };
+  }
 }
 
-function effectiveInstant(birthData: BirthData): Date {
-  // If birthTime is null we use noon UT on the birth date — see LEARNINGS.md.
-  const source = birthData.birthTime ?? noonUTOf(birthData.birthDate);
-  return new Date(source);
+function effectiveInstant(source: InstantSource): Date {
+  // A known birth time is already an absolute instant (the iOS client encodes
+  // a `Date`). For an unknown time we use the astrological convention of noon
+  // *local* time on the birth date — resolved through the birth time zone so
+  // we neither shift the calendar day nor silently use noon UTC. A synastry
+  // person may carry no zone at all, in which case noon UTC is the fallback.
+  if (source.birthTime != null) return new Date(source.birthTime);
+  return noonLocalAsUTC(new Date(source.birthDate), source.timeZoneIdentifier ?? "UTC");
 }
 
 function housesFor(
@@ -84,12 +350,6 @@ function housesFor(
   const mc = ayanamsha === 0 ? tropical.midheaven : tropicalToSidereal(tropical.midheaven, ayanamsha);
   const houses = wholeSignHouses(asc, mc);
   return { ...houses, system: houseSystem };
-}
-
-function noonUTOf(isoDate: string): string {
-  const date = new Date(isoDate);
-  date.setUTCHours(12, 0, 0, 0);
-  return date.toISOString();
 }
 
 function geocentricEclipticLongitude(body: Body, instant: Date): number {

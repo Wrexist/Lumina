@@ -38,6 +38,27 @@ jobs:
       - name: Test
         run: npm test
 
+  secrets:
+    name: Secret scan — gitleaks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install gitleaks
+        run: |
+          VERSION=8.18.4
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" -o gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz gitleaks
+          sudo install gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      # Scan the working tree (--no-git) so the gate is about what's *in* the
+      # source now; the .gitleaks.toml allowlist keeps templates from tripping it.
+      - name: Scan for secrets
+        run: gitleaks detect --no-git --redact --verbose --config .gitleaks.toml --source .
+
   ios:
     name: iOS — generate · build · lint · test
     runs-on: macos-15
@@ -92,6 +113,7 @@ jobs:
             -destination "platform=iOS Simulator,name=iPhone 16 Pro" \
             -skipPackagePluginValidation \
             -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
             build 2>&1 | xcbeautify --renderer github-actions
 
       - name: Test
@@ -102,4 +124,31 @@ jobs:
             -destination "platform=iOS Simulator,name=iPhone 16 Pro" \
             -skipPackagePluginValidation \
             -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
             2>&1 | xcbeautify --renderer github-actions
+
+      # `ScreenshotTests` renders key screens to PNGs via ImageRenderer; upload
+      # them so the UI is reviewable without a Mac. `always()` so they surface
+      # even if a later test fails.
+      - name: Upload UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots
+          path: LuminaTests/__Screenshots__/*.png
+          if-no-files-found: warn
+
+      # The Claude Code remote runner's egress allowlist blocks the artifact
+      # storage host, so also emit each PNG as base64 in the job log — the one
+      # channel that environment can read back (via the GitHub API). `openssl`
+      # base64 -A is used because macOS `base64` lacks GNU's `-w0`.
+      - name: Emit screenshots as base64 (sandbox retrieval)
+        if: always()
+        run: |
+          shopt -s nullglob
+          for f in LuminaTests/__Screenshots__/*.png; do
+            echo "===SHOT_BEGIN $(basename "$f")==="
+            openssl base64 -A -in "$f"
+            echo ""
+            echo "===SHOT_END==="
+          done

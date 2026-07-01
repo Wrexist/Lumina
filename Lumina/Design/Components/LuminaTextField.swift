@@ -39,7 +39,13 @@ struct LuminaTextField: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(title)
-        .accessibilityValue(text.isEmpty ? "Empty" : text)
+        .accessibilityValue(accessibilityValueText)
+    }
+
+    private var accessibilityValueText: String {
+        if text.isEmpty { return "Empty" }
+        // Never read a secure field's contents aloud to VoiceOver.
+        return isSecure ? "Filled" : text
     }
 
     @ViewBuilder
@@ -87,9 +93,7 @@ struct LuminaTextField: View {
     }
 
     private var errorColor: Color {
-        // Re-uses an existing brand token; we don't yet ship a dedicated
-        // error red because most error surfaces are recoverable, not punitive.
-        LuminaColors.blush
+        LuminaColors.error
     }
 }
 

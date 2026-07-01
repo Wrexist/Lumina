@@ -4,7 +4,7 @@ import SwiftUI
 /// grouped by topic, fully on-device. The pull-down search on Today
 /// (Phase 13) will index this content alongside the glossary.
 struct HelpView: View {
-    private struct Article: Identifiable, Hashable {
+    fileprivate struct Article: Identifiable, Hashable {
         let id: String
         let topic: Topic
         let title: String
@@ -35,75 +35,95 @@ struct HelpView: View {
 
     private static let allArticles: [Article] = [
         .init(id: "what-is-lumina", topic: .gettingStarted, title: "What is Lumina?",
-              body: "Lumina is a premium astrology and palm-reading app. We use real Swiss-Ephemeris chart math, on-device computer-vision palm analysis, and RAG-grounded language-model interpretations — never generic horoscope copy."),
+              body: "Lumina is a premium astrology and palm-reading app. We use real Swiss-Ephemeris chart math, "
+                  + "on-device palm analysis, and interpretations grounded in your actual chart — "
+                  + "never generic horoscope copy."),
         .init(id: "what-time-do-i-need", topic: .gettingStarted, title: "Why do you need my birth time?",
-              body: "The exact time decides your rising sign and which house each planet falls into. Without time we still calculate your sign and planets — only houses are hidden. You can always update it later in Settings → Your info."),
+              body: "The exact time decides your rising sign and which house each planet falls into. Without time "
+                  + "we still calculate your sign and planets — only houses are hidden. You can always update it "
+                  + "later in Settings → Your info."),
         .init(id: "wrong-time", topic: .gettingStarted, title: "I think I entered the wrong time",
               body: "Open Settings → Your info, change the time, and save. The Chart tab re-computes the next time you open it."),
         .init(id: "asc-hidden", topic: .chart, title: "My Ascendant says \"hidden\"",
               body: "The Ascendant requires your birth time to compute. Open Settings → Your info to add it; otherwise the chart still ships your real sign and planets."),
         .init(id: "house-systems", topic: .chart, title: "Placidus vs Whole-sign vs Sidereal",
-              body: "Placidus is the modern Western default. Whole-sign is older and matches the sign-aligned approach. Sidereal aligns with the actual constellations (Vedic). Pick the one your tradition uses — your planets stay the same, only the houses shift."),
+              body: "Placidus is the modern Western default. Whole-sign is older and matches the sign-aligned "
+                  + "approach. Sidereal aligns with the actual constellations (Vedic). Pick the one your tradition "
+                  + "uses — your planets stay the same, only the houses shift."),
         .init(id: "retrograde-marker", topic: .chart, title: "What's the ℞ marker?",
-              body: "It's the traditional retrograde marker — the planet appears to move backwards from Earth's vantage point. Astrologers read it as an invitation to revisit, review, or revise rather than initiate."),
-        .init(id: "palm-when", topic: .palm, title: "When does palm scanning ship?",
-              body: "Palm scanning ships in Phase 6 of the roadmap once the on-device Core ML model is balanced across skin tones. The transparency walkthrough in the Palm tab shows exactly how the pipeline runs locally."),
+              body: "It's the traditional retrograde marker — the planet appears to move backwards from Earth's "
+                  + "vantage point. Astrologers read it as an invitation to revisit, review, or revise rather "
+                  + "than initiate."),
+        .init(id: "palm-when", topic: .palm, title: "When does palm scanning arrive?",
+              body: "It's coming soon. We're making sure the on-device line tracing works fairly across every "
+                  + "skin tone before we ship it — that's the part we won't rush. The walkthrough in the Palm "
+                  + "tab shows exactly how it will run on your phone."),
         .init(id: "palm-photo", topic: .palm, title: "Does my palm photo leave my phone?",
-              body: "No. Vision detects your hand; a Core ML model traces the lines; we extract about 50 numbers (line lengths, curvature). Only those numbers go to our server — never the photo. Read the full pipeline in Palm → How this works."),
+              body: "No. Your phone finds your hand and traces the lines on-device, then turns them into about "
+                  + "50 numbers (line lengths, curvature). Only those numbers go to our server — never the "
+                  + "photo. See the full walkthrough in Palm → How this works."),
         .init(id: "add-friend", topic: .people, title: "How do I add someone?",
               body: "Open the People tab and tap the + menu. \"Add someone\" opens a manual form; \"Share my chart\" generates a QR a friend can scan with any camera app."),
-        .init(id: "compatibility-score", topic: .people, title: "How is the compatibility score calculated?",
-              body: "Today's score uses a deterministic algorithm based on Sun-sign element + modality. The full synastry score (with cross-chart aspects, weighted by orb) ships in Phase 7 once the backend `/synastry` endpoint is live."),
+        .init(id: "compatibility-score", topic: .people, title: "How is compatibility calculated?",
+              body: "The headline score is a quick read from your Sun signs' element and modality. Open any "
+                  + "friend to see the real chart-to-chart aspects between you — \"your Venus conjunct their "
+                  + "Mars\" — and a fuller weighted score is coming soon."),
         .init(id: "data-storage", topic: .privacy, title: "Where does my data live?",
               body: "Your chart, friends, and Reflect entries live on this device only. Open Settings → Privacy → Privacy dashboard to see exactly what's where."),
         .init(id: "subscription", topic: .billing, title: "How do I cancel my subscription?",
               body: "Settings → Account → Manage subscription opens Apple's native subscription management screen. We never bury cancel — that's a brand pillar."),
     ]
 
-    @Environment(\.dismiss) private var dismiss
     @State private var query = ""
 
+    // No own NavigationStack: HelpView is either pushed inside the Settings
+    // stack or wrapped in a NavigationStack when presented as a sheet — a
+    // nested stack here produced a double nav bar and a "Done" that popped one
+    // level instead of closing the sheet.
     var body: some View {
-        NavigationStack {
-            List {
-                if !query.isEmpty {
-                    searchResults
-                } else {
-                    ForEach(Topic.allCases) { topic in
-                        Section(topic.displayName) {
-                            ForEach(articles(for: topic)) { article in
-                                NavigationLink {
-                                    ArticleView(article: article)
-                                } label: {
-                                    Text(article.title).font(LuminaTypography.body)
-                                }
-                            }
+        List {
+            if !query.isEmpty {
+                searchResults
+            } else {
+                Section {
+                    NavigationLink {
+                        GlossaryView()
+                    } label: {
+                        HStack {
+                            Image(systemName: "character.book.closed")
+                            Text("Glossary — every term, explained")
                         }
                     }
-                    Section {
-                        NavigationLink {
-                            FeedbackView()
-                        } label: {
-                            HStack {
-                                Image(systemName: "envelope")
-                                Text("Send feedback")
+                }
+                ForEach(Topic.allCases) { topic in
+                    Section(topic.displayName) {
+                        ForEach(articles(for: topic)) { article in
+                            NavigationLink {
+                                ArticleView(article: article)
+                            } label: {
+                                Text(article.title).font(LuminaTypography.body)
                             }
                         }
                     }
                 }
-            }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-            .background(LuminaColors.parchment)
-            .searchable(text: $query, prompt: "Search help")
-            .navigationTitle("Help & FAQ")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
+                Section {
+                    NavigationLink {
+                        FeedbackView()
+                    } label: {
+                        HStack {
+                            Image(systemName: "envelope")
+                            Text("Send feedback")
+                        }
+                    }
                 }
             }
         }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(LuminaColors.parchment)
+        .searchable(text: $query, prompt: "Search help")
+        .navigationTitle("Help & FAQ")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     @ViewBuilder
@@ -167,7 +187,7 @@ private struct ArticleView: View {
 
 private struct FeedbackView: View {
     @State private var subject = ""
-    @State private var body = ""
+    @State private var message = ""
 
     var body: some View {
         ScrollView {
@@ -181,7 +201,7 @@ private struct FeedbackView: View {
                         .font(LuminaTypography.caption)
                         .tracking(1.2)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-                    TextEditor(text: $body)
+                    TextEditor(text: $message)
                         .font(LuminaTypography.body)
                         .scrollContentBackground(.hidden)
                         .background(LuminaColors.parchment)
@@ -191,7 +211,7 @@ private struct FeedbackView: View {
                                 .stroke(LuminaColors.inkBlack.opacity(0.2), lineWidth: 1)
                         )
                 }
-                LuminaButton(title: "Send", variant: .primary, isEnabled: !body.trimmingCharacters(in: .whitespaces).isEmpty) {
+                LuminaButton(title: "Send", variant: .primary, isEnabled: !message.trimmingCharacters(in: .whitespaces).isEmpty) {
                     // TODO(lumina): wire MFMailComposeViewController + diagnostic dump (Phase 12)
                     Haptics.success.play()
                 }
@@ -208,5 +228,5 @@ private struct FeedbackView: View {
 }
 
 #Preview {
-    HelpView()
+    NavigationStack { HelpView() }
 }

@@ -116,23 +116,36 @@ struct JournalCalendarView: View {
     @ViewBuilder
     private func cell(_ day: Date?) -> some View {
         if let day {
-            Button {
-                selectedDay = SelectedDay(date: day)
-            } label: {
-                VStack(spacing: 2) {
-                    Text("\(calendar.component(.day, from: day))")
-                        .font(LuminaTypography.body)
-                        .foregroundStyle(isToday(day) ? LuminaColors.celestialBlue : LuminaColors.inkBlack)
-                    Circle()
-                        .fill(hasEntry(on: day) ? LuminaColors.mutedGold : Color.clear)
-                        .frame(width: 6, height: 6)
+            if isFuture(day) {
+                // You can't reflect on a day that hasn't happened — show the
+                // number dimmed and non-interactive so no future-dated entry
+                // is ever created.
+                dayContent(day)
+                    .opacity(0.35)
+                    .accessibilityHidden(true)
+            } else {
+                Button {
+                    selectedDay = SelectedDay(date: day)
+                } label: {
+                    dayContent(day)
                 }
-                .frame(maxWidth: .infinity, minHeight: 44)
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         } else {
             Color.clear.frame(maxWidth: .infinity, minHeight: 44)
         }
+    }
+
+    private func dayContent(_ day: Date) -> some View {
+        VStack(spacing: 2) {
+            Text("\(calendar.component(.day, from: day))")
+                .font(LuminaTypography.body)
+                .foregroundStyle(isToday(day) ? LuminaColors.celestialBlue : LuminaColors.inkBlack)
+            Circle()
+                .fill(hasEntry(on: day) ? LuminaColors.mutedGold : Color.clear)
+                .frame(width: 6, height: 6)
+        }
+        .frame(maxWidth: .infinity, minHeight: 44)
     }
 
     private func entry(on day: Date) -> JournalEntry? {
@@ -147,13 +160,16 @@ struct JournalCalendarView: View {
         calendar.isDateInToday(day)
     }
 
+    private func isFuture(_ day: Date) -> Bool {
+        calendar.compare(day, to: .now, toGranularity: .day) == .orderedDescending
+    }
+
     private func makeEntry(for day: Date) -> JournalEntry {
         let prompt = JournalPromptGenerator.shared.prompt(for: day)
         let key = JournalPromptGenerator.shared.transitKey(for: day)
         let entry = JournalEntry(date: day, prompt: prompt, transitKey: key)
         modelContext.insert(entry)
-        try? modelContext.save()
+        modelContext.saveOrLog(category: "Reflect")
         return entry
     }
 }
-

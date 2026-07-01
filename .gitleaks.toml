@@ -1,0 +1,22 @@
+# Lumina gitleaks configuration.
+# Enforces CLAUDE.md critical rule #1: no API keys in source. The CI `secrets`
+# job runs `gitleaks detect` against the working tree; this config extends the
+# default ruleset and allowlists template files and obvious placeholders so the
+# gate stays meaningful (real keys fail) without false-positiving on examples.
+
+title = "Lumina"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Template/example files and documented placeholders"
+paths = [
+  '''\.env\.example$''',
+  '''\.gitleaks\.toml$''',
+]
+regexes = [
+  '''YOUR_KEY_HERE''',
+  '''sk-ant-\.\.\.''',
+  '''\$\([A-Z_]+\)''',
+]

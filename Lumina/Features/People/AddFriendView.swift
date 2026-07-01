@@ -96,7 +96,7 @@ struct AddFriendView: View {
                 placeholder: "Stockholm, Sweden",
                 helper: resolved == nil
                     ? "Optional — pick a city for an exact chart."
-                    : "Found ✓ \(resolved?.displayName ?? "")",
+                    : "Using \(resolved?.displayName ?? "")",
                 textContentType: .addressCityAndState
             )
         }
@@ -189,7 +189,7 @@ struct AddFriendView: View {
             friend.compatibilityScore = CompatibilityScorer.score(userBirth.birthDate, friend.birthDate)
         }
         modelContext.insert(friend)
-        try? modelContext.save()
+        modelContext.saveOrLog(category: "People")
         Haptics.success.play()
         dismiss()
     }

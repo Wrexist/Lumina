@@ -10,6 +10,7 @@ struct JournalEntryView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @State private var draft = ""
     @State private var hydrated = false
     @State private var saveTask: Task<Void, Never>?
@@ -30,6 +31,11 @@ struct JournalEntryView: View {
             guard hydrated else { return }
             scheduleSave(newValue)
         }
+        .onChange(of: scenePhase) { _, phase in
+            // Flush the debounce window if the app is backgrounded mid-edit.
+            if phase != .active { saveImmediately() }
+        }
+        .onDisappear { saveImmediately() }
         .task(id: entry.id) {
             draft = entry.body
             hydrated = true
@@ -118,6 +124,6 @@ struct JournalEntryView: View {
     private func commit(_ text: String) {
         guard text != entry.body else { return }
         entry.apply(body: text)
-        try? modelContext.save()
+        modelContext.saveOrLog(category: "Reflect")
     }
 }

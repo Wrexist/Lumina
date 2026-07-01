@@ -66,7 +66,8 @@ final class BirthPlaceSearch: NSObject {
         guard let item = response.mapItems.first else {
             throw LuminaError.unknown(underlyingMessage: "Couldn't find that place — try a nearby city.")
         }
-        let coordinate = item.placemark.coordinate
+        // iOS 26 deprecated `placemark`; `location` is the non-optional CLLocation replacement.
+        let coordinate = item.location.coordinate
         let timeZone = item.timeZone ?? TimeZone(identifier: "UTC") ?? .gmt
         return Resolved(
             displayName: "\(suggestion.title), \(suggestion.subtitle)",

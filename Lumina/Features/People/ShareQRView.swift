@@ -3,13 +3,14 @@ import CoreImage.CIFilterBuiltins
 import SwiftUI
 import UIKit
 
-/// "Share my chart" QR code. Encodes the user's saved `BirthData` as a
-/// `lumina://share/<base64-json>` URL — the same scheme `LuminaDeepLink`
-/// already parses. The other person scans with any camera app or the
-/// Lumina QR scanner (Phase 10 follow-up) to add the user as a friend.
+/// "Share my chart" QR code. Encodes a deliberately-reduced `SharedBirthData`
+/// (birth date + city + coarse coordinates, never the exact time or precise
+/// location) as a `lumina://share/<base64url-json>` URL — the same scheme
+/// `LuminaDeepLink` parses. The other person opens it in Lumina to add the
+/// user as a friend.
 ///
-/// We never put auth tokens or user IDs in the QR — only the birth-data
-/// payload. See `docs/NAVIGATION.md` §10 / Phase 10 of the roadmap.
+/// We never put auth tokens, user IDs, exact birth time, or precise
+/// coordinates in the QR. See docs/AUDIT-2026-06-03.md R2 / `SharedBirthData`.
 struct ShareQRView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var qrImage: UIImage?
@@ -40,7 +41,7 @@ struct ShareQRView: View {
     // MARK: - View building blocks
 
     private var explainer: some View {
-        Text("Have a friend scan this QR with the Lumina app to add you. Only your birth data travels — no account info.")
+        Text("Have a friend scan this with the Lumina app to add you. Only your birth date and city are shared — never your exact birth time or precise location.")
             .font(LuminaTypography.bodyLight)
             .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
             .multilineTextAlignment(.center)
@@ -71,7 +72,7 @@ struct ShareQRView: View {
     }
 
     private var footer: some View {
-        Text("This QR works with any camera app — they don't need Lumina installed.")
+        Text("Open it in the Lumina app to connect. Your journal, friends, and account stay private.")
             .font(LuminaTypography.caption)
             .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
             .multilineTextAlignment(.center)
@@ -106,8 +107,9 @@ struct ShareQRView: View {
             return
         }
         do {
-            let json = try JSONEncoder.shareEncoder.encode(birthData)
-            let payload = json.base64EncodedString()
+            let shared = SharedBirthData(from: birthData)
+            let json = try JSONEncoder.luminaShare.encode(shared)
+            let payload = json.base64URLEncodedString()
             let url = "lumina://share/\(payload)"
             qrImage = Self.makeQR(for: url)
             if qrImage == nil {
@@ -117,12 +119,4 @@ struct ShareQRView: View {
             self.error = LuminaError.from(error)
         }
     }
-}
-
-private extension JSONEncoder {
-    static let shareEncoder: JSONEncoder = {
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        return encoder
-    }()
 }

@@ -7,11 +7,12 @@ struct LuminaErrorState: View {
     let error: LuminaError
     var onRetry: (() -> Void)?
     var onCancel: (() -> Void)?
+    @ScaledMetric private var iconSize: CGFloat = 44
 
     var body: some View {
         VStack(spacing: LuminaSpacing.lg) {
             Image(systemName: icon)
-                .font(.system(size: 44, weight: .light))
+                .font(.system(size: iconSize, weight: .light))
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                 .accessibilityHidden(true)
 

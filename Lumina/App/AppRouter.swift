@@ -54,7 +54,12 @@ final class AppRouter {
     func bootstrap() {
         switch stage {
         case .launching:
-            stage = storage.hasCompletedOnboarding ? .mainTabs : .onboarding
+            if storage.hasCompletedOnboarding {
+                stage = .mainTabs
+                replayPendingDeepLinkIfNeeded()
+            } else {
+                stage = .onboarding
+            }
         case .onboarding, .mainTabs:
             return
         }
@@ -67,6 +72,16 @@ final class AppRouter {
         storage.hasCompletedOnboarding = true
         selectedTab = .today
         stage = .mainTabs
+        replayPendingDeepLinkIfNeeded()
+    }
+
+    /// Replays a deep link that arrived before the shell was ready (during the
+    /// splash or mid-onboarding) so it isn't silently dropped on the
+    /// transition to `.mainTabs`.
+    private func replayPendingDeepLinkIfNeeded() {
+        guard let pending = pendingDeepLink else { return }
+        pendingDeepLink = nil
+        handle(deepLink: pending)
     }
 
     /// Resets to onboarding. Only called from Settings → "Sign out & start

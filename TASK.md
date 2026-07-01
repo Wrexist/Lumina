@@ -77,7 +77,8 @@
 ## 📋 Backlog — Phase 3: Today
 
 - [x] **[2026-05-08]** `TodayHubView` — hero + Big-3 + headline + transit list + quick-actions row, all wired
-- [x] **[2026-05-08]** `TodayViewModel` — loads natal chart from `UserBirthDataStore`, falls through to sample chart on missing-config dev builds; deterministic `headline(for:)` and `whatsHappening(for:)` per-day helpers (replace with real backend `/transits` in Phase 5)
+- [x] **[2026-05-08]** `TodayViewModel` — loads natal chart from `UserBirthDataStore`, falls through to sample chart on missing-config dev builds
+- [x] **[2026-06-03]** Real transits replace the fabricated headline pool — `TodayViewModel` fetches `/transits` concurrently with the chart; `todayLines(from:)` + `TransitPhrasing` render the tightest contact as the headline and up to 3 secondary rows, with an honest "a quiet sky today" empty state
 - [ ] `ContentGenerator.swift` (transits → RAG → claude-opus-4-6)
 - [ ] ElevenLabs TTS via Node `/generate-audio`
 - [ ] Audio cache (FileManager, 7-day TTL, 50MB LRU)
@@ -299,7 +300,8 @@
 - [x] **[2026-04-29]** Placidus iterative cusps + closed-form Asc/MC + whole-sign fallback
 - [x] **[2026-04-29]** 5 Ptolemaic aspects with orbs
 - [x] **[2026-04-29]** Sidereal house variant via Lahiri ayanamsha
-- [ ] Transits & progressions endpoints
+- [x] **[2026-06-03]** `/transits` endpoint — transit→natal cross-aspects (tight orbs, applying/separating, sorted by orb) + pure `computeTransits` lib, 13 tests; shared `requireSharedSecret` auth helper
+- [ ] Progressions endpoint (secondary progressions)
 - [ ] `/synastry`, `/composite`, `/davison` endpoints
 - [ ] Swap `astronomy-engine` → `swisseph` once Pro license clears
 - [ ] Production deploy to Fly.io (Dockerfile, healthcheck, secrets, auto-sleep)
@@ -336,6 +338,82 @@
 - [x] **[2026-05-08]** New 16-phase ROADMAP.md cut, navigation IA spec at `docs/NAVIGATION.md`, branch `claude/roadmap-navigation-improvements-yqxV2`
 - [x] **[2026-05-08]** Phase 1 starter scaffolding landed: `AppRouter`, `LuminaTab`, `LuminaDeepLink`, `MainTabsView`, design-system v2 components (`LuminaButton`, `LuminaCard`, `LuminaTextField`, `LuminaSegmentedControl`, `LuminaSkeleton`, `LuminaEmptyState`, `LuminaErrorState`, `LuminaBadge`, `LuminaError`, `GlossaryLink`/`GlossaryStore`)
 - [x] **[2026-05-08]** Phase 1 sprint follow-up: `LuminaRadii` + `LuminaShadows` tokens, `Haptics` wrapper, `LuminaConfirmationDialog` extension, `LuminaError.from(_:)` mapping for `EphemerisService.ServiceError` and `URLError`. Migrated existing components to the new tokens. Added `DesignTokensAndErrorTests` covering token monotonicity, error mapping, and analytics-key uniqueness.
+
+### ✅ Audit remediation pass — [2026-06-03], branch `claude/adoring-euler-yEDvq`
+
+Full audit at `docs/AUDIT-2026-06-03.md`; fixes (all CI-verified once build settles):
+
+- [x] **CI unblocked** — root-caused 369 pre-existing SwiftLint violations from `brew`-latest pulling rules the codebase never satisfied (207 `switch_case_on_newline` alone). Reconciled `.swiftlint.yml` to the house style; lint + backend green again.
+- [x] **R0 launch integrity** — added `Assets.xcassets` (AppIcon + AccentColor), `Localizable.xcstrings`, `PrivacyInfo.xcprivacy`; `UIUserInterfaceStyle: Light`.
+- [x] **R1 data integrity** — fixed the journal blank-entry insert (`NavigationLink` eager destination), `ModelContext.saveOrLog`, cusp-count guards, `@Attribute(.unique)`, future-day calendar guard, score-out-of-body.
+- [x] **R2 security** — Reflect Face ID re-locks on background; share QR carries reduced `SharedBirthData` (no exact time/precise coords) via base64url; Anthropic key removed from the shipped Info.plist.
+- [x] **R3 paywall** — rescue offer now actually presents (in-place variant swap); honest trust copy; `PaywallTracker` seen/declined split.
+- [x] **R4 navigation** — `settings`/`help`/`share` deep links resolve; pending links replayed post-onboarding; ChartHubView cold-launch race fixed; QR share round-trip implemented (`AcceptShareView`); HelpView nested-stack removed.
+- [x] **R5/R6** — stable `CompatibilityScorer` hash; Today renders all 4 states (sample fallback `#if DEBUG`); accessible error color; Dynamic Type scaling; secure-field a11y; "1th house" ordinal; Settings dead-end chevrons removed; HD "defined → activated (personality-side)" honesty copy.
+- [x] **R7 backend** — noon-local timezone correctness, host-TZ-independent CLI, constant-time secret compare, rate limiter, security headers, body-size cap, birthDate bounds, Dockerfile + fly.toml (30 → 43 tests).
+- [x] **[2026-06-03]** Onboarding per-step persistence + WhatNext card routing (land on the chosen tab) + planet-glyph de-clustering (`ChartWheelLayout`, conjunct glyphs stack at staggered radii).
+- [ ] Remaining backlog (R8): soft-delete-with-undo, gitleaks/coverage CI gates, snapshot tests, native iOS 26 glass API.
+
+### ✅ Feature pass — real transits + chart-wheel — [2026-06-03], branch `claude/adoring-euler-yEDvq`
+
+All CI-verified (runs #52, #54 green on Xcode 26.3 / iOS 26; backend 56 tests):
+
+- [x] **Real "today" transits** — retired the fabricated day-of-year headline pool (literal hallucinated planetary positions) in favour of the real backend computation. Backend `/transits` (transit→natal cross-aspects, tight 2–3° orbs, applying/separating derived from `isRetrograde`, solar-return contacts kept); iOS `EphemerisService.transits(for:at:)`, `TransitReading`/`TransitsResult` models, pure `TransitPhrasing`, and `TodayViewModel` fetching chart + transits concurrently. Honest "a quiet sky today" empty state.
+- [x] **Chart-wheel glyph de-clustering** — `ChartWheelLayout` stacks conjunct planet glyphs at staggered radii (circle cut at largest gap to handle the 0°/360° seam) so each stays legible and tappable.
+- [x] **Shared backend auth** — extracted constant-time `requireSharedSecret` used by `/chart` and `/transits`.
+
+### ✅ Audit pass 2 — premium / clarity / a11y — [2026-06-04], branch `claude/adoring-euler-yEDvq`
+
+Full audit at `docs/AUDIT-2026-06-04.md`. Landed:
+
+- [x] **Premium glyphs** — zodiac/planet glyphs forced to monochrome text (U+FE0E) so they render in brand gold, never OS colour-emoji. Caught by the new CI screenshot render. Regression-tested.
+- [x] **Copy clarity** — purged all user-facing roadmap phase numbers + dev jargon ("Anthropic/ElevenLabs", "RAG", "Core ML", "endpoint", "Export to JSON", "Phase N" badges) across ~10 screens; refreshed stale synastry copy.
+- [x] **Real synastry in People** — `FriendDetailView` shows real chart-to-chart aspects (`SynastryPhrasing`) via the backend `/synastry` endpoint, replacing the date-only placeholder.
+- [x] **Dynamic Type** — `LuminaTypography` already scales (text styles); fixed the 8 remaining hero/icon `.system(size:)` sites with `@ScaledMetric` (+ `minimumScaleFactor` in HStacks). VoiceOver labels swept — only an invisible placeholder needed hiding.
+- [x] **No-Mac UI preview** — `ScreenshotTests` renders key screens to PNGs; CI uploads them as artifacts and emits base64 in the log for retrieval through the egress allowlist.
+- [ ] Remaining: glossary inline-term affordance (R-GLOSS-1); soft-delete-with-undo (R-NAV-1); gitleaks + coverage CI gates.
+
+### ✅ Grounded interpretation engine + synastry depth — [2026-06-04], branch `claude/adoring-euler-yEDvq`
+
+The unblocked grounding layer beneath the (blocked) conversational/RAG reading.
+All CI-verified (runs #63, #66 green):
+
+- [x] **`PlacementInterpreter`** — per-placement readings (planet × sign × house × retrograde); wired into `PlanetDetailSheet`, replacing the "coming soon" card.
+- [x] **`AspectInterpreter`** + Chart-tab "Your strongest aspects" card — every real aspect interpreted in plain language.
+- [x] **Synastry depth** — `CompatibilityScorer.score(fromSynastry:)` (real aspect-weighted 0–100, replaces the date heuristic in Friend detail) + `SynastrySummary` (relationship-dynamic headline) in `FriendDetailView`.
+- [x] **"Ask your chart"** (deterministic) — `ChartOracle` + `ChartQAView`: tap a curated question, get an answer read from the real chart (Big 3 / strongest aspect / dominant element / retrogrades / focal planet). The honest, unblocked version of the category's #1 gap.
+- [x] **"Why these?" transparency sheet** (Today) — shows the exact transit data behind the reading (COMPETITIVE-ANALYSIS gap G7).
+- [x] **Browsable Glossary screen** — surfaces the previously-unused `Glossary.json` content, linked from Help.
+- [ ] Next (unblocked): Big-3 tappable interpretations; transit-tied Reflect prompts; soft-delete-with-undo.
+- [!] Blocked (need provisioning): conversational free-text "ask your chart" + RAG daily reading (Supabase + Anthropic key); narrated audio (ElevenLabs); palm pipeline (Core ML model).
+
+### ✅ Excellence sprint — timing / relationships / palm / sharing / notifications — [2026-06-05], branch `claude/adoring-euler-yEDvq`
+
+Worked top-down through `docs/EXCELLENCE-PLAN.md`. All CI-verified (runs #77–#80 green; notifications + palm + share in #81). Backend 97 tests.
+
+- [x] **"What's coming" forecast** — backend `/forecast` root-finds the exact instant each transiting aspect perfects over a window (`lib/forecast.ts` sign-change + bisect); iOS `ForecastView` + Today "What's coming" card. The category's "timing" promise, done for real.
+- [x] **Composite chart** — backend `/composite` (shorter-arc midpoint merge + aspect engine, `lib/composite.ts`); iOS `CompositeCard` ("your relationship as one chart") in Friend detail.
+- [x] **Moon phase** — backend `/moon` (angle + illumination + next new/full via astronomy-engine); Today "Tonight's Moon" card with the matching SF Symbol.
+- [x] **Big-3 tappable readings** — Sun/Moon → `PlanetDetailSheet`, Rising → new `AscendantInterpreter` + `AscendantDetailSheet`.
+- [x] **Transit-tied Reflect prompt** — `TransitPrompt` shapes the journal prompt from the day's strongest transit; falls back to the date pool offline.
+- [x] **Local transit notifications** — opt-in, on-device (`UNUserNotificationCenter`, no OneSignal), capped at 5, delivered 9am on the day, never doom. `TransitNotificationPlanner` + `TransitNotificationScheduler` + Settings toggle.
+- [x] **Palm Phase A engine** — `PalmReader` + `PalmFeatureExtractor` derive the four classical hand types from real geometry, with a compile-checked `VNHumanHandPoseObservation` adapter. Fully unit-tested; live capture UI is the remaining device-gated piece.
+- [x] **Share your chart** — `ChartShareCard` rendered via `ImageRenderer` → PNG → `ShareLink` from the Chart toolbar (`ChartShareButton`).
+- [x] **Secondary progressions** — backend `/progressions` (day-for-a-year) + Today "Your current chapter" card (progressed Moon/Sun, `ProgressedChapter`).
+- [x] **Gitleaks secret-scan CI gate** — new `secrets` job + `.gitleaks.toml` allowlist; enforces "no keys in source" automatically (CI-verified green).
+- [ ] Next (unblocked): soft-delete + undo; empty-state pass; motion/haptics polish; app icon; coverage CI gate; returns/retrogrades; palm live-capture UI (device).
+
+### ✅ Excellence sprint II — timing depth / UX / brand — [2026-06-06], branch `claude/adoring-euler-yEDvq`
+
+Continued top-down through `docs/EXCELLENCE-PLAN.md`. All CI-verified green; backend 119 tests.
+
+- [x] **Retrogrades** — backend `/retrogrades` (apparent-velocity root-finding for current state + next station) + Today "Retrogrades" card (hidden when the sky is clear). The "is Mercury retrograde?" question, for real.
+- [x] **Returns** — backend `/returns` (next Jupiter/Saturn return, numbered by count since birth) + an imminent-only Today card (shows within a year).
+- [x] **Soft-delete + Undo** — `LuminaSnackbarView` + deferred-commit `.task(id:)`; swipe (People) / long-press (Reflect), recoverable for ~4s.
+- [x] **App icon** — refined gold crescent + sparkle on midnight (replaces the flat orb); `scripts/generate_app_icon.mjs` (dependency-free Node PNG encoder, opaque RGB).
+- [x] **Reduce-motion fix** — the in-app override was a dead toggle; `LuminaMotion` now combines it with the OS setting (LuminaButton/LuminaSkeleton).
+- [x] Empty-state pass verified (new cards hide when empty; lists have empty states); more backend edge tests (composite antipodal, direct-planet retrograde).
+- [ ] Deferred: coverage CI gate (needs a Mac-measured baseline to avoid breaking CI); snapshot-harness scale-up; palm live-capture UI (device).
 
 ---
 

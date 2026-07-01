@@ -176,7 +176,9 @@ enum OnboardingScreens {
                         Spacer()
                         WhyWeAsk(
                             title: "Why we ask for your birth time",
-                            body: "The exact time decides your rising sign and which house each planet falls into. With time, every reading is sharper. Without it, the rest of your chart is still real."
+                            body: "The exact time decides your rising sign and which house each planet "
+                                + "falls into. With time, every reading is sharper. Without it, the rest "
+                                + "of your chart is still real."
                         )
                     }
                 }
@@ -214,7 +216,7 @@ enum OnboardingScreens {
     }
 
     struct WhatNext: View {
-        let onPick: () -> Void
+        let onPick: (LuminaDeepLink) -> Void
 
         var body: some View {
             ScrollView {
@@ -226,17 +228,17 @@ enum OnboardingScreens {
                             .font(LuminaTypography.bodyLight)
                             .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                     }
-                    quickWin("Read today", body: "Your transit-grounded reading, narrated.")
-                    quickWin("Scan a hand", body: "On-device AI reads your palm in 4 seconds.")
-                    quickWin("Add a friend", body: "Compare charts and see what's between you.")
+                    quickWin("Read today", body: "Your transit-grounded reading, narrated.", destination: .today)
+                    quickWin("Scan a hand", body: "On-device AI reads your palm in 4 seconds.", destination: .palmScan)
+                    quickWin("Add a friend", body: "Compare charts and see what's between you.", destination: .people(friendID: nil))
                 }
                 .padding(LuminaSpacing.lg)
             }
         }
 
-        private func quickWin(_ title: String, body: String) -> some View {
+        private func quickWin(_ title: String, body: String, destination: LuminaDeepLink) -> some View {
             Button {
-                onPick()
+                onPick(destination)
             } label: {
                 LuminaCard {
                     VStack(alignment: .leading, spacing: LuminaSpacing.sm) {

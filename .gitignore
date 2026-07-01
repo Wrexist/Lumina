@@ -114,3 +114,6 @@ paywallData*.json
 tmp/
 temp/
 *.tmp
+
+# Generated UI screenshots (rendered on CI, uploaded as artifacts)
+LuminaTests/__Screenshots__/

@@ -12,13 +12,18 @@ struct LuminaSkeleton: View {
 
     let shape: Shape
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @State private var preferences = AppPreferences.shared
     @State private var phase: CGFloat = -1
+
+    private var reduceMotion: Bool {
+        LuminaMotion.isReduced(system: systemReduceMotion, appOverride: preferences.reduceMotionOverride)
+    }
 
     var body: some View {
         Group {
             switch shape {
-            case .line(let width, let height):
+            case let .line(width, height):
                 container.frame(width: width, height: height)
             case .block(let height):
                 container.frame(maxWidth: .infinity).frame(height: height)

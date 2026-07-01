@@ -9,14 +9,27 @@ struct FriendDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @State private var confirmingRemove = false
+    @State private var score = 50
+    @ScaledMetric private var scoreSize: CGFloat = 56
+    @State private var ephemeris = EphemerisService()
+    @State private var synastry: SynastryLoad = .idle
+
+    private enum SynastryLoad {
+        case idle
+        case loading
+        case loaded([SynastryAspect])
+        case unavailable
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
                 header
                 scoreCard
+                shareSection
                 birthInfoCard
-                placeholderSynastry
+                synastrySection
+                CompositeCard(friend: friend)
             }
             .padding(LuminaSpacing.lg)
         }
@@ -24,6 +37,10 @@ struct FriendDetailView: View {
         .navigationTitle(friend.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { trailingToolbar }
+        .task {
+            loadScore()
+            await loadSynastry()
+        }
         .luminaConfirmation(
             "Remove \(friend.name)?",
             message: "This deletes them from your People tab. You can add them again any time.",
@@ -47,14 +64,15 @@ struct FriendDetailView: View {
     }
 
     private var scoreCard: some View {
-        let score = friend.compatibilityScore ?? compute()
         let label = CompatibilityScorer.Label(score: score)
         return LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 HStack(alignment: .firstTextBaseline) {
                     Text("\(score)")
-                        .font(.system(size: 56, weight: .light, design: .serif))
+                        .font(.system(size: scoreSize, weight: .light, design: .serif))
                         .foregroundStyle(LuminaColors.celestialBlue)
+                        .minimumScaleFactor(0.6)
+                        .lineLimit(1)
                     Text("/100")
                         .font(LuminaTypography.bodyLight)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
@@ -85,15 +103,55 @@ struct FriendDetailView: View {
         }
     }
 
-    private var placeholderSynastry: some View {
+    @ViewBuilder
+    private var shareSection: some View {
+        if case .loaded(let aspects) = synastry, !aspects.isEmpty {
+            CompatibilityShareButton(
+                friendName: friend.name,
+                score: score,
+                headline: SynastrySummary.headline(for: aspects)
+            )
+        }
+    }
+
+    private var synastrySection: some View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                Text("Full synastry chart")
+                Text("Between your charts")
                     .font(LuminaTypography.heading)
-                Text("The bi-wheel + 5-dimension narrative report ships with the backend `/synastry` endpoint in Phase 7. The score above is deterministic so you can already compare friends meaningfully.")
-                    .font(LuminaTypography.body)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                synastryBody
             }
+        }
+    }
+
+    @ViewBuilder
+    private var synastryBody: some View {
+        switch synastry {
+        case .idle, .loading:
+            Text("Reading the aspects between you…")
+                .font(LuminaTypography.body)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+        case .loaded(let aspects) where aspects.isEmpty:
+            Text("No major aspects between your charts — an easy, low-friction connection.")
+                .font(LuminaTypography.body)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+        case .loaded(let aspects):
+            Text(SynastrySummary.headline(for: aspects))
+                .font(LuminaTypography.body)
+                .foregroundStyle(LuminaColors.inkBlack)
+            Text("The real contacts behind it:")
+                .font(LuminaTypography.caption)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            ForEach(Array(aspects.prefix(6))) { aspect in
+                HStack(alignment: .top, spacing: LuminaSpacing.sm) {
+                    Text("•").font(LuminaTypography.body)
+                    Text(SynastryPhrasing.sentence(for: aspect)).font(LuminaTypography.body)
+                }
+            }
+        case .unavailable:
+            Text("Add your birth info in Settings to see the aspects between your charts.")
+                .font(LuminaTypography.body)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
         }
     }
 
@@ -113,17 +171,78 @@ struct FriendDetailView: View {
 
     // MARK: - Methods
 
-    private func compute() -> Int {
-        guard let userBirth = UserBirthDataStore.userDefaults.load() else { return 50 }
-        let score = CompatibilityScorer.score(userBirth.birthDate, friend.birthDate)
-        friend.compatibilityScore = score
-        try? modelContext.save()
-        return score
+    /// Resolves the displayed score outside `body` (mutating the model and
+    /// saving during view evaluation triggers "modifying state during view
+    /// update"). Uses the cached score when present, otherwise computes once.
+    private func loadScore() {
+        if let cached = friend.compatibilityScore {
+            score = cached
+            return
+        }
+        guard let userBirth = UserBirthDataStore.userDefaults.load() else { return }
+        let computed = CompatibilityScorer.score(userBirth.birthDate, friend.birthDate)
+        friend.compatibilityScore = computed
+        modelContext.saveOrLog(category: "People")
+        score = computed
     }
+
+    /// Fetches the real chart-to-chart aspects from the backend. Best-effort:
+    /// a missing user chart or a network failure shows an honest empty/locked
+    /// state rather than fabricating contacts. Geocentric longitudes don't
+    /// need birth place, so a friend with only a date still works.
+    private func loadSynastry() async {
+        guard let userBirth = UserBirthDataStore.userDefaults.load() else {
+            synastry = .unavailable
+            return
+        }
+        let mine = SynastryPerson(
+            birthDate: userBirth.birthDate,
+            birthTime: userBirth.birthTime,
+            timeZoneIdentifier: userBirth.timeZoneIdentifier
+        )
+        let theirs = SynastryPerson(
+            birthDate: friend.birthDate,
+            birthTime: friend.birthTime,
+            timeZoneIdentifier: friend.birthTimeZoneIdentifier
+        )
+        synastry = .loading
+        do {
+            let result = try await ephemeris.synastry(personA: mine, personB: theirs)
+            applyLoadedAspects(result.aspects)
+        } catch {
+            #if DEBUG
+            applyLoadedAspects(Self.sampleSynastry)
+            #else
+            synastry = .unavailable
+            #endif
+        }
+    }
+
+    /// Shows the real aspects and upgrades the displayed score from the
+    /// Sun-sign heuristic to the synastry-weighted one, caching it on the
+    /// friend so the People list reflects it next launch too.
+    private func applyLoadedAspects(_ aspects: [SynastryAspect]) {
+        synastry = .loaded(aspects)
+        guard !aspects.isEmpty else { return }
+        let synastryScore = CompatibilityScorer.score(fromSynastry: aspects)
+        score = synastryScore
+        friend.compatibilityScore = synastryScore
+        modelContext.saveOrLog(category: "People")
+    }
+
+    #if DEBUG
+    /// Dev-only stand-in so previews and no-backend builds show the section.
+    private static let sampleSynastry: [SynastryAspect] = [
+        SynastryAspect(planetA: "Venus", planetB: "Mars", type: .conjunction, exactAngle: 0, orb: 1.1),
+        SynastryAspect(planetA: "Sun", planetB: "Moon", type: .trine, exactAngle: 120, orb: 1.6),
+        SynastryAspect(planetA: "Moon", planetB: "Venus", type: .sextile, exactAngle: 60, orb: 2.0),
+        SynastryAspect(planetA: "Mars", planetB: "Saturn", type: .square, exactAngle: 90, orb: 2.4),
+    ]
+    #endif
 
     private func handleRemove() {
         modelContext.delete(friend)
-        try? modelContext.save()
+        modelContext.saveOrLog(category: "People")
         dismiss()
     }
 

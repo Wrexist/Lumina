@@ -11,29 +11,82 @@ import SwiftUI
 struct TodayHubView: View {
     @State private var viewModel = TodayViewModel()
     @Environment(AppRouter.self) private var router
+    @ScaledMetric private var iconSize: CGFloat = 28
+    @State private var showingWhy = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
                 header
-                if let chart = viewModel.natalChart {
-                    BigThreeBand(chart: chart)
-                }
-                headlineCard
-                readingPlaceholder
-                Divider()
-                whatsHappeningSection
-                Divider()
-                quickActionsSection
+                content
             }
             .padding(LuminaSpacing.lg)
         }
         .background(LuminaColors.parchment)
         .navigationTitle("Today")
         .task { await viewModel.loadIfNeeded() }
+        .sheet(isPresented: $showingWhy) {
+            TodayTransparencySheet(transits: viewModel.transits)
+        }
     }
 
     // MARK: - View building blocks
+
+    @ViewBuilder
+    private var content: some View {
+        switch viewModel.state {
+        case .idle, .loading:
+            loadingState
+        case .missingBirthData:
+            missingDataState
+        case .failed(let error):
+            LuminaErrorState(error: error, onRetry: handleRetry)
+        case .ready:
+            loadedContent
+        }
+    }
+
+    private var loadedContent: some View {
+        let lines = viewModel.todayLines
+        return VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
+            if let chart = viewModel.natalChart {
+                BigThreeBand(chart: chart)
+            }
+            headlineCard(lines.headline)
+            dailyReadingCard
+            MoonPhaseCard()
+            RetrogradeCard()
+            ProgressedChapterCard()
+            WhatsComingCard()
+            ReturnsCard()
+            if !lines.secondary.isEmpty {
+                Divider()
+                whatsHappeningSection(lines.secondary)
+                LuminaButton(title: "Why these?", variant: .ghost) { showingWhy = true }
+            }
+            Divider()
+            quickActionsSection
+        }
+    }
+
+    private var loadingState: some View {
+        VStack(alignment: .leading, spacing: LuminaSpacing.md) {
+            LuminaSkeleton(shape: .block(height: 96))
+            LuminaSkeleton(shape: .line(width: 260, height: 22))
+            LuminaSkeleton(shape: .block(height: 80))
+            LuminaSkeleton(shape: .line(height: 18))
+            LuminaSkeleton(shape: .line(height: 18))
+        }
+    }
+
+    private var missingDataState: some View {
+        LuminaEmptyState(
+            systemImage: "sparkles",
+            title: "Finish your chart",
+            body: "Add your birth date, time, and place to see your sky today.",
+            primaryCTA: LuminaEmptyState.CTA(title: "Add birth info", action: openSettings)
+        )
+    }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
@@ -46,10 +99,10 @@ struct TodayHubView: View {
         }
     }
 
-    private var headlineCard: some View {
+    private func headlineCard(_ headline: String?) -> some View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                Text(TodayViewModel.headline(for: .now))
+                Text(headline ?? "A quiet sky today — nothing major is touching your chart right now.")
                     .font(LuminaTypography.heading)
                 Text("Tap any planet on the Chart tab to learn more about your placements.")
                     .font(LuminaTypography.bodyLight)
@@ -58,33 +111,32 @@ struct TodayHubView: View {
         }
     }
 
-    private var readingPlaceholder: some View {
-        LuminaCard(surface: .glass) {
-            HStack(spacing: LuminaSpacing.md) {
-                Image(systemName: "headphones")
-                    .font(.system(size: 28))
-                    .foregroundStyle(LuminaColors.celestialBlue)
-                VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
-                    HStack(spacing: LuminaSpacing.sm) {
-                        LuminaBadge(title: "Soon", tone: .neutral)
-                        Text("Today's reading, narrated")
-                            .font(LuminaTypography.body)
-                    }
-                    Text("Lands with the Anthropic + ElevenLabs wire-up in Phase 5.")
-                        .font(LuminaTypography.caption)
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+    private var dailyReadingCard: some View {
+        let reading = DailyReading.compose(from: viewModel.transits)
+        return LuminaCard {
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                HStack(spacing: LuminaSpacing.sm) {
+                    Text("Your reading")
+                        .font(LuminaTypography.heading)
+                    Spacer()
+                    DailyReadingShareButton(reading: reading, date: .now)
+                    LuminaBadge(title: "Audio soon", tone: .neutral)
                 }
+                Text(reading)
+                    .font(LuminaTypography.body)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
 
-    private var whatsHappeningSection: some View {
+    private func whatsHappeningSection(_ lines: [String]) -> some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
             Text("WHAT'S HAPPENING")
                 .font(LuminaTypography.mono)
                 .tracking(1.4)
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-            ForEach(TodayViewModel.whatsHappening(for: .now), id: \.self) { line in
+            ForEach(lines, id: \.self) { line in
                 HStack(alignment: .top, spacing: LuminaSpacing.sm) {
                     Text("•").font(LuminaTypography.body)
                     Text(line).font(LuminaTypography.body)
@@ -123,7 +175,7 @@ struct TodayHubView: View {
             LuminaCard(padding: LuminaSpacing.md) {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                     Image(systemName: systemImage)
-                        .font(.system(size: 28, weight: .light))
+                        .font(.system(size: iconSize, weight: .light))
                         .foregroundStyle(LuminaColors.celestialBlue)
                     Text(title).font(LuminaTypography.body)
                 }
@@ -136,6 +188,14 @@ struct TodayHubView: View {
     private func jump(to tab: LuminaTab) {
         Haptics.light.play()
         router.selectedTab = tab
+    }
+
+    private func handleRetry() {
+        Task { await viewModel.retry() }
+    }
+
+    private func openSettings() {
+        router.handle(deepLink: .settings)
     }
 }
 

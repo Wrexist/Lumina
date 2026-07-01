@@ -10,8 +10,8 @@
 | Item | Value |
 |---|---|
 | **Phase** | Phase 1 — Navigation Shell + Design System v2 (active sprint per `ROADMAP.md`) |
-| **Active branch** | `claude/roadmap-navigation-improvements-yqxV2` |
-| **Last updated** | 2026-05-08 |
+| **Active branch** | `claude/adoring-euler-yEDvq` (audit remediation; `…yqxV2` merged via PR #3/#4) |
+| **Last updated** | 2026-06-05 |
 | **Dev environment** | **No local macOS** — CI on `macos-15`/Xcode-latest is the only build/test loop |
 | **Blockers** | Font license · Swiss Eph license · ElevenLabs voice · Palm ML model · Supabase project · TestFlight signing |
 | **Spec docs** | `ROADMAP.md` (16-phase plan) · `docs/NAVIGATION.md` (IA + UX clarity charter — read before any view PR) |
@@ -281,4 +281,4 @@ No Alamofire — use native `URLSession` with async/await actors. No RxSwift/Com
 - [iOS 26 Liquid Glass HIG](https://developer.apple.com/design/human-interface-guidelines/) — Liquid Glass design guidance
 - [OneSignal iOS](https://documentation.onesignal.com/docs/ios-sdk-setup) — Push notification setup
 - [Supabase Swift](https://supabase.com/docs/reference/swift/introduction) — Backend client
-- Competitive research: `docs/PRODUCT_SPEC.md`
+- Competitive research: `docs/COMPETITIVE-ANALYSIS.md` (per-competitor pros/cons, premium-feature map, category gaps, prioritized recommendations)

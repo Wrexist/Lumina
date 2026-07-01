@@ -6,6 +6,7 @@ import SwiftUI
 struct MainTabsView: View {
     @Bindable var router: AppRouter
     @State private var settingsPresented = false
+    @State private var helpPresented = false
 
     var body: some View {
         TabView(selection: $router.selectedTab) {
@@ -21,6 +22,28 @@ struct MainTabsView: View {
         .environment(router)
         .sheet(isPresented: $settingsPresented) {
             SettingsView()
+        }
+        .sheet(isPresented: $helpPresented) {
+            NavigationStack { HelpView() }
+        }
+        .task { consumeGlobal(router.pendingPresentation) }
+        .onChange(of: router.pendingPresentation) { _, link in
+            consumeGlobal(link)
+        }
+    }
+
+    /// Presents shell-level destinations (Settings, Help) that sit above a tab
+    /// rather than inside one. Tab-specific links are consumed by their hub.
+    private func consumeGlobal(_ link: LuminaDeepLink?) {
+        switch link {
+        case .settings:
+            settingsPresented = true
+            router.pendingPresentation = nil
+        case .help:
+            helpPresented = true
+            router.pendingPresentation = nil
+        default:
+            break
         }
     }
 

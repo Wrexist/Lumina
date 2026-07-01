@@ -21,7 +21,12 @@ struct LuminaButton: View {
     var isEnabled = true
     let action: () -> Void
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @State private var preferences = AppPreferences.shared
+
+    private var reduceMotion: Bool {
+        LuminaMotion.isReduced(system: systemReduceMotion, appOverride: preferences.reduceMotionOverride)
+    }
 
     var body: some View {
         Button(action: action) {
@@ -48,7 +53,9 @@ struct LuminaButton: View {
             }
         })
         .accessibilityLabel(title)
-        .accessibilityAddTraits(isEnabled ? [.isButton] : [.isButton, .notEnabled])
+        // `.disabled(...)` above already conveys the disabled state to
+        // accessibility; SwiftUI's AccessibilityTraits has no `.notEnabled`.
+        .accessibilityAddTraits(.isButton)
     }
 
     private var contents: some View {
@@ -71,7 +78,7 @@ struct LuminaButton: View {
     private var background: Color {
         switch variant {
         case .primary: LuminaColors.celestialBlue
-        case .destructive: LuminaColors.inkBlack
+        case .destructive: LuminaColors.error
         case .secondary, .ghost: .clear
         }
     }

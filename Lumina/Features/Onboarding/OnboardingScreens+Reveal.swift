@@ -12,18 +12,21 @@ extension OnboardingScreens {
 
         @State private var error: LuminaError?
         @State private var inflight = false
+        @State private var chart: NatalChart?
 
         var body: some View {
             VStack(spacing: LuminaSpacing.lg) {
                 Spacer()
                 if let error {
                     LuminaErrorState(error: error, onRetry: handleRetry, onCancel: handleCancel)
+                } else if state.chartReady, let chart {
+                    revealedSignature(chart)
                 } else {
                     revealCircle
                     Spacer()
                     Text(state.chartReady
-                        ? "The full animated chart wheel ships in Phase 4. For now your chart is computed and cached."
-                        : "Crunching planetary positions for your moment in time.")
+                        ? "Your chart is calculated and saved — explore the full wheel in the Chart tab."
+                        : "Calculating the exact planetary positions for your moment in time.")
                         .font(LuminaTypography.caption)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
                         .multilineTextAlignment(.center)
@@ -52,6 +55,43 @@ extension OnboardingScreens {
                 )
         }
 
+        /// The first-impression wow-moment: their cosmic signature, ready to
+        /// share the second it's computed (the onboarding virality hook).
+        private func revealedSignature(_ chart: NatalChart) -> some View {
+            let signature = CosmicSignatureMaker.make(from: chart)
+            return VStack(spacing: LuminaSpacing.lg) {
+                Text("Meet your chart")
+                    .font(LuminaTypography.display)
+                    .multilineTextAlignment(.center)
+                VStack(spacing: LuminaSpacing.sm) {
+                    Text(signature.headline)
+                        .font(LuminaTypography.heading)
+                        .multilineTextAlignment(.center)
+                    Text(bigThreeLine(signature))
+                        .font(LuminaTypography.body)
+                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                }
+                HStack(spacing: LuminaSpacing.sm) {
+                    Text("Share your signature")
+                        .font(LuminaTypography.body)
+                        .foregroundStyle(LuminaColors.celestialBlue)
+                    ChartShareButton(chart: chart)
+                }
+                Spacer()
+            }
+        }
+
+        private func bigThreeLine(_ signature: CosmicSignature) -> String {
+            [
+                signature.sunSign.map { "\($0) Sun" },
+                signature.moonSign.map { "\($0) Moon" },
+                signature.risingSign.map { "\($0) rising" },
+            ]
+            .compactMap { $0 }
+            .joined(separator: " · ")
+        }
+
         private func handleRetry() {
             Task { await compute() }
         }
@@ -74,7 +114,7 @@ extension OnboardingScreens {
                 return
             }
             do {
-                _ = try await ephemeris.chart(for: birthData)
+                chart = try await ephemeris.chart(for: birthData)
                 state.chartReady = true
                 Haptics.success.play()
             } catch let serviceError as EphemerisService.ServiceError where serviceError == .missingConfiguration {

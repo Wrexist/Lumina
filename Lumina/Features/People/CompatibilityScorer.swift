@@ -69,10 +69,56 @@ enum CompatibilityScorer {
         // pairs in the same element/modality bucket don't all land on
         // the same number. Hashes are order-independent because we sort.
         let pair = [leftSign, rightSign].sorted()
-        let pairHash = "\(pair[0])-\(pair[1])".hashValue
-        let jitter = abs(pairHash % 11) - 5
+        let jitter = Int(stableHash("\(pair[0])-\(pair[1])") % 11) - 5
         score += jitter
         return max(0, min(100, score))
+    }
+
+    /// Real synastry-weighted score (0–100) from the backend cross-aspects —
+    /// the grounded successor to the Sun-sign heuristic above, used in Friend
+    /// detail once `/synastry` has loaded. Harmonious aspects (trine/sextile)
+    /// and bonding conjunctions lift the score; squares/oppositions lower it.
+    /// Tighter aspects count more, and contacts between the relationship
+    /// planets (Sun/Moon/Venus/Mars) are weighted 1.5×. Order-independent, so
+    /// it's symmetric. Empty aspect list → a neutral 50.
+    static func score(fromSynastry aspects: [SynastryAspect]) -> Int {
+        guard !aspects.isEmpty else { return 50 }
+        var total = 50.0
+        for aspect in aspects {
+            let tightness = max(0, 1 - aspect.orb / maxSynastryOrb)
+            let multiplier = bothRelationshipPlanets(aspect) ? 1.5 : 1.0
+            total += aspectWeight(aspect.type) * tightness * multiplier
+        }
+        return max(0, min(100, Int(total.rounded())))
+    }
+
+    private static let maxSynastryOrb = 10.0
+    private static let relationshipPlanets: Set<String> = ["Sun", "Moon", "Venus", "Mars"]
+
+    private static func aspectWeight(_ type: AspectType) -> Double {
+        switch type {
+        case .trine: 6
+        case .conjunction: 4
+        case .sextile: 3
+        case .opposition: -2
+        case .square: -4
+        }
+    }
+
+    private static func bothRelationshipPlanets(_ aspect: SynastryAspect) -> Bool {
+        relationshipPlanets.contains(aspect.planetA) && relationshipPlanets.contains(aspect.planetB)
+    }
+
+    /// FNV-1a 64-bit hash — deterministic across processes. `String.hashValue`
+    /// is seeded per app run, so using it here drifted the cached
+    /// `Friend.compatibilityScore` on every cold launch.
+    static func stableHash(_ string: String) -> UInt64 {
+        var hash: UInt64 = 0xcbf2_9ce4_8422_2325
+        for byte in string.utf8 {
+            hash ^= UInt64(byte)
+            hash = hash &* 0x0000_0100_0000_01b3
+        }
+        return hash
     }
 
     /// Combined sun-sign string for display ("Aries · Leo").

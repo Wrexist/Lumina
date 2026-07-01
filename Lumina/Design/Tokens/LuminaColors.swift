@@ -9,6 +9,10 @@ enum LuminaColors {
     static let mutedGold = color(hex: "#C9A96E")
     static let midnight = color(hex: "#0B1437")
     static let blush = color(hex: "#E5C8C2")
+    /// Error / destructive accent. A muted oxblood that keeps the editorial
+    /// tone while clearing WCAG AA (~6.9:1) for body text on `parchment`
+    /// and for `parchment` text on an `error` fill.
+    static let error = color(hex: "#9B2C2C")
 
     private static func color(hex: String) -> Color {
         let trimmed = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))

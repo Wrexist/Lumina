@@ -30,7 +30,7 @@ struct ManualBirthPlaceSheet: View {
                     if let error {
                         Text(error)
                             .font(LuminaTypography.caption)
-                            .foregroundStyle(LuminaColors.blush)
+                            .foregroundStyle(LuminaColors.error)
                     }
                     LuminaButton(title: "Save", variant: .primary, isEnabled: validated != nil) {
                         save()

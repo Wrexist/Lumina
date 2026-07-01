@@ -43,6 +43,69 @@ final class PeopleAndTodayTests: XCTestCase {
         XCTAssertEqual(CompatibilityScorer.Label(score: 10).displayName, "Challenging")
     }
 
+    // MARK: - Synastry-weighted score (real cross-aspects)
+
+    func testSynastryScoreEmptyIsNeutral() {
+        XCTAssertEqual(CompatibilityScorer.score(fromSynastry: []), 50)
+    }
+
+    func testHarmoniousAspectsScoreAboveHardAspects() {
+        let harmonious = [synAspect("Sun", "Moon", .trine, orb: 1), synAspect("Venus", "Mars", .sextile, orb: 1)]
+        let hard = [synAspect("Sun", "Moon", .square, orb: 1), synAspect("Venus", "Mars", .opposition, orb: 1)]
+        XCTAssertGreaterThan(CompatibilityScorer.score(fromSynastry: harmonious), 50)
+        XCTAssertLessThan(CompatibilityScorer.score(fromSynastry: hard), 50)
+        XCTAssertGreaterThan(
+            CompatibilityScorer.score(fromSynastry: harmonious),
+            CompatibilityScorer.score(fromSynastry: hard)
+        )
+    }
+
+    func testTighterAspectsCountMore() {
+        let tight = [synAspect("Sun", "Moon", .trine, orb: 0.5)]
+        let wide = [synAspect("Sun", "Moon", .trine, orb: 9.5)]
+        XCTAssertGreaterThan(
+            CompatibilityScorer.score(fromSynastry: tight),
+            CompatibilityScorer.score(fromSynastry: wide)
+        )
+    }
+
+    func testRelationshipPlanetsWeightedMore() {
+        let personal = [synAspect("Venus", "Mars", .trine, orb: 1)]
+        let outer = [synAspect("Saturn", "Jupiter", .trine, orb: 1)]
+        XCTAssertGreaterThan(
+            CompatibilityScorer.score(fromSynastry: personal),
+            CompatibilityScorer.score(fromSynastry: outer)
+        )
+    }
+
+    func testSynastryScoreStaysInRange() {
+        let flood = Array(repeating: synAspect("Venus", "Mars", .trine, orb: 0.5), count: 60)
+        let score = CompatibilityScorer.score(fromSynastry: flood)
+        XCTAssertGreaterThanOrEqual(score, 0)
+        XCTAssertLessThanOrEqual(score, 100)
+    }
+
+    // MARK: - Synastry relationship summary
+
+    func testSummaryEmptyReadsIndependent() {
+        XCTAssertTrue(SynastrySummary.headline(for: []).contains("independent"))
+    }
+
+    func testSummaryClassifiesTheDynamic() {
+        let flow = [synAspect("Sun", "Moon", .trine, orb: 1), synAspect("Venus", "Mars", .sextile, orb: 1)]
+        XCTAssertTrue(SynastrySummary.headline(for: flow).contains("flow"))
+
+        let charged = [synAspect("Sun", "Moon", .square, orb: 1), synAspect("Venus", "Mars", .opposition, orb: 1)]
+        XCTAssertTrue(SynastrySummary.headline(for: charged).contains("charged"))
+
+        let intertwined = [synAspect("Sun", "Moon", .conjunction, orb: 1), synAspect("Venus", "Mars", .conjunction, orb: 1)]
+        XCTAssertTrue(SynastrySummary.headline(for: intertwined).contains("intertwined"))
+    }
+
+    private func synAspect(_ a: String, _ b: String, _ type: AspectType, orb: Double) -> SynastryAspect {
+        SynastryAspect(planetA: a, planetB: b, type: type, exactAngle: 0, orb: orb)
+    }
+
     // MARK: - Friend round-trip
 
     @MainActor
@@ -83,19 +146,28 @@ final class PeopleAndTodayTests: XCTestCase {
         XCTAssertNil(friend.makeBirthData())
     }
 
-    // MARK: - TodayViewModel deterministic helpers
+    // MARK: - TodayViewModel.todayLines (real transits → headline + rows)
 
-    func testTodayHeadlineIsDeterministicPerDate() {
-        let date = Date(timeIntervalSince1970: 1_725_000_000)
-        XCTAssertEqual(TodayViewModel.headline(for: date), TodayViewModel.headline(for: date))
+    @MainActor
+    func testTodayLinesEmptyWhenNoTransits() {
+        let lines = TodayViewModel.todayLines(from: [])
+        XCTAssertNil(lines.headline)
+        XCTAssertTrue(lines.secondary.isEmpty)
     }
 
-    func testWhatsHappeningReturnsThreeRows() {
-        let rows = TodayViewModel.whatsHappening(for: .now)
-        XCTAssertEqual(rows.count, 3)
-        for row in rows {
-            XCTAssertFalse(row.isEmpty)
-        }
+    @MainActor
+    func testTodayLinesUseTightestAsHeadlineAndCapSecondary() {
+        let transits = [
+            TransitReading(transiting: "Pluto", natal: "Mercury", type: .trine, exactAngle: 120, orb: 0.4, applying: false),
+            TransitReading(transiting: "Venus", natal: "Venus", type: .sextile, exactAngle: 60, orb: 0.5, applying: true),
+            TransitReading(transiting: "Saturn", natal: "Neptune", type: .square, exactAngle: 90, orb: 1.3, applying: true),
+            TransitReading(transiting: "Moon", natal: "Jupiter", type: .opposition, exactAngle: 180, orb: 1.3, applying: false),
+            TransitReading(transiting: "Mars", natal: "Sun", type: .conjunction, exactAngle: 0, orb: 2, applying: true),
+        ]
+        let lines = TodayViewModel.todayLines(from: transits)
+        XCTAssertEqual(lines.headline, "Pluto trine your Mercury, easing")
+        XCTAssertEqual(lines.secondary.count, 3, "secondary is capped at 3")
+        XCTAssertEqual(lines.secondary.first, "Venus sextile your Venus, building")
     }
 
     // MARK: - Helpers

@@ -18,7 +18,7 @@ struct BirthData: Codable, Hashable, Sendable {
     let longitude: Double
     let timeZoneIdentifier: String
 
-    func encode(to encoder: Encoder) throws {
+    func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(birthDate, forKey: .birthDate)
         try container.encode(birthTime, forKey: .birthTime)

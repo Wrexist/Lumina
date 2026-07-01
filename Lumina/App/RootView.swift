@@ -19,7 +19,10 @@ struct RootView: View {
                         router.bootstrap()
                     }
             case .onboarding:
-                OnboardingFlowView {
+                OnboardingFlowView { destination in
+                    if let destination {
+                        router.pendingDeepLink = destination
+                    }
                     router.completeOnboarding()
                 }
             case .mainTabs:

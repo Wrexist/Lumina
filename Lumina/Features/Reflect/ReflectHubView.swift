@@ -16,6 +16,11 @@ struct ReflectHubView: View {
     @State private var lock = AppLock.shared
     @State private var unlockError: LuminaError?
     @State private var unlocking = false
+    @State private var openedEntry: JournalEntry?
+    @State private var ephemeris = EphemerisService()
+    @State private var transits: [TransitReading] = []
+    @State private var pendingDelete: JournalEntry?
+    @ScaledMetric private var lockIconSize: CGFloat = 56
 
     var body: some View {
         Group {
@@ -35,7 +40,7 @@ struct ReflectHubView: View {
         VStack(spacing: LuminaSpacing.lg) {
             Spacer()
             Image(systemName: "lock.shield")
-                .font(.system(size: 56))
+                .font(.system(size: lockIconSize))
                 .foregroundStyle(LuminaColors.celestialBlue)
             Text("Reflect is locked")
                 .font(LuminaTypography.heading)
@@ -47,7 +52,7 @@ struct ReflectHubView: View {
             if let unlockError {
                 Text(unlockError.userBody)
                     .font(LuminaTypography.caption)
-                    .foregroundStyle(LuminaColors.blush)
+                    .foregroundStyle(LuminaColors.error)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, LuminaSpacing.lg)
             }
@@ -69,6 +74,22 @@ struct ReflectHubView: View {
             }
             .padding(LuminaSpacing.lg)
         }
+        .navigationDestination(item: $openedEntry) { entry in
+            JournalEntryView(entry: entry)
+        }
+        .task { await loadTransits() }
+        .overlay(alignment: .bottom) { undoBar }
+        .animation(.smooth, value: pendingDelete?.id)
+        .task(id: pendingDelete?.id) { await autoCommitPendingDelete() }
+        .onDisappear(perform: commitPendingDelete)
+    }
+
+    @ViewBuilder
+    private var undoBar: some View {
+        if pendingDelete != nil {
+            LuminaSnackbarView(message: "Entry removed", actionTitle: "Undo", onAction: cancelPendingDelete)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
     }
 
     private var todaysPromptCard: some View {
@@ -78,7 +99,7 @@ struct ReflectHubView: View {
                     .font(LuminaTypography.mono)
                     .tracking(1.4)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-                Text(JournalPromptGenerator.shared.prompt(for: .now))
+                Text(todaysPrompt)
                     .font(LuminaTypography.heading)
                 Text("Auto-saved on this device only.")
                     .font(LuminaTypography.caption)
@@ -89,19 +110,10 @@ struct ReflectHubView: View {
 
     private var primaryCTA: some View {
         let title = todayEntry == nil ? "Write today's reflection" : "Continue today's reflection"
-        return NavigationLink {
-            JournalEntryView(entry: todayEntry ?? createTodayEntry())
-        } label: {
-            HStack {
-                Image(systemName: "pencil")
-                Text(title)
-            }
-            .frame(maxWidth: .infinity, minHeight: 56)
-            .padding(.horizontal, LuminaSpacing.lg)
-            .background(LuminaColors.celestialBlue)
-            .foregroundStyle(LuminaColors.parchment)
-            .luminaCornerRadius(LuminaRadii.md)
-        }
+        // Value-based navigation: the entry is created in the tap handler, NOT
+        // in a NavigationLink destination builder (which SwiftUI evaluates
+        // eagerly during `body`, inserting blank entries on mere tab open).
+        return LuminaButton(title: title, variant: .primary, systemImage: "pencil", action: openTodayEntry)
     }
 
     @ViewBuilder
@@ -142,13 +154,20 @@ struct ReflectHubView: View {
                     }
                     .font(LuminaTypography.caption)
                 }
-                ForEach(entries.prefix(5)) { entry in
+                ForEach(Array(entries.filter { $0.id != pendingDelete?.id }.prefix(5))) { entry in
                     NavigationLink {
                         JournalEntryDetailView(entry: entry)
                     } label: {
                         entryRow(entry)
                     }
                     .buttonStyle(.plain)
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            softDelete(entry)
+                        } label: {
+                            Label("Remove", systemImage: "trash")
+                        }
+                    }
                 }
             }
         }
@@ -159,7 +178,34 @@ struct ReflectHubView: View {
         return entries.first { calendar.isDateInToday($0.date) }
     }
 
+    /// The prompt shown on the card. Once today's entry exists, it shows the
+    /// entry's frozen prompt so the card and the entry never disagree; before
+    /// that, it's the live transit-tied prompt (falling back to the date pool
+    /// until transits load).
+    private var todaysPrompt: String {
+        if let existing = todayEntry {
+            return existing.prompt
+        }
+        return JournalPromptGenerator.shared.prompt(forTransits: transits, on: .now)
+    }
+
     // MARK: - Methods
+
+    private func openTodayEntry() {
+        openedEntry = todayEntry ?? createTodayEntry()
+    }
+
+    /// Best-effort load of today's real transits so the prompt reflects the
+    /// actual sky. On any failure (no birth data, offline) `transits` stays
+    /// empty and the prompt falls back to the date-keyed pool — no error shown.
+    private func loadTransits() async {
+        guard transits.isEmpty, let birth = UserBirthDataStore.userDefaults.load() else { return }
+        do {
+            transits = try await ephemeris.transits(for: birth).transits
+        } catch {
+            transits = []
+        }
+    }
 
     private func unlock() async {
         guard !unlocking else { return }
@@ -200,11 +246,11 @@ struct ReflectHubView: View {
 
     private func createTodayEntry() -> JournalEntry {
         let date = Date.now
-        let prompt = JournalPromptGenerator.shared.prompt(for: date)
-        let key = JournalPromptGenerator.shared.transitKey(for: date)
+        let prompt = JournalPromptGenerator.shared.prompt(forTransits: transits, on: date)
+        let key = JournalPromptGenerator.shared.transitKey(forTransits: transits, on: date)
         let entry = JournalEntry(date: date, prompt: prompt, transitKey: key)
         modelContext.insert(entry)
-        try? modelContext.save()
+        modelContext.saveOrLog(category: "Reflect")
         return entry
     }
 
@@ -212,6 +258,38 @@ struct ReflectHubView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE · MMM d"
         return formatter.string(from: date).uppercased()
+    }
+}
+
+// MARK: - Soft delete
+
+extension ReflectHubView {
+    /// Soft-delete with an undo window; commits any prior pending delete first.
+    func softDelete(_ entry: JournalEntry) {
+        Haptics.warning.play()
+        commitPendingDelete()
+        pendingDelete = entry
+    }
+
+    func cancelPendingDelete() {
+        Haptics.light.play()
+        pendingDelete = nil
+    }
+
+    /// Waits out the undo window, then finalizes — cancelled when `pendingDelete`
+    /// changes (undo, or a newer deletion supersedes it).
+    func autoCommitPendingDelete() async {
+        guard pendingDelete != nil else { return }
+        try? await Task.sleep(for: .seconds(4))
+        guard !Task.isCancelled else { return }
+        commitPendingDelete()
+    }
+
+    func commitPendingDelete() {
+        guard let entry = pendingDelete else { return }
+        modelContext.delete(entry)
+        modelContext.saveOrLog(category: "Reflect")
+        pendingDelete = nil
     }
 }
 

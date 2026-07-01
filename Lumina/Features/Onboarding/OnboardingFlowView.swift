@@ -13,8 +13,13 @@ struct OnboardingFlowView: View {
     @State private var state = OnboardingState()
     @State private var ephemeris = EphemerisService()
     @State private var paywall = PaywallTracker.shared
-    @State private var paywallVariant: PaywallOfferView.Variant?
-    let onComplete: () -> Void
+    @State private var paywallPresented = false
+    @State private var paywallVariant: PaywallOfferView.Variant = .initial
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var pendingDestination: LuminaDeepLink?
+    /// Called when onboarding finishes. The optional deep link is the tab the
+    /// user chose on the "what next" screen (nil = land on Today).
+    let onComplete: (LuminaDeepLink?) -> Void
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -33,12 +38,17 @@ struct OnboardingFlowView: View {
                     .padding(.bottom, LuminaSpacing.lg)
             }
         }
-        .fullScreenCover(item: $paywallVariant) { variant in
+        .fullScreenCover(isPresented: $paywallPresented) {
             PaywallOfferView(
-                variant: variant,
+                variant: paywallVariant,
                 onStartTrial: handleStartTrial,
                 onContinueFree: handleContinueFree
             )
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // Persist mid-step edits when backgrounded so a force-quit resumes
+            // exactly where the user left off (docs/NAVIGATION.md §6).
+            if phase != .active { state.persist() }
         }
     }
 
@@ -63,7 +73,7 @@ struct OnboardingFlowView: View {
             Spacer()
 
             // Keep chevron-shaped placeholder so the title is centered.
-            Image(systemName: "chevron.left").opacity(0)
+            Image(systemName: "chevron.left").opacity(0).accessibilityHidden(true)
         }
     }
 
@@ -88,7 +98,7 @@ struct OnboardingFlowView: View {
         case .chartReveal:
             OnboardingScreens.ChartReveal(state: state, ephemeris: ephemeris)
         case .whatNext:
-            OnboardingScreens.WhatNext { handleFinalTap() }
+            OnboardingScreens.WhatNext { handleFinalTap($0) }
         }
     }
 
@@ -101,7 +111,7 @@ struct OnboardingFlowView: View {
             isEnabled: state.canAdvance(from: state.currentStep)
         ) {
             if isFinal {
-                handleFinalTap()
+                handleFinalTap(nil)
             } else {
                 state.advance()
             }
@@ -111,11 +121,13 @@ struct OnboardingFlowView: View {
     /// Final-step tap. The first time, present the paywall offer as a
     /// non-blocking full-screen cover. After the user has seen (and
     /// declined) it, subsequent finals route straight to MainTabs.
-    private func handleFinalTap() {
+    private func handleFinalTap(_ destination: LuminaDeepLink?) {
+        pendingDestination = destination
         if paywall.hasSeenInitialOffer {
-            onComplete()
+            onComplete(destination)
         } else {
             paywallVariant = .initial
+            paywallPresented = true
         }
     }
 
@@ -124,28 +136,28 @@ struct OnboardingFlowView: View {
         if paywallVariant == .rescue {
             paywall.recordRescueShown()
         }
-        paywallVariant = nil
+        paywallPresented = false
         // TODO(lumina): trigger RevenueCat purchase flow before completing
         persistAndComplete()
     }
 
     private func handleContinueFree() {
-        guard let current = paywallVariant else {
-            persistAndComplete()
-            return
-        }
-        switch current {
+        switch paywallVariant {
         case .initial:
             paywall.recordInitialOfferSeen()
             if paywall.shouldShowRescue() {
+                // Swap the cover's content to the rescue offer *in place*. A
+                // fullScreenCover(item:) won't reliably re-present on a
+                // non-nil → non-nil change, so we keep a single cover up and
+                // change only the variant it renders.
                 paywallVariant = .rescue
             } else {
-                paywallVariant = nil
+                paywallPresented = false
                 persistAndComplete()
             }
         case .rescue:
             paywall.recordRescueShown()
-            paywallVariant = nil
+            paywallPresented = false
             persistAndComplete()
         }
     }
@@ -156,10 +168,10 @@ struct OnboardingFlowView: View {
         if let birthData = state.makeBirthData() {
             UserBirthDataStore.userDefaults.save(birthData)
         }
-        onComplete()
+        onComplete(pendingDestination)
     }
 }
 
 #Preview {
-    OnboardingFlowView(onComplete: { })
+    OnboardingFlowView { _ in }
 }

@@ -11,7 +11,9 @@ import SwiftUI
 /// doesn't yet expose. The "see what's missing" footer makes that
 /// transparent.
 struct BodygraphView: View {
-    static let designSideMissingNote = "Type, Profile, and Authority require the design-side chart (88° before birth). That endpoint ships with Phase 8 — until then we render only the personality-side activations."
+    static let designSideMissingNote = "Type, Profile, and Authority need your design-side chart "
+        + "(calculated about 88 days before birth), which is coming soon. For now this shows your "
+        + "personality-side activations."
 
     let activation: HumanDesignActivation
     var onTapCenter: ((HumanDesignCenter) -> Void)?
@@ -39,7 +41,7 @@ struct BodygraphView: View {
 
     private func centerView(for center: HumanDesignCenter, in size: CGFloat) -> some View {
         let frame = center.layoutFrame
-        let isDefined = activation.definedCenters.contains(center)
+        let isActivated = activation.definedCenters.contains(center)
         let width = frame.width * size
         let height = frame.height * size
         return Button {
@@ -47,15 +49,15 @@ struct BodygraphView: View {
             onTapCenter?(center)
         } label: {
             RoundedRectangle(cornerRadius: LuminaRadii.xs, style: .continuous)
-                .fill(isDefined ? center.fillColor : Color.clear)
+                .fill(isActivated ? center.fillColor : Color.clear)
                 .overlay(
                     RoundedRectangle(cornerRadius: LuminaRadii.xs, style: .continuous)
-                        .stroke(LuminaColors.inkBlack.opacity(isDefined ? 0.3 : 0.5), lineWidth: 1)
+                        .stroke(LuminaColors.inkBlack.opacity(isActivated ? 0.3 : 0.5), lineWidth: 1)
                 )
                 .overlay(
                     Text(center.displayName)
                         .font(LuminaTypography.caption)
-                        .foregroundStyle(isDefined ? LuminaColors.parchment : LuminaColors.inkBlack.opacity(0.7))
+                        .foregroundStyle(isActivated ? LuminaColors.parchment : LuminaColors.inkBlack.opacity(0.7))
                         .padding(LuminaSpacing.xs)
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.6)
@@ -67,7 +69,7 @@ struct BodygraphView: View {
             x: frame.minX * size + width / 2,
             y: frame.minY * size + height / 2
         )
-        .accessibilityLabel("\(center.displayName) — \(isDefined ? "defined" : "open")")
+        .accessibilityLabel("\(center.displayName) — \(isActivated ? "activated" : "open")")
     }
 
     // MARK: - Methods

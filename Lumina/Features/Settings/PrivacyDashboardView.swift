@@ -60,7 +60,7 @@ struct PrivacyDashboardView: View {
                 row("Your account", value: "—")
                 row("Active subscription status", value: "—")
                 row("Push token", value: "—")
-                Text("Account + subscription rows fill in once Sign in with Apple + RevenueCat are wired (Phases 12, 16).")
+                Text("Account and subscription details will appear here once sign-in and purchases are available.")
                     .font(LuminaTypography.caption)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
             }
@@ -83,7 +83,7 @@ struct PrivacyDashboardView: View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 sectionHeader("Your data", systemImage: "tray.and.arrow.down")
-                Text("Export to JSON and account deletion ship later in Phase 12. Until then, your local data lives only on this device — uninstalling the app removes everything.")
+                Text("Exporting your data and deleting your account are coming soon. Until then, your data lives only on this device — uninstalling the app removes everything.")
                     .font(LuminaTypography.bodyLight)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                 LuminaBadge(title: "Soon", tone: .neutral)
