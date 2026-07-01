@@ -14,6 +14,8 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var preferences = AppPreferences.shared
     @State private var restoreMessage: String?
+    @State private var authManager = AuthManager.shared
+    @State private var signInPresented = false
 
     var body: some View {
         NavigationStack {
@@ -35,6 +37,9 @@ struct SettingsView: View {
             }
             .overlay(alignment: .bottom) { restoreBanner }
             .animation(.smooth, value: restoreMessage)
+            .sheet(isPresented: $signInPresented) {
+                SignInView { _ in signInPresented = false }
+            }
         }
     }
 
@@ -50,7 +55,22 @@ struct SettingsView: View {
                 SettingsRow(title: "Restore purchases", trailing: nil)
             }
             .buttonStyle(.plain)
-            SettingsRow(title: "Sign in with Apple", trailing: .badge("Soon"))
+            signInRow
+        }
+    }
+
+    @ViewBuilder
+    private var signInRow: some View {
+        if let session = authManager.session {
+            Button(action: authManager.signOut) {
+                SettingsRow(title: "Sign out", trailing: .text(session.displayName ?? session.email ?? "Signed in"))
+            }
+            .buttonStyle(.plain)
+        } else {
+            Button(action: { signInPresented = true }) {
+                SettingsRow(title: "Sign in with Apple", trailing: nil)
+            }
+            .buttonStyle(.plain)
         }
     }
 
