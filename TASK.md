@@ -86,7 +86,7 @@ Release / store (this commit):
 - [x] **[2026-05-08]** Manual lat/lon fallback (`ManualBirthPlaceSheet`) for offline / geocoder-down cases — name, lat, lon, IANA time-zone picker
 - [x] **[2026-05-08]** Soft post-onboarding paywall offer (`PaywallOfferView`, `.fullScreenCover`) on the WhatNext step with explicit "Continue free"
 - [x] **[2026-05-08]** Discount rescue paywall (once per install, gated by `PaywallTracker`)
-- [ ] Sign in with Apple (deferred to after first chart reveal)
+- [ ] Sign in with Apple (deferred to after first chart reveal) — plan: `docs/CAPABILITIES-PLAN.md` §3 (hard-blocked on the Supabase project existing)
 - [~] Deferred notification permission — `NotificationPermission` helper landed and reachable from Settings; the contextual prompt after the first daily reading lands with the Today tab build-out
 - [ ] 14 onboarding analytics events
 - [ ] "Update birth info" Settings surface that reuses these forms
@@ -235,6 +235,9 @@ Release / store (this commit):
 
 ## 📋 Backlog — Phase 11: Notifications + Engagement
 
+> OneSignal wiring plan (AppDelegate init, capability/entitlement, token
+> registration, segment tagging): `docs/CAPABILITIES-PLAN.md` §2.
+
 - [x] **[2026-05-08]** `NotificationPermission` helper — `@MainActor @Observable`, `request()`/`refreshStatus()`, `Status` enum mapped from `UNAuthorizationStatus`
 - [x] **[2026-05-08]** `NotificationSettingsView` reachable from Settings → Notifications (state-aware CTA: turn on / open iOS Settings / all set)
 - [ ] OneSignal SDK integration + token registration + 4 segments
@@ -252,9 +255,9 @@ Release / store (this commit):
 - [x] **[2026-05-08]** `SettingsView` with all 5 sections wired to the gear icon
 - [x] **[2026-05-08]** `EditBirthInfoView` — reuses Phase-2 `BirthPlaceSearch` and `WhyWeAsk`; hydrates from `UserBirthDataStore`, writes back on save; manual-coordinates fallback
 - [x] **[2026-05-08]** `PrivacyDashboardView` — "what's on this device / what's on our server / what's never stored" with live counts from SwiftData and UserDefaults
-- [ ] Manage subscription deep link
-- [ ] Restore purchases action + toast
-- [ ] Sign out flow
+- [ ] Manage subscription deep link — unblocked by RevenueCat core wiring, `docs/CAPABILITIES-PLAN.md` §1
+- [ ] Restore purchases action + toast — unblocked by RevenueCat core wiring, `docs/CAPABILITIES-PLAN.md` §1
+- [ ] Sign out flow — depends on Sign in with Apple, `docs/CAPABILITIES-PLAN.md` §3
 - [ ] `PrivacyDashboardView` ("what we know / what we don't")
 - [ ] Export-my-data → JSON archive via `.fileExporter`
 - [ ] Delete-account flow (3-step + 30-day grace + local wipe)
@@ -331,6 +334,16 @@ Release / store (this commit):
 - [ ] RAG corpus chunking + embedding pipeline (~1,940 chunks)
 - [ ] pgvector HNSW index post-insert
 - [ ] Edge function for daily-reading throttle
+
+### App capabilities
+
+> Full plan (Xcode capabilities, code, owner action items, sequencing):
+> `docs/CAPABILITIES-PLAN.md`.
+
+- [ ] RevenueCat core wiring — `Purchases.configure()`, entitlement mapping, real purchase call at every existing paywall/gate call site. No new Xcode capability (IAP is on by default). Unblocked today except for a real `REVENUECAT_API_KEY_IOS` + RevenueCat dashboard config. Plan §1.
+- [ ] OneSignal core wiring — `AppDelegate` init, Push Notifications capability + entitlement, token registration, tie into `NotificationPermission`. Scaffolding unblocked; end-to-end needs a signed device build. Plan §2.
+- [ ] Associated Domains / universal links — `LuminaDeepLink` parses `https://lumina.app/...` alongside `lumina://`, migrate the QR share payload. Hard-blocked on the `lumina.app` domain existing (same blocker as the Phase 15 privacy/terms pages). Plan §4.
+- [ ] Background Modes (`audio`) — add only when Phase 5's audio player ships; not needed today. Plan §5.
 
 ### SwiftData migrations
 - [ ] `SchemaMigrationPlan` from version 1 onward (no shipping without one)
