@@ -74,6 +74,27 @@ final class AuditFixTests: XCTestCase {
         XCTAssertNil(LuminaDeepLink.from(url: link("https://example.com/chart")))
     }
 
+    // MARK: - Deep-link parsing (universal links parse identically)
+
+    func testUniversalLinkMalformedInputsParseSafely() {
+        // Same malformed shapes as above, but via the `https://lumina.app/...`
+        // universal link — must fall back exactly the same way as `lumina://`.
+        XCTAssertEqual(LuminaDeepLink.from(url: link("https://lumina.app/chart/planet")), .chart(planet: nil))
+        XCTAssertEqual(LuminaDeepLink.from(url: link("https://lumina.app/people/not-a-uuid")), .people(friendID: nil))
+        XCTAssertEqual(LuminaDeepLink.from(url: link("https://lumina.app/share/")), .today)
+    }
+
+    func testShareUniversalLinkMatchesCustomSchemeShape() {
+        // The QR share flow (`ShareQRView`) emits `https://lumina.app/share/...`
+        // — confirm it decodes to the identical case as the legacy
+        // `lumina://share/...` shape `AcceptShareView` has always consumed.
+        let payload = "abcDEF123"
+        XCTAssertEqual(
+            LuminaDeepLink.from(url: link("https://lumina.app/share/\(payload)")),
+            LuminaDeepLink.from(url: link("lumina://share/\(payload)"))
+        )
+    }
+
     // MARK: - Helpers
 
     private func link(_ string: String) -> URL {

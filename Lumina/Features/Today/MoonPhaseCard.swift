@@ -7,6 +7,7 @@ struct MoonPhaseCard: View {
     @Environment(AppRouter.self) private var router
     @State private var ephemeris = EphemerisService()
     @State private var phase: MoonPhaseResult?
+    @State private var showing3D = false
     @ScaledMetric private var glyphSize: CGFloat = 40
 
     var body: some View {
@@ -16,6 +17,11 @@ struct MoonPhaseCard: View {
             }
         }
         .task { await load() }
+        .sheet(isPresented: $showing3D) {
+            if let phase {
+                MoonSphereSheetView(phase: phase)
+            }
+        }
     }
 
     // MARK: - View building blocks
@@ -54,6 +60,9 @@ struct MoonPhaseCard: View {
                         }
                     }
                 }
+                LuminaButton(title: "View in 3D", variant: .ghost, systemImage: "sparkles") {
+                    show3D()
+                }
             }
         }
     }
@@ -63,6 +72,11 @@ struct MoonPhaseCard: View {
     private func jumpToReflect() {
         Haptics.light.play()
         router.selectedTab = .reflect
+    }
+
+    private func show3D() {
+        Haptics.light.play()
+        showing3D = true
     }
 
     private func load() async {

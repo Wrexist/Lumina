@@ -17,13 +17,14 @@ struct TodayHubView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
-                header
+                CelestialHeroCard(date: .now)
                 content
             }
             .padding(LuminaSpacing.lg)
         }
         .background(LuminaColors.parchment)
         .navigationTitle("Today")
+        .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.loadIfNeeded() }
         .sheet(isPresented: $showingWhy) {
             TodayTransparencySheet(transits: viewModel.transits)
@@ -88,17 +89,6 @@ struct TodayHubView: View {
         )
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
-            Text(dateLabel.uppercased())
-                .font(LuminaTypography.mono)
-                .tracking(1.4)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-            Text("Your sky today")
-                .font(LuminaTypography.display)
-        }
-    }
-
     private func headlineCard(_ headline: String?) -> some View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
@@ -160,12 +150,6 @@ struct TodayHubView: View {
                 }
             }
         }
-    }
-
-    private var dateLabel: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE · MMM d"
-        return formatter.string(from: .now)
     }
 
     // MARK: - Methods

@@ -1,9 +1,15 @@
 import Foundation
 
 /// Single source of truth for inbound URL routing. Every `lumina://...` URL
-/// resolves to one case, every case has tests, and no other file calls
-/// `URL`-parsing for app navigation. See `docs/NAVIGATION.md` §7.
+/// and every `https://lumina.app/...` universal link resolves to one case,
+/// every case has tests, and no other file calls `URL`-parsing for app
+/// navigation. See `docs/NAVIGATION.md` §7 and
+/// `docs/CAPABILITIES-PLAN.md` §4.
 enum LuminaDeepLink: Equatable, Sendable {
+    /// The universal-link host this parser and QR/share generation must agree
+    /// on. Kept here so both sides stay in sync if the domain ever changes.
+    static let universalLinkHost = "lumina.app"
+
     case today
     case chart(planet: String?)
     case palmScan
@@ -29,11 +35,13 @@ enum LuminaDeepLink: Equatable, Sendable {
 
     /// Returns `nil` for any URL that isn't a Lumina deep link or isn't
     /// understood. Callers fall back to a default route (typically `.today`).
+    ///
+    /// Accepts either the custom `lumina://...` scheme (any host/path) or a
+    /// `https://lumina.app/...` universal link — both feed the exact same
+    /// path-parsing below, so adding a new route only ever needs one switch
+    /// statement, not one per scheme.
     static func from(url: URL) -> LuminaDeepLink? {
-        guard url.scheme == "lumina" else { return nil }
-        // SwiftUI gives us URLs where the host is the first path component;
-        // normalise both shapes (`lumina://chart` and `lumina:///chart`).
-        let path = (url.host.map { [$0] } ?? []) + url.pathComponents.filter { $0 != "/" }
+        guard let path = routePath(for: url) else { return nil }
         guard let head = path.first else { return nil }
         let tail = Array(path.dropFirst())
 
@@ -47,6 +55,31 @@ enum LuminaDeepLink: Equatable, Sendable {
         case "settings": return .settings
         case "help": return parseHelp(tail: tail)
         default: return nil
+        }
+    }
+
+    // MARK: - Scheme handling
+
+    /// Builds the route's path components (e.g. `["chart", "planet", "Mars"]`)
+    /// for a supported URL, or `nil` if the scheme/host combination isn't a
+    /// Lumina link at all. This is the only place the two supported shapes
+    /// (`lumina://...` and `https://lumina.app/...`) diverge — everything
+    /// past this point is one shared parser.
+    private static func routePath(for url: URL) -> [String]? {
+        let components = url.pathComponents.filter { $0 != "/" }
+        switch url.scheme {
+        case "lumina":
+            // SwiftUI gives us URLs where the host is the first path
+            // component; normalise both shapes (`lumina://chart` and
+            // `lumina:///chart`).
+            return (url.host.map { [$0] } ?? []) + components
+        case "https":
+            guard url.host == Self.universalLinkHost else { return nil }
+            // Here the host is the real domain, not a route component —
+            // the route lives entirely in the path (`/chart/...`).
+            return components
+        default:
+            return nil
         }
     }
 

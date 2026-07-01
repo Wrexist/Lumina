@@ -9,6 +9,16 @@ import SwiftUI
 /// shows. Each returns a left-aligned `VStack` (no `ScrollView`, which
 /// `ImageRenderer` can't size); the renderer fixes the width + background.
 enum TabPreviews {
+    /// Fixed date so the Today hero renders identically across runs — a real
+    /// Tuesday (2026-06-02), so the kicker reads "TUESDAY · JUN 2".
+    static let sampleDate: Date = {
+        var components = DateComponents()
+        components.year = 2026
+        components.month = 6
+        components.day = 2
+        return Calendar(identifier: .gregorian).date(from: components) ?? Date(timeIntervalSince1970: 0)
+    }()
+
     static func chart(_ chart: NatalChart) -> some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
             Text("Chart").font(LuminaTypography.display)
@@ -23,7 +33,10 @@ enum TabPreviews {
 
     static func today(chart: NatalChart, headline: String?, secondary: [String], reading: String) -> some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
-            sectionHeader(kicker: "TUESDAY · JUN 3", title: "Your sky today")
+            // The real immersive Today hero (static frame — no gyroscope in
+            // the ImageRenderer screenshot harness) so the render reflects
+            // what ships in `TodayHubView`.
+            CelestialHeroCard(date: Self.sampleDate, showsMotion: false)
             BigThreeBand(chart: chart)
             LuminaCard {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {

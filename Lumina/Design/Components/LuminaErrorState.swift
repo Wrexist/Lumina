@@ -51,7 +51,7 @@ struct LuminaErrorState: View {
         case .notSignedIn: "person.crop.circle.badge.questionmark"
         case .subscriptionRequired: "sparkles"
         case .permissionDenied: "lock"
-        case .missingConfiguration: "wrench.adjustable"
+        case .missingConfiguration: "moon.stars"
         case .unknown: "questionmark.diamond"
         }
     }

@@ -8,10 +8,26 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        // TODO(lumina): configure RevenueCat with LuminaRevenueCatAPIKeyIOS from Info.plist
-        // TODO(lumina): configure OneSignal with LuminaOneSignalAppID from Info.plist
-        // DECISION: per LEARNINGS.md, RevenueCat must be initialized here, not in LuminaApp.init,
-        // to avoid SwiftUI Preview crashes.
+        // DECISION: per LEARNINGS.md, RevenueCat/OneSignal must be initialized here, not in
+        // LuminaApp.init, to avoid SwiftUI Preview crashes. Both no-op safely when their
+        // Info.plist key is empty/placeholder — see docs/CAPABILITIES-PLAN.md.
+        let info = Bundle.main.infoDictionary ?? [:]
+
+        let revenueCatKey = info["LuminaRevenueCatAPIKeyIOS"] as? String ?? ""
+        Task {
+            await IAPManager.shared.configure(apiKey: revenueCatKey)
+        }
+
+        let oneSignalAppID = info["LuminaOneSignalAppID"] as? String ?? ""
+        PushNotificationManager.initialize(appID: oneSignalAppID, launchOptions: launchOptions)
+
+        // Restore any previously-signed-in Sign in with Apple session (and
+        // clear it if Apple reports the credential was revoked) before the
+        // rest of the app reads `AuthManager.shared.session`.
+        Task { @MainActor in
+            await AuthManager.shared.restoreSessionIfAvailable()
+        }
+
         logger.info("Lumina launched")
         return true
     }

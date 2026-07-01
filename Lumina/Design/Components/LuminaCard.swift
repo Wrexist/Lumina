@@ -21,8 +21,25 @@ struct LuminaCard<Content: View>: View {
             .background(surfaceBackground)
             .foregroundStyle(foreground)
             .luminaCornerRadius(LuminaRadii.md)
+            .overlay(highlight)
             .overlay(border)
             .luminaShadow(.card)
+    }
+
+    /// A very faint "lit from above" sheen so cards read as slightly raised
+    /// glass rather than flat outlines. Clipped to the card shape and kept
+    /// low-opacity so it never darkens the parchment surface.
+    @ViewBuilder
+    private var highlight: some View {
+        RoundedRectangle(cornerRadius: LuminaRadii.md, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: [LuminaColors.parchment.opacity(0.06), .clear],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .allowsHitTesting(false)
     }
 
     @ViewBuilder

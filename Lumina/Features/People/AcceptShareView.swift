@@ -1,10 +1,13 @@
 import SwiftData
 import SwiftUI
 
-/// Presented when the user opens a `lumina://share/<payload>` link (e.g. by
-/// scanning a friend's QR). Decodes the reduced `SharedBirthData` and offers
-/// to add the person to People. Malformed payloads fall through to a friendly
-/// error rather than crashing.
+/// Presented when the user opens a `lumina://share/<payload>` link or a
+/// `https://lumina.app/share/<payload>` universal link (e.g. by scanning a
+/// friend's QR) — both schemes are parsed by `LuminaDeepLink` and route here
+/// with an already-decoded `payload`, so this view doesn't care which one
+/// produced it. Decodes the reduced `SharedBirthData` and offers to add the
+/// person to People. Malformed payloads fall through to a friendly error
+/// rather than crashing.
 struct AcceptShareView: View {
     let payload: String
 

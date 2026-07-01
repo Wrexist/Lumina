@@ -51,16 +51,27 @@ final class NotificationPermission {
     /// Prompts the system permission sheet. Returns the resulting status
     /// so callers can branch (e.g. show a "Settings → Notifications" hint
     /// if denied). This is the only call site that triggers the OS sheet.
+    ///
+    /// When `PushNotificationManager` has been configured (a real OneSignal
+    /// app ID), the prompt is routed through OneSignal's own permission API
+    /// so a push token registers as part of the same system prompt — never
+    /// two competing prompts. Dev/CI builds with no OneSignal app ID fall
+    /// through to the direct `UNUserNotificationCenter` path unchanged.
     @discardableResult
     func request() async -> Status {
-        do {
-            let granted = try await center.requestAuthorization(options: [.alert, .badge, .sound])
-            status = granted ? .granted : .denied
-            return status
-        } catch {
-            logger.error("notification authorisation failed: \(error.localizedDescription)")
-            status = .denied
-            return status
+        guard PushNotificationManager.isAvailable else {
+            do {
+                let granted = try await center.requestAuthorization(options: [.alert, .badge, .sound])
+                status = granted ? .granted : .denied
+                return status
+            } catch {
+                logger.error("notification authorisation failed: \(error.localizedDescription)")
+                status = .denied
+                return status
+            }
         }
+        _ = await PushNotificationManager.requestPermission()
+        await refreshStatus()
+        return status
     }
 }

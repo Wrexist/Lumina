@@ -8,7 +8,7 @@ import SwiftUI
 /// for the session.
 ///
 /// Free tier: first 3 entries free; entry #4 surfaces a soft Plus banner
-/// (the actual purchase wires through RevenueCat in Phase 16).
+/// backed by the real `IAPManager` purchase flow (see `Core/IAP/`).
 struct ReflectHubView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \JournalEntry.date, order: .reverse) private var entries: [JournalEntry]
