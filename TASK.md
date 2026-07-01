@@ -7,7 +7,24 @@
 
 ---
 
-## 📌 Latest — Growth + Release infra (2026-07, branch `claude/adoring-euler-yEDvq`)
+## 📌 Latest — App capabilities: IAP, push, auth, universal links, 3D Moon (2026-07-01, branch `claude/app-capabilities-plan-br64fe`)
+
+Full plan at `docs/CAPABILITIES-PLAN.md`. Turns an Xcode capabilities audit
+("Push Notifications: No", "Sign in with Apple: No", "Associated Domains: No",
+"In-App Purchase: no explicit toggle but `Purchases.configure()` never
+called") into real, shipped code:
+
+- [x] RevenueCat wired for real (`IAPManager`, `PremiumStatus`, onboarding trial + Settings rows)
+- [x] OneSignal wired for real (`PushNotificationManager`, single permission prompt, Palm waitlist tag)
+- [x] Sign in with Apple + Keychain session (`AuthManager`, `SignInView`), Supabase exchange layered on best-effort
+- [x] Universal links (`https://lumina.app/...`) alongside `lumina://`; QR share migrated; `apple-app-site-association` ready to deploy
+- [x] Immersive 3D Moon (`MoonSphere3DView`, SceneKit) — the real ephemeris phase angle drives the lit/dark terminator; "View in 3D" on the Today "Tonight's Moon" card
+- [ ] Background Modes (`audio`) — deliberately deferred until Phase 5's audio player exists
+- [!] Owner action items outstanding: RevenueCat/OneSignal/Supabase dashboards, `lumina.app` domain + hosting, Apple Developer capability registration — see `docs/CAPABILITIES-PLAN.md` "Owner action items"
+
+---
+
+## 📌 Growth + Release infra (2026-07, branch `claude/adoring-euler-yEDvq`)
 
 Viral/dopamine features (all CI-green, merged via PR #5):
 - [x] Cosmic signature — identity card + richer shareable profile
@@ -86,7 +103,7 @@ Release / store (this commit):
 - [x] **[2026-05-08]** Manual lat/lon fallback (`ManualBirthPlaceSheet`) for offline / geocoder-down cases — name, lat, lon, IANA time-zone picker
 - [x] **[2026-05-08]** Soft post-onboarding paywall offer (`PaywallOfferView`, `.fullScreenCover`) on the WhatNext step with explicit "Continue free"
 - [x] **[2026-05-08]** Discount rescue paywall (once per install, gated by `PaywallTracker`)
-- [ ] Sign in with Apple (deferred to after first chart reveal) — plan: `docs/CAPABILITIES-PLAN.md` §3 (hard-blocked on the Supabase project existing)
+- [x] **[2026-07-01]** Sign in with Apple — `AuthManager`/`SignInView` shipped and reachable from Settings (not yet the contextual post-chart-reveal prompt originally scoped here — that placement refinement is still open). The Supabase identity-token exchange is best-effort and no-ops until the project exists; see `docs/CAPABILITIES-PLAN.md` §3.
 - [~] Deferred notification permission — `NotificationPermission` helper landed and reachable from Settings; the contextual prompt after the first daily reading lands with the Today tab build-out
 - [ ] 14 onboarding analytics events
 - [ ] "Update birth info" Settings surface that reuses these forms
@@ -255,9 +272,9 @@ Release / store (this commit):
 - [x] **[2026-05-08]** `SettingsView` with all 5 sections wired to the gear icon
 - [x] **[2026-05-08]** `EditBirthInfoView` — reuses Phase-2 `BirthPlaceSearch` and `WhyWeAsk`; hydrates from `UserBirthDataStore`, writes back on save; manual-coordinates fallback
 - [x] **[2026-05-08]** `PrivacyDashboardView` — "what's on this device / what's on our server / what's never stored" with live counts from SwiftData and UserDefaults
-- [ ] Manage subscription deep link — unblocked by RevenueCat core wiring, `docs/CAPABILITIES-PLAN.md` §1
-- [ ] Restore purchases action + toast — unblocked by RevenueCat core wiring, `docs/CAPABILITIES-PLAN.md` §1
-- [ ] Sign out flow — depends on Sign in with Apple, `docs/CAPABILITIES-PLAN.md` §3
+- [x] **[2026-07-01]** Manage subscription deep link — opens the App Store subscriptions page from Settings. `docs/CAPABILITIES-PLAN.md` §1
+- [x] **[2026-07-01]** Restore purchases action + toast — Settings row calls `IAPManager.restorePurchases()`, shows a `LuminaSnackbarView` result. `docs/CAPABILITIES-PLAN.md` §1
+- [x] **[2026-07-01]** Sign out flow — Settings "Sign out" row via `AuthManager.signOut()`; clears Keychain session only, never local SwiftData. `docs/CAPABILITIES-PLAN.md` §3
 - [ ] `PrivacyDashboardView` ("what we know / what we don't")
 - [ ] Export-my-data → JSON archive via `.fileExporter`
 - [ ] Delete-account flow (3-step + 30-day grace + local wipe)
@@ -340,10 +357,11 @@ Release / store (this commit):
 > Full plan (Xcode capabilities, code, owner action items, sequencing):
 > `docs/CAPABILITIES-PLAN.md`.
 
-- [ ] RevenueCat core wiring — `Purchases.configure()`, entitlement mapping, real purchase call at every existing paywall/gate call site. No new Xcode capability (IAP is on by default). Unblocked today except for a real `REVENUECAT_API_KEY_IOS` + RevenueCat dashboard config. Plan §1.
-- [ ] OneSignal core wiring — `AppDelegate` init, Push Notifications capability + entitlement, token registration, tie into `NotificationPermission`. Scaffolding unblocked; end-to-end needs a signed device build. Plan §2.
-- [ ] Associated Domains / universal links — `LuminaDeepLink` parses `https://lumina.app/...` alongside `lumina://`, migrate the QR share payload. Hard-blocked on the `lumina.app` domain existing (same blocker as the Phase 15 privacy/terms pages). Plan §4.
-- [ ] Background Modes (`audio`) — add only when Phase 5's audio player ships; not needed today. Plan §5.
+- [x] **[2026-07-01]** RevenueCat core wiring — `IAPManager` calls `Purchases.configure/purchase/restore` for real, dev-safe no-op without a real key; `PremiumStatus` mirror; wired into onboarding trial + Settings "Manage subscription"/"Restore purchases". No new Xcode capability needed. Still needs a real `REVENUECAT_API_KEY_IOS` + RevenueCat dashboard config to do anything live. Plan §1.
+- [x] **[2026-07-01]** OneSignal core wiring — `PushNotificationManager` + `AppDelegate` init + `NotificationPermission` routing (one prompt, not two) + Palm waitlist tag. Push Notifications capability + entitlement added to `project.yml` (broadcast-capability key is best-effort, needs verification against a live Xcode capability editor). End-to-end push delivery still needs a signed device build. Plan §2.
+- [x] **[2026-07-01]** Sign in with Apple — `AuthManager` (Keychain session, works standalone) + `SignInView` + `SupabaseAuthService` (best-effort identity-token exchange, no-ops until Supabase exists) + real Settings row (sign in / sign out). Plan §3.
+- [x] **[2026-07-01]** Associated Domains / universal links — `LuminaDeepLink` parses `https://lumina.app/...` alongside `lumina://`; QR share migrated; `web/apple-app-site-association` + `web/README.md` ready to deploy once the domain exists. Plan §4.
+- [ ] Background Modes (`audio`) — deliberately **not** added yet; add only when Phase 5's audio player ships. Adding it now would recreate the exact "capability with nothing behind it" anti-pattern this audit exists to fix. Plan §5.
 
 ### SwiftData migrations
 - [ ] `SchemaMigrationPlan` from version 1 onward (no shipping without one)

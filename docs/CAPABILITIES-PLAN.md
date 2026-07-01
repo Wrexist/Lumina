@@ -20,6 +20,38 @@ zero benefit. No further action on HealthKit.
 
 ---
 
+## Status — [2026-07-01]
+
+Items 1–4 are implemented and pushed (branch `claude/app-capabilities-plan-br64fe`):
+
+- **§1 IAP** — `IAPManager` calls the real RevenueCat SDK; `PremiumStatus` is
+  the MainActor-observable mirror; wired into onboarding's trial CTA and
+  Settings' "Manage subscription" / "Restore purchases" rows.
+- **§2 Push** — `PushNotificationManager` wraps OneSignal; `AppDelegate` now
+  initializes it; `NotificationPermission` routes through it (one prompt,
+  not two); Palm's "notify me" tags a waitlist segment. Best-effort
+  `com.apple.developer.usernotifications.channel` entitlement added for the
+  Broadcast Capability (see the caveat in §2 below — unverified literal key).
+- **§3 Sign in with Apple** — `AuthManager` + Keychain session + `SignInView`
+  fully work standalone; `SupabaseAuthService` layers the identity-token
+  exchange on top best-effort (silently no-ops until Supabase exists).
+  Settings' row is real: sign in / sign out.
+- **§4 Universal links** — `LuminaDeepLink` accepts both schemes; the QR
+  share flow emits `https://lumina.app/share/...`; `web/apple-app-site-association`
+  + `web/README.md` are ready to deploy once the domain exists.
+- **§5 Background Modes** — **not added**. Deliberately deferred: there is no
+  audio feature yet to justify the capability (Phase 5 is still blocked on
+  ElevenLabs), and adding a capability with nothing behind it is the same
+  anti-pattern this whole audit exists to fix. Revisit when Phase 5 ships.
+
+None of items 2–4 can be end-to-end verified without the respective owner
+provisioning (OneSignal app + APNs key, Supabase project, `lumina.app`
+domain) and, for push/Sign in with Apple specifically, a signed device
+build — CI can only confirm these compile and behave correctly in their
+dev-safe no-op state.
+
+---
+
 ## Summary — what to build, what's blocked, what order
 
 | # | Item | New Xcode capability | Code work | Hard-blocked on | Can build now? |
