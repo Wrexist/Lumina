@@ -137,8 +137,13 @@ struct OnboardingFlowView: View {
             paywall.recordRescueShown()
         }
         paywallPresented = false
-        // TODO(lumina): trigger RevenueCat purchase flow before completing
-        persistAndComplete()
+        // Never trap the user behind a stuck paywall — success, failure, and
+        // user-cancellation all land on the same "continue free" completion,
+        // matching `handleContinueFree`'s philosophy below.
+        Task {
+            _ = try? await IAPManager.shared.purchaseCurrentOffering()
+            persistAndComplete()
+        }
     }
 
     private func handleContinueFree() {

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Phase-12 settings shell. Ships now (rather than later in the roadmap)
 /// because the nav-bar gear icon was a dead end without it — and the
@@ -12,6 +13,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var preferences = AppPreferences.shared
+    @State private var restoreMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -31,6 +33,8 @@ struct SettingsView: View {
                     Button("Done") { dismiss() }
                 }
             }
+            .overlay(alignment: .bottom) { restoreBanner }
+            .animation(.smooth, value: restoreMessage)
         }
     }
 
@@ -38,9 +42,25 @@ struct SettingsView: View {
 
     private var accountSection: some View {
         Section("Account") {
-            SettingsRow(title: "Manage subscription", trailing: .badge("Soon"))
-            SettingsRow(title: "Restore purchases", trailing: .badge("Soon"))
+            Button(action: openManageSubscription) {
+                SettingsRow(title: "Manage subscription", trailing: nil)
+            }
+            .buttonStyle(.plain)
+            Button(action: restorePurchases) {
+                SettingsRow(title: "Restore purchases", trailing: nil)
+            }
+            .buttonStyle(.plain)
             SettingsRow(title: "Sign in with Apple", trailing: .badge("Soon"))
+        }
+    }
+
+    @ViewBuilder
+    private var restoreBanner: some View {
+        if let restoreMessage {
+            LuminaSnackbarView(message: restoreMessage, actionTitle: "Dismiss") {
+                self.restoreMessage = nil
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
 
@@ -108,6 +128,26 @@ struct SettingsView: View {
         let short = info?["CFBundleShortVersionString"] as? String ?? "0.0"
         let build = info?["CFBundleVersion"] as? String ?? "0"
         return "\(short) (\(build))"
+    }
+
+    // MARK: - Actions
+
+    private func openManageSubscription() {
+        guard let url = URL(string: "itms-apps://apps.apple.com/account/subscriptions") else { return }
+        UIApplication.shared.open(url)
+    }
+
+    private func restorePurchases() {
+        Task {
+            do {
+                let isPremium = try await IAPManager.shared.restorePurchases()
+                Haptics.success.play()
+                restoreMessage = isPremium ? "Your Lumina Plus subscription is restored." : "No active subscription found."
+            } catch {
+                Haptics.failure.play()
+                restoreMessage = "Couldn't restore purchases right now. Try again in a moment."
+            }
+        }
     }
 }
 
