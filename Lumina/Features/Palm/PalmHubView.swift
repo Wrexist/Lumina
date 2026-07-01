@@ -90,7 +90,7 @@ struct PalmHubView: View {
     }
 
     private func handleNotifyMe() {
-        // TODO(lumina): wire to Anthropic email capture or OneSignal segment (Phase 11)
+        PushNotificationManager.setTag(key: "palm_waitlist", value: "true")
         Haptics.medium.play()
     }
 }
