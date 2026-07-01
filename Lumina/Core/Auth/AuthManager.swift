@@ -158,8 +158,15 @@ final class AuthManager {
     }
 
     private func clearLocalSession() {
-        session = nil
-        try? keychain.delete()
+        // Delete the persisted session first; only drop the in-memory copy once
+        // the Keychain entry is actually gone. Clearing `session` on a failed
+        // delete would let the old session restore on next launch.
+        do {
+            try keychain.delete()
+            session = nil
+        } catch {
+            logger.error("failed to clear Keychain auth session: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     private static func displayName(from components: PersonNameComponents?) -> String? {

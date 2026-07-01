@@ -113,7 +113,7 @@ struct ShareQRView: View {
             let shared = SharedBirthData(from: birthData)
             let json = try JSONEncoder.luminaShare.encode(shared)
             let payload = json.base64URLEncodedString()
-            let url = "https://lumina.app/share/\(payload)"
+            let url = "https://\(LuminaDeepLink.universalLinkHost)/share/\(payload)"
             qrImage = Self.makeQR(for: url)
             if qrImage == nil {
                 error = .unknown(underlyingMessage: "Couldn't render the QR code.")

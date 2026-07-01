@@ -6,6 +6,10 @@ import Foundation
 /// navigation. See `docs/NAVIGATION.md` §7 and
 /// `docs/CAPABILITIES-PLAN.md` §4.
 enum LuminaDeepLink: Equatable, Sendable {
+    /// The universal-link host this parser and QR/share generation must agree
+    /// on. Kept here so both sides stay in sync if the domain ever changes.
+    static let universalLinkHost = "lumina.app"
+
     case today
     case chart(planet: String?)
     case palmScan
@@ -70,7 +74,7 @@ enum LuminaDeepLink: Equatable, Sendable {
             // `lumina:///chart`).
             return (url.host.map { [$0] } ?? []) + components
         case "https":
-            guard url.host == "lumina.app" else { return nil }
+            guard url.host == Self.universalLinkHost else { return nil }
             // Here the host is the real domain, not a route component —
             // the route lives entirely in the path (`/chart/...`).
             return components

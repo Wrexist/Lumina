@@ -41,7 +41,9 @@ enum PushNotificationManager {
     /// `requestPermission()` so they can branch on "OneSignal isn't set up,
     /// fall back to the direct system API" vs. "OneSignal is set up and the
     /// user simply denied" — the latter must never trigger a second prompt.
-    static var isAvailable: Bool { isConfigured }
+    static var isAvailable: Bool {
+        isConfigured
+    }
 
     /// Configures the OneSignal SDK. Safe to call with an empty or
     /// placeholder `appID` (dev/CI builds before the OneSignal app exists)

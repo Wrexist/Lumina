@@ -17,6 +17,9 @@ struct OnboardingFlowView: View {
     @State private var paywallVariant: PaywallOfferView.Variant = .initial
     @Environment(\.scenePhase) private var scenePhase
     @State private var pendingDestination: LuminaDeepLink?
+    /// One-time completion guard: the trial purchase runs in a `Task`, so a
+    /// second final-step tap could otherwise call `onComplete` twice.
+    @State private var didComplete = false
     /// Called when onboarding finishes. The optional deep link is the tab the
     /// user chose on the "what next" screen (nil = land on Today).
     let onComplete: (LuminaDeepLink?) -> Void
@@ -170,6 +173,8 @@ struct OnboardingFlowView: View {
     /// Writes the captured `BirthData` into the persistent store before
     /// completing onboarding so every other tab can read from one source.
     private func persistAndComplete() {
+        guard !didComplete else { return }
+        didComplete = true
         if let birthData = state.makeBirthData() {
             UserBirthDataStore.userDefaults.save(birthData)
         }

@@ -10,7 +10,7 @@ file (today) that a future static host (or the same one serving the Phase 15
 
 Must be deployed so that it is reachable at exactly:
 
-```
+```text
 https://lumina.app/.well-known/apple-app-site-association
 ```
 

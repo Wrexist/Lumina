@@ -44,10 +44,14 @@ struct CelestialHeroCard: View {
         .padding(LuminaSpacing.lg)
     }
 
-    private var dateLabel: String {
+    private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE · MMM d"
-        return formatter.string(from: date)
+        return formatter
+    }()
+
+    private var dateLabel: String {
+        Self.dateFormatter.string(from: date)
     }
 }
 

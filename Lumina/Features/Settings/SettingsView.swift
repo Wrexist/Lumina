@@ -14,6 +14,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var preferences = AppPreferences.shared
     @State private var restoreMessage: String?
+    @State private var isRestoringPurchases = false
     @State private var authManager = AuthManager.shared
     @State private var signInPresented = false
 
@@ -55,6 +56,7 @@ struct SettingsView: View {
                 SettingsRow(title: "Restore purchases", trailing: nil)
             }
             .buttonStyle(.plain)
+            .disabled(isRestoringPurchases)
             signInRow
         }
     }
@@ -162,7 +164,10 @@ struct SettingsView: View {
     }
 
     private func restorePurchases() {
+        guard !isRestoringPurchases else { return }
+        isRestoringPurchases = true
         Task {
+            defer { isRestoringPurchases = false }
             do {
                 let isPremium = try await IAPManager.shared.restorePurchases()
                 Haptics.success.play()

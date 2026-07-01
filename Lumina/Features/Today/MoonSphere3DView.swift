@@ -52,7 +52,7 @@ struct MoonSphere3DView: UIViewRepresentable {
     /// No-op: `phase` is fixed for the lifetime of the sheet that presents
     /// this view (it's passed in once from `MoonPhaseCard`'s already-loaded
     /// `@State`), so there is never a new phase to re-light the scene for.
-    func updateUIView(_ view: SCNView, context: Context) { }
+    func updateUIView(_ view: SCNView, context: Context) {}
 
     // MARK: - Scene construction
 
