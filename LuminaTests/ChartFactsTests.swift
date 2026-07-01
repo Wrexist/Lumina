@@ -17,7 +17,9 @@ final class ChartFactsTests: XCTestCase {
     func testStatesWhenBirthTimeIsUnknown() {
         let summary = ChartFacts.summary(of: Self.chart(planets: [("Sun", 5, false)], houses: nil, aspects: []))
         XCTAssertTrue(summary.contains("Birth time unknown"))
-        XCTAssertFalse(summary.contains("Ascendant"))
+        // No rising sign should be *stated* — the "unavailable" note mentions the
+        // word "Ascendant", so assert on the placement format, not the bare word.
+        XCTAssertFalse(summary.contains("(rising) in"))
     }
 
     func testIncludesAscendantWhenHousesKnown() {
