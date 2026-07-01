@@ -1,0 +1,183 @@
+/* App Store marketing screenshot templates — rendered via Playwright at
+   1290x2796 (long-standing accepted Pro-Max-class portrait size; re-render at
+   whatever exact pixel size App Store Connect currently requests for your
+   target device — these are plain HTML/CSS, so that's a one-line change). */
+
+@font-face {
+  font-family: "Fraunces";
+  font-style: italic;
+  font-weight: 100 900;
+  src: url("../../website/assets/fonts/fraunces-latin-wght-italic.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 100 900;
+  src: url("../../website/assets/fonts/fraunces-latin-wght-normal.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  src: url("../../website/assets/fonts/inter-latin-500-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  src: url("../../website/assets/fonts/inter-latin-600-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 500;
+  src: url("../../website/assets/fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2");
+}
+
+:root {
+  --ink-black: #1A1A1F;
+  --parchment: #F5F0E6;
+  --celestial-blue: #3D5A8C;
+  --muted-gold: #C9A96E;
+  --midnight: #0B1437;
+  --blush: #E5C8C2;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1290px; height: 2796px; overflow: hidden; }
+body {
+  font-family: "Inter", sans-serif;
+  position: relative;
+}
+
+.frame {
+  width: 1290px;
+  height: 2796px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.frame.on-dark {
+  background: radial-gradient(ellipse 120% 70% at 50% -5%, #142054 0%, var(--midnight) 55%, #070d29 100%);
+  color: var(--parchment);
+}
+.frame.on-light {
+  background: var(--parchment);
+  color: var(--ink-black);
+}
+
+.caption-zone {
+  padding: 150px 96px 40px;
+  text-align: center;
+}
+.eyebrow {
+  display: inline-block;
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 500;
+  font-size: 30px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-gold);
+  margin-bottom: 28px;
+}
+.on-light .eyebrow { color: var(--celestial-blue); }
+.caption {
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 92px;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+}
+.subcaption {
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  font-size: 38px;
+  line-height: 1.4;
+  margin-top: 34px;
+  opacity: 0.75;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.device-zone {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+/* No forced aspect ratio — the device wraps each screenshot's own natural
+   shape, so there is never a mismatch to crop or letterbox away. Sized wide
+   enough to fill most of the canvas. `.tall.crop-top` is the one deliberate
+   exception: slide 4's source is a full scrolled page (far taller than any
+   reasonable frame), so it opts into a real phone-screen ratio and crops to
+   "the top of more content below" — a natural treatment for scrollable UI,
+   just not a fit for the single-card/single-graphic captures used elsewhere. */
+.device {
+  border-radius: 72px;
+  border: 14px solid var(--ink-black);
+  background: var(--parchment);
+  box-shadow: 0 60px 140px -30px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  width: 1150px;
+}
+.device img {
+  display: block;
+  width: 100%;
+}
+.device.tall {
+  aspect-ratio: 390 / 844;
+}
+.device.tall img {
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.on-dark .device { border-color: #050a1e; }
+
+/* Brand mark, bottom-anchored on every slide for a consistent close */
+.brandmark {
+  position: absolute;
+  bottom: 64px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-size: 34px;
+  z-index: 5;
+}
+.brandmark img { width: 40px; height: 40px; }
+
+/* Slide 6 — brand close, no device */
+.manifesto-zone {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 130px;
+  text-align: center;
+  gap: 56px;
+}
+.manifesto-zone .mark {
+  width: 150px;
+  height: 150px;
+}
+.manifesto-zone .caption { font-size: 118px; }
+
+.sparkle {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  background: var(--muted-gold);
+  clip-path: polygon(50% 0%, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0% 50%, 38% 38%);
+  opacity: 0.8;
+}
+.sparkle.dim { opacity: 0.35; transform: scale(0.6); }
+.sparkle.big { transform: scale(1.6); }
