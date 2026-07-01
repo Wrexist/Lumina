@@ -11,8 +11,43 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Cheap up-front check so we don't burn a 45-min macOS runner on a
+  # backend-only change, or spin up Node for an iOS-only change. Secret
+  # scanning stays unconditional below — it's ~4s and should cover every
+  # file type regardless of which area changed.
+  changes:
+    name: Detect changed areas
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      ios: ${{ steps.filter.outputs.ios }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/ci.yml'
+            ios:
+              - 'Lumina/**'
+              - 'LuminaTests/**'
+              - 'LuminaWidget/**'
+              - 'ios/**'
+              - 'project.yml'
+              - 'project.xcconfig'
+              - '.swiftlint.yml'
+              - '.swiftformat'
+              - 'scripts/**'
+              - '.github/workflows/ci.yml'
+
   backend:
     name: Backend — typecheck · test
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -61,6 +96,8 @@ jobs:
 
   ios:
     name: iOS — generate · build · lint · test
+    needs: changes
+    if: needs.changes.outputs.ios == 'true'
     runs-on: macos-15
     timeout-minutes: 45
 
