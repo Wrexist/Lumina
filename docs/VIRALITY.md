@@ -47,6 +47,8 @@ Priority order — each ships as its own CI-verified commit:
 6. ⏳ **"Cosmic weather" week-ahead** — a weekly view of what's coming (reuses
    `/forecast`), for anticipation + a weekly return reason.
 
+8. ✅ **Onboarding share-moment** — the chart reveal now shows your cosmic signature + a one-tap share, capturing the first-impression wow.
+
 ## What to deliberately NOT do
 
 - Streak counters, daily-login rewards, confetti, XP/levels — off-brand and the
