@@ -1,0 +1,60 @@
+/*
+  Design tokens — mirrors the native app's Design/Tokens/ system so the site
+  reads as the same product, not a separate marketing skin.
+  Source of truth: Lumina/Design/Tokens/{LuminaColors,LuminaTypography,LuminaSpacing}.swift
+
+  Fonts: the app's PP Editorial New / Söhne / GT America Mono are paid
+  licenses not cleared for web embedding, so the site uses free equivalents
+  with the same character — Fraunces (warm editorial serif) in place of PP
+  Editorial New, Inter in place of Söhne, JetBrains Mono in place of GT
+  America Mono.
+*/
+
+:root {
+  /* Brand palette — exact hex values from LuminaColors.swift */
+  --ink-black: #1A1A1F;
+  --parchment: #F5F0E6;
+  --celestial-blue: #3D5A8C;
+  --muted-gold: #C9A96E;
+  --midnight: #0B1437;
+  --blush: #E5C8C2;
+
+  /* Derived surfaces */
+  --parchment-dim: #EDE6D6;
+  --ink-soft: rgba(26, 26, 31, 0.7);
+  --ink-faint: rgba(26, 26, 31, 0.5);
+  --ink-hairline: rgba(26, 26, 31, 0.12);
+  --parchment-on-midnight: rgba(245, 240, 230, 0.92);
+  --parchment-on-midnight-soft: rgba(245, 240, 230, 0.66);
+  --gold-hairline: rgba(201, 169, 110, 0.35);
+  --glass-fill: rgba(245, 240, 230, 0.6);
+  --glass-fill-dark: rgba(11, 20, 55, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.4);
+
+  /* Typography */
+  --font-display: "Fraunces", "PP Editorial New", Georgia, serif;
+  --font-body: "Inter", "Söhne", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", "GT America Mono", ui-monospace, monospace;
+
+  /* 8pt grid — mirrors LuminaSpacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+  --space-3xl: 96px;
+  --space-4xl: 144px;
+
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 32px;
+
+  --content-max: 1180px;
+  --content-narrow: 760px;
+
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 220ms;
+  --dur-med: 480ms;
+  --dur-slow: 900ms;
+}
