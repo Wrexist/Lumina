@@ -1,28 +1,23 @@
 import SwiftUI
 
-/// "Ask your chart" — the deterministic, grounded version. The user taps a
-/// curated question; the answer is read straight from their real chart via
-/// `ChartOracle`. Pushed from the Chart tab. A free-text, language-model
-/// version layers on later (needs the backend reading endpoint), but the
-/// honest, unblocked experience ships now.
+/// "Ask your chart". Two grounded modes: a free-text question answered by the
+/// server-side LLM (when configured), and a curated set answered deterministically
+/// straight from the chart via `ChartOracle`. The curated set always works — no
+/// key required — so the screen is never empty. Pushed from the Chart tab.
 struct ChartQAView: View {
     let chart: NatalChart
     @State private var selected: ChartQuestion = .bigThree
+    @State private var viewModel = ChartQAViewModel()
+    @State private var draft = ""
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
-                Text("Tap a question — every answer is read straight from your chart, never a generic horoscope.")
-                    .font(LuminaTypography.bodyLight)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-
-                VStack(spacing: LuminaSpacing.sm) {
-                    ForEach(ChartQuestion.allCases) { question in
-                        questionRow(question)
-                    }
+                intro
+                if viewModel.offersConversation {
+                    conversation
                 }
-
-                answerCard
+                curated
             }
             .padding(LuminaSpacing.lg)
         }
@@ -30,8 +25,88 @@ struct ChartQAView: View {
         .navigationTitle("Ask your chart")
         .navigationBarTitleDisplayMode(.inline)
     }
+}
 
-    private func questionRow(_ question: ChartQuestion) -> some View {
+extension ChartQAView {
+    var intro: some View {
+        Text("Every answer is read straight from your real chart — never a generic horoscope.")
+            .font(LuminaTypography.bodyLight)
+            .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Free-text (LLM) mode
+
+    var conversation: some View {
+        LuminaCard(surface: .glass) {
+            VStack(alignment: .leading, spacing: LuminaSpacing.md) {
+                Text("Ask anything")
+                    .font(LuminaTypography.heading)
+                LuminaTextField(
+                    title: "Your question",
+                    text: $draft,
+                    placeholder: "How do I come across to new people?",
+                    maxCharacters: 200
+                )
+                LuminaButton(
+                    title: "Ask your chart",
+                    variant: .primary,
+                    isLoading: viewModel.isLoading,
+                    isEnabled: !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ) {
+                    Task { await viewModel.ask(draft, chart: chart) }
+                }
+                conversationResult
+            }
+        }
+    }
+
+    @ViewBuilder
+    var conversationResult: some View {
+        switch viewModel.state {
+        case .idle, .loading:
+            EmptyView()
+        case .answer(let text):
+            Text(text)
+                .font(LuminaTypography.body)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
+                .frame(maxWidth: .infinity, alignment: .leading)
+        case .failed(let error):
+            conversationNote(error)
+        }
+    }
+
+    @ViewBuilder
+    func conversationNote(_ error: LuminaError) -> some View {
+        // A missing server key is a "coming soon", not a scary failure — the
+        // curated answers below still work either way.
+        let comingSoon = error == .missingConfiguration(key: "AnthropicAPIKey")
+        Text(comingSoon
+            ? "Conversational readings are being prepared. In the meantime, the questions below are answered straight from your chart."
+            : error.userBody)
+            .font(LuminaTypography.bodyLight)
+            .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Curated (deterministic) mode
+
+    var curated: some View {
+        VStack(alignment: .leading, spacing: LuminaSpacing.md) {
+            Text(viewModel.offersConversation ? "OR PICK A QUESTION" : "PICK A QUESTION")
+                .font(LuminaTypography.mono)
+                .tracking(1.4)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            VStack(spacing: LuminaSpacing.sm) {
+                ForEach(ChartQuestion.allCases) { question in
+                    questionRow(question)
+                }
+            }
+            answerCard
+        }
+    }
+
+    func questionRow(_ question: ChartQuestion) -> some View {
         Button {
             selected = question
             Haptics.selection.play()
@@ -63,7 +138,7 @@ struct ChartQAView: View {
         .accessibilityValue(selected == question ? "Selected" : "")
     }
 
-    private var answerCard: some View {
+    var answerCard: some View {
         LuminaCard {
             Text(ChartOracle.answer(to: selected, chart: chart))
                 .font(LuminaTypography.body)

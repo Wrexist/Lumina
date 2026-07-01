@@ -10,6 +10,7 @@ import { moonRoutes } from "./routes/moon.ts";
 import { progressionsRoutes } from "./routes/progressions.ts";
 import { retrogradesRoutes } from "./routes/retrogrades.ts";
 import { returnsRoutes } from "./routes/returns.ts";
+import { interpretRoutes } from "./routes/interpret.ts";
 import { AstronomyEngineEphemeris } from "./services/astronomyEngineEphemeris.ts";
 
 export async function buildServer(config: Config): Promise<FastifyInstance> {
@@ -56,6 +57,7 @@ export async function buildServer(config: Config): Promise<FastifyInstance> {
   await app.register(progressionsRoutes, { ephemeris, config });
   await app.register(retrogradesRoutes, { ephemeris, config });
   await app.register(returnsRoutes, { ephemeris, config });
+  await app.register(interpretRoutes, { config });
 
   return app;
 }

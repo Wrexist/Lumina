@@ -39,17 +39,19 @@ final class DesignTokensAndErrorTests: XCTestCase {
         XCTAssertEqual(mapped, .server(status: 422))
     }
 
-    func testMapsAIMissingAPIKey() {
-        let mapped = LuminaError.from(LuminaAIClient.ClientError.missingAPIKey)
+    func testMapsAINotConfiguredToAnthropicKey() {
+        let mapped = LuminaError.from(LuminaAIClient.ClientError.notConfigured)
         XCTAssertEqual(mapped, .missingConfiguration(key: "AnthropicAPIKey"))
     }
 
-    func testMapsAINotImplementedToUnknown() {
-        if case .unknown = LuminaError.from(LuminaAIClient.ClientError.notImplemented) {
-            // expected
-        } else {
-            XCTFail("expected .unknown")
-        }
+    func testMapsAIMissingConfigurationToBackend() {
+        let mapped = LuminaError.from(LuminaAIClient.ClientError.missingConfiguration)
+        XCTAssertEqual(mapped, .missingConfiguration(key: "SwissEphServiceURL"))
+    }
+
+    func testMapsAIHTTPErrorToServerStatus() {
+        let mapped = LuminaError.from(LuminaAIClient.ClientError.httpError(status: 502, body: ""))
+        XCTAssertEqual(mapped, .server(status: 502))
     }
 
     func testMapsAIInvalidResponse() {

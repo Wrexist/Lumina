@@ -446,3 +446,21 @@ No PIL/cairosvg/ImageMagick/sharp on the runner, but Node's `zlib.deflateSync` +
 
 **[2026-06] Coverage CI gate deferred on purpose**
 A hard coverage gate needs a measured baseline to avoid breaking CI, and the test step's coverage flags can't be validated from Linux. Rather than risk the owner's only build loop with an unvalidated gate, leave it for a Mac run that can observe the baseline first.
+
+---
+
+## [2026-07] Home-screen widget shipped, and the TestFlight path
+
+**[2026-07] A WidgetKit extension + App Group entitlements build green on the simulator CI with `CODE_SIGNING_ALLOWED=NO`**
+The flagship retention feature (a home-screen Cosmic Signature widget) was the highest blind-build risk in the no-Mac workflow: a new XcodeGen `app-extension` target, App Group entitlements on two targets, and extension embedding — none runnable locally. It passed CI on the **first** try. Keys:
+- Add the widget in `project.yml` as `type: app-extension` with `info:`/`entitlements:` **properties** (XcodeGen generates both plists — no committed files), `sources:` including the app's shared `WidgetSharedStore.swift`, and depend on it from the app with `- target: LuminaWidget` + `embed: true`.
+- App + widget **App Group** via `entitlements: properties: com.apple.security.application-groups: [group.app.lumina.ios]`.
+- The one change that de-risks the whole class of "requires a development team / provisioning profile" failures: pass **`CODE_SIGNING_ALLOWED=NO`** to the simulator `xcodebuild build`/`test`. Signing is skipped, so entitlements aren't validated against a profile; the app still compiles and the extension still embeds. Real App-Group data-sharing only needs to work on a *signed* build (device/TestFlight), which CI never exercises.
+- Widget code can't see `LuminaColors`/`LuminaSpacing`/`ChartGlyphs` (app-target). Use `Color(red:green:blue:)` (also dodges `no_hex_color_literals`), system `.serif`/`.monospaced` fonts, and a local `WidgetMetric` enum for spacing. `no_magic_spacing_numbers` only fires on 2-digit literals after `padding|spacing|frame.width/height`, not on named constants or `.frame(width:)`.
+- App writes the snapshot from the single place a chart becomes `.ready` (`BirthChartViewModel.setReady`) → `CosmicSignatureMaker.make` → `WidgetSharedStore.write` → `WidgetCenter.shared.reloadAllTimelines()`. Store degrades to `.standard` UserDefaults when the App Group isn't provisioned, so it's a harmless no-op in sim/CI.
+
+**[2026-07] The PR's CI artifact can NOT go to TestFlight — it's an unsigned simulator build**
+`ci.yml` builds `-destination "platform=iOS Simulator"` with `CODE_SIGNING_ALLOWED=NO`. TestFlight needs a **signed device `.ipa`** (`generic/platform=iOS`). Added a separate **`ios-testflight.yml`** (workflow_dispatch) modeled on the Silicon-Tech-Tycoon repo: App Store Connect **API-key cloud signing** (no `.p12`/keychain) — decode the `.p8` to `~/.appstoreconnect/private_keys/AuthKey_<KEYID>.p8`, then `xcodebuild archive -allowProvisioningUpdates -authenticationKeyPath/ID/IssuerID CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM=…` → `-exportArchive` with `ios/ExportOptions.plist` (`method: app-store-connect`) → `xcrun altool --upload-app`. Only 3 new secrets: `APP_STORE_CONNECT_KEY_ID`, `_ISSUER_ID`, `_API_KEY_BASE64` (+ the existing app-runtime secrets). Full runbook in `docs/TESTFLIGHT.md`; copy-paste store listing in `docs/APP-STORE-LISTING.md`.
+
+**[2026-07] Version indirection so app + appex never drift**
+App and widget `CFBundleShortVersionString`/`CFBundleVersion` now reference `$(MARKETING_VERSION)`/`$(CURRENT_PROJECT_VERSION)` (defaults `0.1.0`/`1` in `settings.base`). The TestFlight workflow overrides `CURRENT_PROJECT_VERSION` on the command line, which applies to every target in the scheme — so each upload gets a unique build number and the appex version always matches the host app (a mismatch is an ASC rejection).

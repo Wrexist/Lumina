@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Export for TestFlight / App Store. Xcode 15.3+ renamed the old
+         "app-store" method to "app-store-connect". -->
+    <key>method</key>
+    <string>app-store-connect</string>
+
+    <key>teamID</key>
+    <string>S3U8B8HH96</string>
+
+    <!-- Cloud signing: Xcode manages the distribution cert + profiles for the
+         app AND the widget extension, authenticated by the ASC API key passed
+         to xcodebuild. -->
+    <key>signingStyle</key>
+    <string>automatic</string>
+
+    <!-- Ship dSYMs so App Store Connect can symbolicate crash reports. -->
+    <key>uploadSymbols</key>
+    <true/>
+
+    <!-- Let Xcode strip Swift symbols from the shipped binary. -->
+    <key>stripSwiftSymbols</key>
+    <true/>
+
+    <!-- We stamp the build number ourselves (CURRENT_PROJECT_VERSION), so
+         don't let Xcode auto-manage it. -->
+    <key>manageAppVersionAndBuildNumber</key>
+    <false/>
+</dict>
+</plist>

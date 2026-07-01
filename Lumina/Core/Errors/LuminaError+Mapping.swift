@@ -38,12 +38,16 @@ extension LuminaError {
 
     private static func mapAI(_ error: LuminaAIClient.ClientError) -> LuminaError {
         switch error {
-        case .missingAPIKey:
+        case .missingConfiguration:
+            return .missingConfiguration(key: "SwissEphServiceURL")
+        case .notConfigured:
+            // Server has no Anthropic key yet — surfaced to the user as a gentle
+            // "coming soon", never a hard failure.
             return .missingConfiguration(key: "AnthropicAPIKey")
-        case .notImplemented:
-            return .unknown(underlyingMessage: "This feature is still being built.")
         case .invalidResponse:
             return .server(status: 0)
+        case .httpError(let status, _):
+            return .server(status: status)
         }
     }
 

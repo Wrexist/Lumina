@@ -7,6 +7,26 @@
 
 ---
 
+## 📌 Latest — Growth + Release infra (2026-07, branch `claude/adoring-euler-yEDvq`)
+
+Viral/dopamine features (all CI-green, merged via PR #5):
+- [x] Cosmic signature — identity card + richer shareable profile
+- [x] Shareable compatibility result (send-it-to-them loop)
+- [x] Share today's reading (daily distribution loop)
+- [x] New-moon / full-moon rituals on the Moon card
+- [x] "What makes your chart rare" curiosity-gap standout
+- [x] Onboarding reveal → instant shareable "meet your signature" moment
+- [x] **Home-screen Cosmic Signature widget** (Sun · Moon · Rising) — WidgetKit extension, App Group, green first try
+
+Release / store (this commit):
+- [x] `ios-testflight.yml` — signed device archive → TestFlight via ASC API-key cloud signing (workflow_dispatch)
+- [x] `ios/ExportOptions.plist`, version indirection (app+widget in lockstep)
+- [x] `docs/TESTFLIGHT.md` (secret checklist + Apple-side runbook) · `docs/APP-STORE-LISTING.md` (copy-paste, ASO-optimized)
+- [!] Actual TestFlight upload — blocked on Apple Developer signing + the 3 ASC secrets (owner action; see `docs/TESTFLIGHT.md`)
+- [ ] Conversational "Ask your chart" — blocked on Anthropic key provisioning
+
+---
+
 ## 🔥 Active Sprint — Phase 1: Navigation Shell + Design System v2
 
 > Branch: `claude/roadmap-navigation-improvements-yqxV2`

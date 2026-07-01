@@ -22,6 +22,14 @@ settings:
     # input/output file declarations if the script is ever removed.)
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     CLANG_ENABLE_MODULES: YES
+    # Single source of truth for the marketing + build number, referenced by
+    # both the app and widget Info.plists via $(MARKETING_VERSION) /
+    # $(CURRENT_PROJECT_VERSION). The TestFlight workflow overrides
+    # CURRENT_PROJECT_VERSION on the xcodebuild command line so every upload
+    # gets a unique build number — and app + appex stay in lockstep (a
+    # mismatch is an App Store Connect rejection).
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
     # Warnings-as-errors and upcoming-features are applied per-target below
     # so they only gate our own code, not SPM dependency builds.
 
@@ -65,8 +73,8 @@ targets:
       path: Lumina/Resources/Info.plist
       properties:
         CFBundleDisplayName: Lumina
-        CFBundleShortVersionString: "0.1.0"
-        CFBundleVersion: "1"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
@@ -140,9 +148,10 @@ targets:
       path: LuminaWidget/Info.plist
       properties:
         CFBundleDisplayName: Lumina
-        # Must match the host app's version, or embedding fails validation.
-        CFBundleShortVersionString: "0.1.0"
-        CFBundleVersion: "1"
+        # Must match the host app's version, or embedding fails validation —
+        # kept in lockstep via the shared build settings.
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
