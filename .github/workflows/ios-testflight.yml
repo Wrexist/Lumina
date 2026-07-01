@@ -1,0 +1,144 @@
+name: ios-testflight
+
+# Manual-only. Archives a SIGNED device build and uploads it to TestFlight.
+# This is the real distribution path — distinct from ci.yml, which only does an
+# unsigned *simulator* build for verification. Trigger from the Actions tab
+# ("Run workflow") once the App Store Connect secrets + Apple-side setup are in
+# place (see docs/TESTFLIGHT.md).
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "CFBundleVersion to stamp (must be higher than the last upload). Defaults to the run number."
+        required: false
+
+concurrency:
+  group: testflight-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  TEAM_ID: S3U8B8HH96          # public — same Apple Developer team as the rest of the account
+  SCHEME: Lumina
+
+jobs:
+  testflight:
+    name: Archive · export · upload
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    env:
+      # App-runtime keys injected into secrets/Config.xcconfig so the shipped
+      # binary has working services. Mirrors ci.yml — minus ANTHROPIC_API_KEY,
+      # which by design never ships in the IPA (LLM calls are server-side).
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+      REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
+      ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SWISS_EPH_SERVICE_URL: ${{ secrets.SWISS_EPH_SERVICE_URL }}
+      SWISS_EPH_API_SECRET: ${{ secrets.SWISS_EPH_API_SECRET }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install xcodegen, xcbeautify
+        run: brew install xcodegen xcbeautify
+
+      - name: Inject env -> secrets/Config.xcconfig
+        run: bash scripts/inject_env.sh
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      # The ASC API key (.p8) authenticates automatic cloud signing — Xcode
+      # creates/downloads the distribution certificate + App Store profiles on
+      # the fly, so there's no .p12 / keychain dance. altool later finds the key
+      # here automatically by its Key ID.
+      - name: Install App Store Connect API key
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ASC_KEY_ID:-}" ] || [ -z "${ASC_KEY_BASE64:-}" ]; then
+            echo "::error::APP_STORE_CONNECT_KEY_ID / _API_KEY_BASE64 are not set. See docs/TESTFLIGHT.md."
+            exit 1
+          fi
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          # Accept the secret in any common shape: already-PEM, or base64
+          # (with or without stray CR/LF from copy-paste on any OS).
+          if printf '%s' "$ASC_KEY_BASE64" | grep -q "BEGIN PRIVATE KEY"; then
+            printf '%s' "$ASC_KEY_BASE64" > "$KEY_PATH"
+          else
+            printf '%s' "$ASC_KEY_BASE64" | tr -d '\r\n ' | base64 --decode > "$KEY_PATH"
+          fi
+          grep -q "BEGIN PRIVATE KEY" "$KEY_PATH" || { echo "::error::Decoded key is not a valid .p8"; exit 1; }
+          echo "ASC_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+
+      - name: Resolve build number
+        run: |
+          set -euo pipefail
+          BUILD_NUMBER="${{ github.event.inputs.build_number }}"
+          [ -z "$BUILD_NUMBER" ] && BUILD_NUMBER="${{ github.run_number }}"
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "Stamping build $BUILD_NUMBER"
+
+      - name: Archive (signed, device)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -scheme "$SCHEME" \
+            -destination "generic/platform=iOS" \
+            -archivePath "build/Lumina.xcarchive" \
+            -skipPackagePluginValidation \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "${{ secrets.APP_STORE_CONNECT_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}" \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            archive 2>&1 | xcbeautify --renderer github-actions
+
+      - name: Export .ipa (app-store-connect)
+        run: |
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath "build/Lumina.xcarchive" \
+            -exportPath "build/export" \
+            -exportOptionsPlist "ios/ExportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "${{ secrets.APP_STORE_CONNECT_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}" \
+            2>&1 | xcbeautify --renderer github-actions
+
+      - name: Upload to TestFlight
+        run: |
+          set -euo pipefail
+          IPA=$(find build/export -name "*.ipa" | head -n 1)
+          if [ -z "$IPA" ]; then echo "::error::No .ipa produced"; exit 1; fi
+          echo "Uploading $IPA"
+          xcrun altool --upload-app --type ios \
+            --file "$IPA" \
+            --apiKey "${{ secrets.APP_STORE_CONNECT_KEY_ID }}" \
+            --apiIssuer "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}"
+
+      - name: Upload .ipa artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumina-ipa
+          path: build/export/*.ipa
+          if-no-files-found: warn
+
+      - name: Clean up API key
+        if: always()
+        run: rm -f "$HOME"/.appstoreconnect/private_keys/AuthKey_*.p8
