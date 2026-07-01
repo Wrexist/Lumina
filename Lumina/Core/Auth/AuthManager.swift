@@ -18,6 +18,7 @@ final class AuthManager {
     enum AuthError: Error, Equatable, Sendable {
         case invalidCredential
         case authorization(String)
+        case noPresentationAnchor
     }
 
     static let shared = AuthManager()
@@ -48,11 +49,20 @@ final class AuthManager {
         // generating a random nonce here, setting its SHA256 digest via
         // `request.nonce`, and passing the raw value through so the
         // exchange gets full replay protection.
+        // Resolve the presentation anchor here on the main actor, where a
+        // window reliably exists (this is only ever called from a visible
+        // sign-in sheet). Passing it into the coordinator avoids
+        // reconstructing a window in the delegate — and sidesteps iOS 26
+        // deprecating every `UIWindow` initializer except `init(windowScene:)`.
+        guard let anchor = Self.presentationAnchor() else {
+            throw AuthError.noPresentationAnchor
+        }
+
         let request = ASAuthorizationAppleIDProvider().createRequest()
         request.requestedScopes = [.fullName, .email]
 
         let controller = ASAuthorizationController(authorizationRequests: [request])
-        let coordinator = AppleSignInCoordinator()
+        let coordinator = AppleSignInCoordinator(anchor: anchor)
         controller.delegate = coordinator
         controller.presentationContextProvider = coordinator
 
@@ -159,6 +169,18 @@ final class AuthManager {
         return formatted.isEmpty ? nil : formatted
     }
 
+    /// The window to anchor the Sign in with Apple sheet on. Uses only the
+    /// non-deprecated scene-based window lookup (iOS 26 deprecates every
+    /// `UIWindow` initializer except `init(windowScene:)`), so there is no
+    /// fabricated-window fallback: a genuinely window-less app can't present
+    /// the sheet, and `signIn()` throws `.noPresentationAnchor` instead.
+    private static func presentationAnchor() -> UIWindow? {
+        let windows = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+        return windows.first(where: \.isKeyWindow) ?? windows.first
+    }
+
     private static let encoder = JSONEncoder()
     private static let decoder = JSONDecoder()
 }
@@ -185,7 +207,16 @@ private struct AppleIDCredentialResult: Sendable {
 /// and hop back via a continuation rather than touching actor-isolated
 /// state directly.
 private final class AppleSignInCoordinator: NSObject, @unchecked Sendable {
+    /// Resolved on the main actor in `AuthManager.signIn()` and only read back
+    /// (never mutated), so exposing it to the `nonisolated`
+    /// `presentationAnchor(for:)` is safe under the type's `@unchecked Sendable`.
+    private let anchor: ASPresentationAnchor
     private var continuation: CheckedContinuation<AppleIDCredentialResult, any Error>?
+
+    init(anchor: ASPresentationAnchor) {
+        self.anchor = anchor
+        super.init()
+    }
 
     /// Runs the controller and suspends until the delegate callback fires.
     /// Each coordinator instance is used for exactly one authorization
@@ -233,32 +264,8 @@ extension AppleSignInCoordinator: ASAuthorizationControllerDelegate {
 
 extension AppleSignInCoordinator: ASAuthorizationControllerPresentationContextProviding {
     nonisolated func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        MainActor.assumeIsolated {
-            AppleSignInCoordinator.anchor()
-        }
-    }
-
-    /// Resolves a presentation anchor without the no-arg `UIWindow()`
-    /// (`ASPresentationAnchor()`) initializer, which iOS 26 deprecates in
-    /// favor of `init(windowScene:)` — and which the target's
-    /// warnings-as-errors would otherwise fail the build on. Prefers the key
-    /// window, then any window, then a fresh window on the active scene.
-    @MainActor
-    private static func anchor() -> ASPresentationAnchor {
-        let windowScenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        let windows = windowScenes.flatMap(\.windows)
-        if let keyWindow = windows.first(where: \.isKeyWindow) {
-            return keyWindow
-        }
-        if let anyWindow = windows.first {
-            return anyWindow
-        }
-        if let scene = windowScenes.first {
-            return UIWindow(windowScene: scene)
-        }
-        // Unreachable while a sign-in sheet is presented (a window always
-        // exists); `init(frame:)` avoids the deprecated no-arg initializer.
-        return UIWindow(frame: .zero)
+        // The anchor was resolved on the main actor at init; just hand it back.
+        anchor
     }
 }
 
