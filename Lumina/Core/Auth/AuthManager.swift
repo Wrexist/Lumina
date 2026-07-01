@@ -185,7 +185,7 @@ private struct AppleIDCredentialResult: Sendable {
 /// and hop back via a continuation rather than touching actor-isolated
 /// state directly.
 private final class AppleSignInCoordinator: NSObject, @unchecked Sendable {
-    private var continuation: CheckedContinuation<AppleIDCredentialResult, Error>?
+    private var continuation: CheckedContinuation<AppleIDCredentialResult, any Error>?
 
     /// Runs the controller and suspends until the delegate callback fires.
     /// Each coordinator instance is used for exactly one authorization
@@ -253,7 +253,7 @@ extension AppleSignInCoordinator {
     /// `@MainActor` hops above, so touching `continuation` here is safe even
     /// though the type itself is `@unchecked Sendable`.
     @MainActor
-    func finish(_ result: Result<AppleIDCredentialResult, Error>) {
+    func finish(_ result: Result<AppleIDCredentialResult, any Error>) {
         guard let continuation else { return }
         self.continuation = nil
         continuation.resume(with: result)
