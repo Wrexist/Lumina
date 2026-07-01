@@ -4,6 +4,7 @@ import SwiftUI
 /// the next new/full moon. Global sky data (needs no birth chart), so it loads
 /// itself and stays quiet on failure rather than blocking the Today tab.
 struct MoonPhaseCard: View {
+    @Environment(AppRouter.self) private var router
     @State private var ephemeris = EphemerisService()
     @State private var phase: MoonPhaseResult?
     @ScaledMetric private var glyphSize: CGFloat = 40
@@ -41,11 +42,28 @@ struct MoonPhaseCard: View {
                             .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
                     }
                 }
+                if let ritual = MoonRitual.prompt(forAngle: moon.angle) {
+                    Divider()
+                    Text(ritual)
+                        .font(LuminaTypography.body)
+                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if let cta = MoonRitual.callToAction(forAngle: moon.angle) {
+                        LuminaButton(title: cta, variant: .ghost, systemImage: "moon.stars") {
+                            jumpToReflect()
+                        }
+                    }
+                }
             }
         }
     }
 
     // MARK: - Methods
+
+    private func jumpToReflect() {
+        Haptics.light.play()
+        router.selectedTab = .reflect
+    }
 
     private func load() async {
         do {
