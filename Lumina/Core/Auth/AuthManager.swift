@@ -234,17 +234,31 @@ extension AppleSignInCoordinator: ASAuthorizationControllerDelegate {
 extension AppleSignInCoordinator: ASAuthorizationControllerPresentationContextProviding {
     nonisolated func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
         MainActor.assumeIsolated {
-            AppleSignInCoordinator.keyWindow() ?? ASPresentationAnchor()
+            AppleSignInCoordinator.anchor()
         }
     }
 
+    /// Resolves a presentation anchor without the no-arg `UIWindow()`
+    /// (`ASPresentationAnchor()`) initializer, which iOS 26 deprecates in
+    /// favor of `init(windowScene:)` — and which the target's
+    /// warnings-as-errors would otherwise fail the build on. Prefers the key
+    /// window, then any window, then a fresh window on the active scene.
     @MainActor
-    private static func keyWindow() -> UIWindow? {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .filter { $0.activationState == .foregroundActive }
-            .flatMap(\.windows)
-            .first(where: \.isKeyWindow)
+    private static func anchor() -> ASPresentationAnchor {
+        let windowScenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let windows = windowScenes.flatMap(\.windows)
+        if let keyWindow = windows.first(where: \.isKeyWindow) {
+            return keyWindow
+        }
+        if let anyWindow = windows.first {
+            return anyWindow
+        }
+        if let scene = windowScenes.first {
+            return UIWindow(windowScene: scene)
+        }
+        // Unreachable while a sign-in sheet is presented (a window always
+        // exists); `init(frame:)` avoids the deprecated no-arg initializer.
+        return UIWindow(frame: .zero)
     }
 }
 
