@@ -67,7 +67,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
         } else {
-            Button(action: { signInPresented = true }) {
+            Button(action: presentSignIn) {
                 SettingsRow(title: "Sign in with Apple", trailing: nil)
             }
             .buttonStyle(.plain)
@@ -151,6 +151,10 @@ struct SettingsView: View {
     }
 
     // MARK: - Actions
+
+    private func presentSignIn() {
+        signInPresented = true
+    }
 
     private func openManageSubscription() {
         guard let url = URL(string: "itms-apps://apps.apple.com/account/subscriptions") else { return }
