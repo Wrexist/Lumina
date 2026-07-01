@@ -42,18 +42,11 @@ final class AuthManager {
     /// same `appleUserIdentifier`, the previously-known values are merged in
     /// rather than clobbered with the `nil`s a repeat sign-in returns.
     func signIn() async throws -> AuthSession {
-        // NOTE: no `nonce` is set on the request, so the Supabase exchange
-        // below passes `nonce: nil`. Supabase's `signInWithIdToken` accepts
-        // that (nonce is optional replay protection, not a hard
-        // requirement), but once the Supabase project exists it's worth
-        // generating a random nonce here, setting its SHA256 digest via
-        // `request.nonce`, and passing the raw value through so the
-        // exchange gets full replay protection.
-        // Resolve the presentation anchor here on the main actor, where a
-        // window reliably exists (this is only ever called from a visible
-        // sign-in sheet). Passing it into the coordinator avoids
-        // reconstructing a window in the delegate — and sidesteps iOS 26
-        // deprecating every `UIWindow` initializer except `init(windowScene:)`.
+        // Resolve the presentation anchor on the main actor, where a window
+        // reliably exists (this is only called from a visible sign-in sheet),
+        // and pass it into the coordinator — avoiding reconstructing a window
+        // in the delegate (iOS 26 deprecates every `UIWindow` initializer
+        // except `init(windowScene:)`).
         guard let anchor = Self.presentationAnchor() else {
             throw AuthError.noPresentationAnchor
         }
@@ -67,12 +60,20 @@ final class AuthManager {
         controller.presentationContextProvider = coordinator
 
         let credential = try await coordinator.perform(controller)
+        let newSession = mergedSession(from: credential)
+        try persist(newSession)
+        session = newSession
 
-        let userIdentifier = credential.userIdentifier
-        let newEmail = credential.email
-        let newDisplayName = Self.displayName(from: credential.fullName)
         let identityToken = credential.identityToken.flatMap { String(data: $0, encoding: .utf8) }
+        await exchangeWithSupabase(idToken: identityToken)
+        return newSession
+    }
 
+    /// Builds the `AuthSession`, merging in any previously-known email/name for
+    /// the same Apple user — Apple only supplies those on the *first*
+    /// authorization, so a repeat sign-in returns `nil`s we must not clobber.
+    private func mergedSession(from credential: AppleIDCredentialResult) -> AuthSession {
+        let userIdentifier = credential.userIdentifier
         var previousEmail: String?
         var previousDisplayName: String?
         if let existing = session, existing.appleUserIdentifier == userIdentifier {
@@ -84,32 +85,30 @@ final class AuthManager {
             previousEmail = decoded.email
             previousDisplayName = decoded.displayName
         }
-
-        let newSession = AuthSession(
+        return AuthSession(
             appleUserIdentifier: userIdentifier,
-            email: newEmail ?? previousEmail,
-            displayName: newDisplayName ?? previousDisplayName,
+            email: credential.email ?? previousEmail,
+            displayName: Self.displayName(from: credential.fullName) ?? previousDisplayName,
             createdAt: Date()
         )
+    }
 
-        try persist(newSession)
-        session = newSession
-
-        // Best-effort backend exchange. A missing Supabase project is an
-        // expected, dev-safe condition right now — local sign-in is still
-        // meaningful UI feedback on its own, so that specific failure is
-        // swallowed rather than surfaced. Any other failure is also just
-        // logged: the on-device sign-in already succeeded and shouldn't be
-        // undone by a backend hiccup.
+    /// Best-effort backend exchange. A missing Supabase project (no token yet)
+    /// is an expected, dev-safe condition — local sign-in already succeeded and
+    /// is meaningful on its own, so that specific failure is swallowed; any
+    /// other failure is logged, never surfaced (the on-device sign-in stands).
+    ///
+    /// NOTE: no `nonce` is passed. Once Supabase exists, generate a random
+    /// nonce, set its SHA256 digest on `request.nonce` in `signIn()`, and pass
+    /// the raw value here for full replay protection.
+    private func exchangeWithSupabase(idToken: String?) async {
         do {
-            try await supabaseAuthService.signInWithApple(idToken: identityToken, nonce: nil)
+            try await supabaseAuthService.signInWithApple(idToken: idToken, nonce: nil)
         } catch SupabaseAuthService.ServiceError.missingConfiguration {
             logger.debug("Supabase not configured yet (or no identity token available) — local sign-in only.")
         } catch {
             logger.error("Supabase sign-in exchange failed: \(error.localizedDescription, privacy: .public)")
         }
-
-        return newSession
     }
 
     /// Loads any persisted session from Keychain, then asks Apple whether
