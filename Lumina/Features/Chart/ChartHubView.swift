@@ -145,6 +145,7 @@ struct ChartHubView: View {
             }
             BigThreeBand(chart: chart)
             CosmicSignatureCard(chart: chart)
+            ChartStandoutCard(chart: chart)
             AskYourChartCard(chart: chart)
             ChartWheelView(chart: chart, onTapPlanet: handleTap)
                 .padding(LuminaSpacing.sm)
