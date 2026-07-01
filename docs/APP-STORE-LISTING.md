@@ -105,7 +105,7 @@ Privacy Policy: https://wrexist.github.io/Lumina/privacy.html
 
 > Paste-time checks: the two URLs at the bottom are **required** by Apple when
 > you have auto-renewable subscriptions (Guideline 3.1.2). The Privacy URL
-> points at the real page in `website/privacy.html` (see `docs/WEBSITE.md` for
+> points at the real page in `docs/privacy.html` (see `docs/WEBSITE.md` for
 > the one-time Pages setup) — swap in a custom domain there if you set one up.
 > Terms of Use uses Apple's standard EULA since there's no custom Terms page
 > built; write one and link it here instead if you need custom terms.
@@ -164,7 +164,7 @@ computed result. Not 4+ because of the fortune-telling/mysticism themes.
 | Marketing URL | `https://wrexist.github.io/Lumina/` | Optional |
 | Privacy Policy URL | `https://wrexist.github.io/Lumina/privacy.html` | Yes |
 
-> These are the real pages in `website/` — see `docs/WEBSITE.md` for the
+> These are the real pages in `docs/` — see `docs/WEBSITE.md` for the
 > one-time GitHub Pages setup required before they resolve. Swap in a custom
 > domain there later if you set one up; update these three rows to match.
 

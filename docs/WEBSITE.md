@@ -1,20 +1,28 @@
 # Website — Setup & Structure
 
-The marketing site (`website/`) is a static, dependency-free site — no build
+The marketing site (`docs/`) is a static, dependency-free site — no build
 step, no framework, no npm install. Three pages: home, Support, Privacy. It's
 required for App Store Connect's Support URL and Privacy Policy URL (see
 `docs/APP-STORE-LISTING.md`).
 
+It lives at repo-root `docs/`, alongside this project's other markdown docs,
+specifically so it can be served via GitHub Pages' **"Deploy from a branch"**
+source pointed at `main` / `/docs` — the simplest option, a dropdown + Save in
+the repo UI, no workflow to maintain. (An earlier version of this used a
+`.github/workflows/pages.yml` + GitHub-Actions-based deployment instead; that
+was removed when this simpler branch-deploy approach was chosen. If you'd
+rather go back to Actions-based deployment for more control over the build
+step, `git log` has the old workflow.)
+
 ---
 
-## One-time setup (you must do this — can't be done via a workflow file)
+## One-time setup
 
 1. Repo → **Settings → Pages**.
-2. Under **Build and deployment → Source**, choose **GitHub Actions** (not
-   "Deploy from a branch").
-3. Push to `main` with changes under `website/` (or run the **pages** workflow
-   manually from the Actions tab) — it builds and publishes automatically from
-   then on.
+2. Under **Build and deployment → Source**, choose **Deploy from a branch**.
+3. Branch: **main**, folder: **/docs** → **Save**.
+4. Every push to `main` that touches `docs/` redeploys automatically — no
+   Actions run involved.
 
 Once enabled, the site is live at:
 
@@ -34,7 +42,7 @@ final URL — either this GitHub Pages URL, or a custom domain if you set one up
 
 If you own a domain (e.g. `lumina.app`):
 
-1. Add a `website/CNAME` file containing just the domain, e.g. `lumina.app`.
+1. Add a `docs/CNAME` file containing just the domain, e.g. `lumina.app`.
 2. At your DNS provider, add a `CNAME` record pointing the subdomain (or an
    `ALIAS`/`ANAME`/`A` record set per
    [GitHub's apex-domain instructions](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site)
@@ -47,10 +55,12 @@ If you own a domain (e.g. `lumina.app`):
 ## Structure
 
 ```
-website/
+docs/
 ├── index.html          # Marketing / landing — 3D hero, differentiators, features, get-the-app
 ├── support.html         # FAQ + contact — the App Store Connect Support URL
 ├── privacy.html          # Privacy policy — the App Store Connect Privacy Policy URL
+├── *.md                  # This project's other docs (TESTFLIGHT, APP-STORE-LISTING, audits, etc.) —
+│                           unrelated to the site itself, just sharing the folder GitHub Pages needs
 └── assets/
     ├── css/
     │   ├── tokens.css     # Brand colors/type/spacing as CSS custom properties
@@ -65,6 +75,11 @@ website/
         ├── brand/mark-1024.png   # The app icon, reused as the site's wordmark glyph
         └── screenshots/            # Real app screenshots (from CI), reused across the site
 ```
+
+Note the markdown docs sitting alongside the site are themselves served as
+static files once Pages is enabled (e.g. `.../TESTFLIGHT.md` would resolve,
+just as unstyled plain text) — harmless since the repo is already public, but
+worth knowing. None of them are linked from the site itself.
 
 ## Design notes
 
@@ -99,6 +114,6 @@ website/
 ## Local preview (no server needed beyond a static file server)
 
 ```bash
-cd website && python3 -m http.server 8000
+cd docs && python3 -m http.server 8000
 # open http://localhost:8000
 ```
