@@ -144,4 +144,5 @@ external groups need a short Beta App Review).
 | `Bundle version must be higher than the previously uploaded version` | Set a higher `build_number` input, or just re-run (run number increments). |
 | `Authentication credentials are missing or invalid` | Re-check the 3 ASC secrets; re-encode the `.p8`. |
 | `Invalid entitlements` / App Groups | Ensure `group.app.lumina.ios` is registered and assigned to both App IDs. |
+| `Entitlement <key> not found and could not be included in profile` | The archive step validates every key in `Lumina.entitlements` against the real provisioning profile — unlike CI's unsigned simulator build, which skips this check entirely. Remove the offending key from `project.yml`'s `entitlements.properties` (it's not a real/registered entitlement) or register the matching capability on the `app.lumina.ios` App ID first. See `docs/CAPABILITIES-PLAN.md` for the `com.apple.developer.usernotifications.channel` precedent. |
 | Upload rejects encryption compliance | Already handled — `ITSAppUsesNonExemptEncryption` is `false` in the Info.plist. |

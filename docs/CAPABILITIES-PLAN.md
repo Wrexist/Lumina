@@ -29,9 +29,13 @@ Items 1–4 are implemented and pushed (branch `claude/app-capabilities-plan-br6
   Settings' "Manage subscription" / "Restore purchases" rows.
 - **§2 Push** — `PushNotificationManager` wraps OneSignal; `AppDelegate` now
   initializes it; `NotificationPermission` routes through it (one prompt,
-  not two); Palm's "notify me" tags a waitlist segment. Best-effort
+  not two); Palm's "notify me" tags a waitlist segment. The best-effort
   `com.apple.developer.usernotifications.channel` entitlement added for the
-  Broadcast Capability (see the caveat in §2 below — unverified literal key).
+  Broadcast Capability was **removed on 2026-07-01** — a signed
+  `ios-testflight.yml` archive confirmed it against a real provisioning
+  profile and Apple rejected it ("not a valid entitlement"), exactly the
+  risk flagged when it was added unverified. Per-device APNs push
+  (`aps-environment`) is unaffected.
 - **§3 Sign in with Apple** — `AuthManager` + Keychain session + `SignInView`
   fully work standalone; `SupabaseAuthService` layers the identity-token
   exchange on top best-effort (silently no-ops until Supabase exists).
@@ -163,6 +167,14 @@ different, working feature and stays as-is.
   required — a standard alert push wakes the app via the normal
   notification-tap path. Recommendation: skip this background mode for v1,
   add it only if/when a silent-push use case is scoped.
+- ~~`com.apple.developer.usernotifications.channel`~~ — **not a real
+  entitlement.** This was a best-effort guess at a Broadcast Capability
+  sub-toggle; a signed archive against a real provisioning profile
+  confirmed Apple rejects it. There is no channel/broadcast entitlement
+  exposed via Xcode's capability editor today, so OneSignal segment
+  broadcasts go out as ordinary per-device APNs sends (fan-out handled on
+  the OneSignal side, not via an app entitlement) — no code or capability
+  change needed for that.
 
 **Plan:**
 1. `AppDelegate` — `OneSignal.initialize(appId, withLaunchOptions: launchOptions)`
