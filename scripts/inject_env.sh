@@ -16,8 +16,11 @@ mkdir -p "${ROOT}/secrets"
 
 # Keys we expose to Info.plist via $(KEY) substitution. Keep in sync with
 # project.yml's `info.properties` block.
+#
+# ANTHROPIC_API_KEY is intentionally NOT here: LLM interpretation runs
+# server-side (backend `/interpret`), so the key must never reach the app
+# bundle — a client-side key is extractable from the IPA.
 KEYS=(
-  ANTHROPIC_API_KEY
   ELEVENLABS_API_KEY
   ELEVENLABS_VOICE_ID
   REVENUECAT_API_KEY_IOS
