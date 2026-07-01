@@ -74,6 +74,57 @@ final class NavigationTests: XCTestCase {
         XCTAssertNil(LuminaDeepLink.from(url: makeURL("https://lumina.app")))
     }
 
+    // MARK: - LuminaDeepLink (universal links)
+
+    // `https://lumina.app/...` must parse identically to its `lumina://`
+    // equivalent — see `docs/CAPABILITIES-PLAN.md` §4.
+
+    func testTodayUniversalLink() {
+        XCTAssertEqual(parse("https://lumina.app/today"), .today)
+    }
+
+    func testChartUniversalLinkWithPlanet() {
+        XCTAssertEqual(parse("https://lumina.app/chart/planet/Mars"), .chart(planet: "Mars"))
+    }
+
+    func testChartUniversalLinkWithoutPlanet() {
+        XCTAssertEqual(parse("https://lumina.app/chart"), .chart(planet: nil))
+    }
+
+    func testPalmScanAndHistoryUniversalLinks() {
+        XCTAssertEqual(parse("https://lumina.app/palm/scan"), .palmScan)
+        XCTAssertEqual(parse("https://lumina.app/palm/history"), .palmHistory)
+        XCTAssertEqual(parse("https://lumina.app/palm"), .palmHistory)
+    }
+
+    func testPeopleUniversalLink() {
+        let id = UUID()
+        XCTAssertEqual(parse("https://lumina.app/people/\(id.uuidString)"), .people(friendID: id))
+        XCTAssertEqual(parse("https://lumina.app/people"), .people(friendID: nil))
+    }
+
+    func testShareUniversalLink() {
+        XCTAssertEqual(parse("https://lumina.app/share/abcDEF123"), .acceptShare(payload: "abcDEF123"))
+    }
+
+    func testReflectUniversalLink() {
+        let id = UUID()
+        XCTAssertEqual(parse("https://lumina.app/reflect/\(id.uuidString)"), .reflect(entryID: id))
+        XCTAssertEqual(parse("https://lumina.app/reflect/today"), .reflect(entryID: nil))
+        XCTAssertEqual(parse("https://lumina.app/reflect"), .reflect(entryID: nil))
+    }
+
+    func testSettingsAndHelpUniversalLinks() {
+        XCTAssertEqual(parse("https://lumina.app/settings"), .settings)
+        XCTAssertEqual(parse("https://lumina.app/help"), .help(topicID: nil))
+        XCTAssertEqual(parse("https://lumina.app/help/billing"), .help(topicID: "billing"))
+    }
+
+    func testWrongHostHTTPSReturnsNil() {
+        XCTAssertNil(LuminaDeepLink.from(url: makeURL("https://example.com/chart")))
+        XCTAssertNil(LuminaDeepLink.from(url: makeURL("https://evil.lumina.app/chart")))
+    }
+
     func testDeepLinkTabMappings() {
         XCTAssertEqual(LuminaDeepLink.today.tab, .today)
         XCTAssertEqual(LuminaDeepLink.chart(planet: nil).tab, .chart)

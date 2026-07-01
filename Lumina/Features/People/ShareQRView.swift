@@ -5,9 +5,12 @@ import UIKit
 
 /// "Share my chart" QR code. Encodes a deliberately-reduced `SharedBirthData`
 /// (birth date + city + coarse coordinates, never the exact time or precise
-/// location) as a `lumina://share/<base64url-json>` URL — the same scheme
-/// `LuminaDeepLink` parses. The other person opens it in Lumina to add the
-/// user as a friend.
+/// location) as a `https://lumina.app/share/<base64url-json>` universal link
+/// — the same shape `LuminaDeepLink` parses. The other person opens it in
+/// Lumina to add the user as a friend; if they don't have Lumina installed,
+/// the link falls back to a normal web page instead of doing nothing (the
+/// reason this uses a universal link rather than the `lumina://` scheme —
+/// see `docs/CAPABILITIES-PLAN.md` §4).
 ///
 /// We never put auth tokens, user IDs, exact birth time, or precise
 /// coordinates in the QR. See docs/AUDIT-2026-06-03.md R2 / `SharedBirthData`.
@@ -110,7 +113,7 @@ struct ShareQRView: View {
             let shared = SharedBirthData(from: birthData)
             let json = try JSONEncoder.luminaShare.encode(shared)
             let payload = json.base64URLEncodedString()
-            let url = "lumina://share/\(payload)"
+            let url = "https://lumina.app/share/\(payload)"
             qrImage = Self.makeQR(for: url)
             if qrImage == nil {
                 error = .unknown(underlyingMessage: "Couldn't render the QR code.")

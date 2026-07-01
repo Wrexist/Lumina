@@ -37,4 +37,22 @@ final class DeepLinkRoutingTests: XCTestCase {
         XCTAssertEqual(router.selectedTab, .chart)
         XCTAssertEqual(router.pendingPresentation, .chart(planet: nil))
     }
+
+    @MainActor
+    func testChartPlanetUniversalLinkSelectsChartTabAndStashesPresentation() {
+        // Same contract as the `lumina://` test above, but via the
+        // `https://lumina.app/...` universal link shape.
+        let router = AppRouter(storage: .inMemory())
+        router.bootstrap()
+        router.completeOnboarding()
+
+        let url = URL(string: "https://lumina.app/chart/planet/Mars")
+        let link = url.flatMap(LuminaDeepLink.from(url:))
+        XCTAssertEqual(link, .chart(planet: "Mars"))
+
+        guard let link else { return }
+        router.handle(deepLink: link)
+        XCTAssertEqual(router.selectedTab, .chart)
+        XCTAssertEqual(router.pendingPresentation, .chart(planet: "Mars"))
+    }
 }

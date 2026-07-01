@@ -1,0 +1,18 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["S3U8B8HH96.app.lumina.ios"],
+        "components": [
+          { "/": "/share/*", "comment": "Friend chart share (QR / link)" },
+          { "/": "/chart/*", "comment": "Chart deep links (e.g. planet detail)" },
+          { "/": "/people/*", "comment": "People / friend deep links" },
+          { "/": "/reflect/*", "comment": "Reflect / journal deep links" },
+          { "/": "/settings", "comment": "Settings deep link" },
+          { "/": "/help/*", "comment": "Help deep links" },
+          { "/": "/today", "comment": "Today tab deep link" }
+        ]
+      }
+    ]
+  }
+}
