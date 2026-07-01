@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — Lumina</title>
+<meta name="description" content="How Lumina handles your data — birth details, palm measurements, journal entries, and subscriptions — in plain language.">
+<link rel="icon" type="image/png" href="assets/img/brand/mark-1024.png">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html" class="nav-brand">
+    <img src="assets/img/brand/mark-1024.png" alt="">
+    Lumina
+  </a>
+  <div class="nav-links">
+    <a href="index.html#why">Why Lumina</a>
+    <a href="index.html#features">Features</a>
+    <a href="support.html">Support</a>
+  </div>
+  <div class="nav-cta">
+    <a href="index.html#get-app" class="btn btn-ghost">Get the app</a>
+  </div>
+</nav>
+
+<section class="page-hero">
+  <div class="container container--narrow">
+    <span class="eyebrow">Privacy</span>
+    <h1>Your data, plainly explained.</h1>
+    <p class="lede">Privacy isn't a feature we bolted on — it shaped how Lumina is built. This page explains exactly what we collect, what never leaves your device, and why.</p>
+  </div>
+</section>
+
+<div class="legal">
+  <p class="updated">Last updated · 2026</p>
+
+  <nav class="toc" aria-label="Sections">
+    <a href="#overview">Overview</a>
+    <a href="#collect">What we collect</a>
+    <a href="#device">What never leaves your device</a>
+    <a href="#third-parties">Third-party services</a>
+    <a href="#storage">Storage &amp; security</a>
+    <a href="#rights">Your rights</a>
+    <a href="#children">Children's privacy</a>
+    <a href="#website">This website</a>
+    <a href="#changes">Changes</a>
+    <a href="#contact">Contact</a>
+  </nav>
+
+  <h2 id="overview">Overview</h2>
+  <p>Lumina is an astrology and palm-reading app. To generate a real birth chart we need your birth date, time, and place; to write a grounded reading we process the astrological facts computed from that chart; to run a subscription we work with Apple's payment system. This policy explains what that involves in plain terms.</p>
+
+  <h2 id="collect">What we collect</h2>
+  <table>
+    <thead><tr><th>Category</th><th>What it includes</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Birth data</td><td>Date, time, and place of birth</td><td>Required to compute your real natal chart</td></tr>
+      <tr><td>Palm measurements</td><td>Geometric line/feature measurements only — never a photo</td><td>To generate your palm reading</td></tr>
+      <tr><td>Journal entries</td><td>Text you write in Reflect</td><td>Stored on-device so you can revisit past entries</td></tr>
+      <tr><td>Chart &amp; reading history</td><td>Cached charts and past interpretations</td><td>So readings load instantly without recomputing</td></tr>
+      <tr><td>Subscription status</td><td>Entitlement state from Apple's App Store</td><td>To unlock premium features you've paid for</td></tr>
+      <tr><td>Contacts (optional)</td><td>Name and birthday, only for people you explicitly add</td><td>To compute compatibility with friends you choose</td></tr>
+      <tr><td>Push token (optional)</td><td>A device token, only if you enable notifications</td><td>To deliver your daily reading notification</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="device">What never leaves your device</h2>
+  <p>Your palm photo is the clearest example of our privacy-by-design approach: it is captured and analyzed entirely on your iPhone using Apple's Vision framework and a custom on-device model. The photo itself is never uploaded, transmitted, or stored anywhere but your device. Only the resulting numeric measurements — line lengths, curvature, geometric ratios — are used to generate your reading.</p>
+  <p>Your journal entries and cached chart data are also stored locally on your device using Apple's SwiftData framework, protected behind Face ID if you enable app lock in Settings.</p>
+
+  <h2 id="third-parties">Third-party services</h2>
+  <p>Lumina is built on a small number of specialized services, each used for exactly one purpose:</p>
+  <ul>
+    <li><strong>Our own ephemeris service</strong> — a backend we operate to compute real planetary positions from your birth data. This is not a third party; it's infrastructure we run specifically for chart accuracy.</li>
+    <li><strong>Anthropic (Claude)</strong> — generates the written text of your interpretations. It receives the astrological facts already computed from your chart (for example, "Sun in Gemini, Moon in Pisces, Saturn retrograde") — never your name, contact details, or account information.</li>
+    <li><strong>RevenueCat</strong> — manages subscription entitlements. All payment itself is processed by Apple; we never see or store your card details.</li>
+    <li><strong>Supabase</strong> — used for account sync and push-token storage where account features are enabled.</li>
+    <li><strong>OneSignal</strong> — delivers push notifications, only if you turn them on. Disabling notifications in Settings stops this entirely.</li>
+    <li><strong>Apple</strong> — App Store purchases, Face ID, and camera access are all mediated by iOS itself under Apple's own privacy protections.</li>
+  </ul>
+  <p>We do not use advertising networks, ad-tracking SDKs, or sell any personal data to third parties.</p>
+
+  <h2 id="storage">Storage &amp; security</h2>
+  <p>Data that does leave your device (birth data sent for chart computation, chart facts sent for interpretation) travels over encrypted connections. Where account data is stored server-side, it's protected behind authenticated access — there is no public database of user charts.</p>
+
+  <h2 id="rights">Your rights</h2>
+  <p>Open <strong>Settings → Privacy</strong> in the app to export a copy of your stored data or delete your account and everything associated with it. Deleting your account removes your birth data, journal entries, and chart history from our servers; on-device data is removed when you delete the app.</p>
+  <p>You can manage or cancel your subscription anytime from your Apple ID settings — see <a href="support.html">Support</a> for the exact steps. You can disable notifications, camera access, or Face ID individually in the iOS Settings app at any time without losing access to the rest of Lumina.</p>
+
+  <h2 id="children">Children's privacy</h2>
+  <p>Lumina is not directed at children under 13, and we do not knowingly collect personal information from them. If you believe a child has provided us with personal information, contact us and we'll remove it.</p>
+
+  <h2 id="website">This website</h2>
+  <p>This marketing website (the pages you're reading right now) does not use tracking cookies, third-party analytics, or advertising pixels of any kind. It's static, informational pages — nothing about your visit here is collected.</p>
+
+  <h2 id="changes">Changes to this policy</h2>
+  <p>If Lumina's data practices change in a way that affects you, we'll update this page and, for material changes, notify you in the app before the change takes effect.</p>
+
+  <h2 id="contact">Contact</h2>
+  <p>Questions about this policy or your data — write to <a href="mailto:privacy@lumina.app">privacy@lumina.app</a>.</p>
+</div>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <a href="index.html" class="footer-brand">
+        <img src="assets/img/brand/mark-1024.png" alt="">
+        Lumina
+      </a>
+      <div class="footer-links">
+        <div>
+          <h4>Product</h4>
+          <ul>
+            <li><a href="index.html#why">Why Lumina</a></li>
+            <li><a href="index.html#features">Features</a></li>
+            <li><a href="index.html#get-app">Get the app</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <ul>
+            <li><a href="support.html">Support</a></li>
+            <li><a href="privacy.html">Privacy</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Lumina. Finally, a real one.</span>
+      <span>Made for iOS 26</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/main.js"></script>
+</body>
+</html>
