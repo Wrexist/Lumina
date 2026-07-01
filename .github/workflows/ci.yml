@@ -6,8 +6,14 @@ on:
   pull_request:
     branches: [main]
 
+# A push to a claude/** branch and the pull_request opened from that same
+# branch fire two separate events for the same commit. github.ref differs
+# between them (refs/heads/<branch> vs refs/pull/<n>/merge), so without
+# normalizing, both used to run the full pipeline — including the iOS job —
+# in parallel. Falling back to the PR's source-branch name keys both events
+# to the same group, so cancel-in-progress kills the older, redundant run.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
