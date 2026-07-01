@@ -17,6 +17,10 @@ struct MoonSphereSheetView: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
+                // Stars sit between the midnight background and the (clear-
+                // backed) SceneKit view, so the moon floats in a starfield.
+                LuminaStarfield(tint: LuminaColors.mutedGold.opacity(0.85))
+                    .ignoresSafeArea()
                 MoonSphere3DView(phase: phase, reduceMotion: reduceMotion)
                     .ignoresSafeArea()
                 caption
