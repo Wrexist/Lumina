@@ -81,12 +81,15 @@ enum PushNotificationManager {
             return false
         }
 
-        // NOTE: double-check this against the actual SDK. `OneSignal.Notifications
-        // .requestPermission(_:fallbackToSettings:)` is the documented v5 shape;
-        // some 5.x releases expose it as a completion-handler API rather than
-        // `async`, in which case this call site needs a
-        // `withCheckedContinuation` bridge instead of a direct `await`.
-        let granted = await OneSignal.Notifications.requestPermission(true)
+        // OneSignal v5's `requestPermission` is a completion-handler API
+        // (`OSUserResponseBlock` = `(Bool) -> Void`), not `async`, so bridge it
+        // to `async` with a checked continuation. `Bool` is `Sendable`, so the
+        // continuation crosses back cleanly under strict concurrency.
+        let granted = await withCheckedContinuation { continuation in
+            OneSignal.Notifications.requestPermission { accepted in
+                continuation.resume(returning: accepted)
+            }
+        }
         logger.debug("OneSignal permission request result: \(granted, privacy: .public)")
         return granted
     }
