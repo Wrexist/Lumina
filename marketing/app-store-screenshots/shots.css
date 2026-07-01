@@ -7,31 +7,31 @@
   font-family: "Fraunces";
   font-style: italic;
   font-weight: 100 900;
-  src: url("../../website/assets/fonts/fraunces-latin-wght-italic.woff2") format("woff2-variations");
+  src: url("../../docs/assets/fonts/fraunces-latin-wght-italic.woff2") format("woff2-variations");
 }
 @font-face {
   font-family: "Fraunces";
   font-style: normal;
   font-weight: 100 900;
-  src: url("../../website/assets/fonts/fraunces-latin-wght-normal.woff2") format("woff2-variations");
+  src: url("../../docs/assets/fonts/fraunces-latin-wght-normal.woff2") format("woff2-variations");
 }
 @font-face {
   font-family: "Inter";
   font-style: normal;
   font-weight: 500;
-  src: url("../../website/assets/fonts/inter-latin-500-normal.woff2") format("woff2");
+  src: url("../../docs/assets/fonts/inter-latin-500-normal.woff2") format("woff2");
 }
 @font-face {
   font-family: "Inter";
   font-style: normal;
   font-weight: 600;
-  src: url("../../website/assets/fonts/inter-latin-600-normal.woff2") format("woff2");
+  src: url("../../docs/assets/fonts/inter-latin-600-normal.woff2") format("woff2");
 }
 @font-face {
   font-family: "JetBrains Mono";
   font-style: normal;
   font-weight: 500;
-  src: url("../../website/assets/fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2");
+  src: url("../../docs/assets/fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2");
 }
 
 :root {
