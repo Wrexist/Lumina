@@ -107,7 +107,13 @@ jobs:
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
             archive 2>&1 | xcbeautify --renderer github-actions
 
-      - name: Export .ipa (app-store-connect)
+      # ExportOptions.plist sets destination=upload, so this single xcodebuild
+      # call exports AND uploads to App Store Connect atomically (Apple's
+      # recommended path) — no separate `xcrun altool --upload-app` needed.
+      # That older two-step path has a known failure mode where altool prints
+      # "UPLOAD SUCCEEDED" locally but the delivery never actually reaches ASC
+      # (no build appears, no email sent).
+      - name: Export & upload to TestFlight
         run: |
           set -o pipefail
           xcodebuild -exportArchive \
@@ -119,17 +125,6 @@ jobs:
             -authenticationKeyID "${{ secrets.APP_STORE_CONNECT_KEY_ID }}" \
             -authenticationKeyIssuerID "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}" \
             2>&1 | xcbeautify --renderer github-actions
-
-      - name: Upload to TestFlight
-        run: |
-          set -euo pipefail
-          IPA=$(find build/export -name "*.ipa" | head -n 1)
-          if [ -z "$IPA" ]; then echo "::error::No .ipa produced"; exit 1; fi
-          echo "Uploading $IPA"
-          xcrun altool --upload-app --type ios \
-            --file "$IPA" \
-            --apiKey "${{ secrets.APP_STORE_CONNECT_KEY_ID }}" \
-            --apiIssuer "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}"
 
       - name: Upload .ipa artifact
         if: always()

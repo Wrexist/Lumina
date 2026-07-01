@@ -28,5 +28,16 @@
          don't let Xcode auto-manage it. -->
     <key>manageAppVersionAndBuildNumber</key>
     <false/>
+
+    <!-- Upload straight to App Store Connect as part of the export step,
+         authenticated by the same ASC API key passed to xcodebuild. This is
+         Apple's current recommended path and folds reserve, upload, and
+         commit into one atomic xcodebuild call, instead of a separate
+         "xcrun altool upload app" call afterwards — that separate-altool
+         path has a known failure mode where it reports "UPLOAD SUCCEEDED"
+         locally but the delivery never actually lands in App Store Connect
+         (no build, no email). -->
+    <key>destination</key>
+    <string>upload</string>
 </dict>
 </plist>

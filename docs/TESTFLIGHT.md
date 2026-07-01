@@ -98,12 +98,28 @@ the run number. The workflow:
 1. `inject_env.sh` → `xcodegen generate`
 2. installs the ASC API key
 3. `xcodebuild archive` (device, automatic cloud signing)
-4. `xcodebuild -exportArchive` → `.ipa` (also saved as a run artifact)
-5. `xcrun altool --upload-app` → App Store Connect
+4. `xcodebuild -exportArchive` → exports the `.ipa` (also saved as a run
+   artifact) **and** uploads it to App Store Connect in the same call, via
+   `destination: upload` in `ExportOptions.plist`
 
 Processing on Apple's side takes 5–15 min, after which the build shows under
 **TestFlight**. Add it to a tester group (internal testers need no review;
 external groups need a short Beta App Review).
+
+> **Not appearing at all, with no confirmation email?** Don't trust a green
+> CI run alone — check **App Store Connect → (your app) → TestFlight** tab
+> directly. If it's genuinely empty (not even a "Processing" placeholder),
+> the most common cause is the App Store Connect API key's **role**: it must
+> be **App Manager or Admin** under **Users and Access → Integrations → App
+> Store Connect API**. A lower-privilege key (e.g. plain "Developer") can
+> still authenticate cloud signing/provisioning — which is why the archive
+> step succeeds — but Apple's backend can silently drop the actual TestFlight
+> delivery without ever surfacing an error to CI and without emailing anyone.
+> We previously uploaded via a separate `xcrun altool --upload-app` call
+> after export, which has a known history of reporting local "UPLOAD
+> SUCCEEDED" while the delivery never lands in App Store Connect; the
+> `destination: upload` approach above is Apple's more reliable, currently
+> recommended path.
 
 ---
 
