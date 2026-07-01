@@ -40,7 +40,7 @@ Priority order — each ships as its own CI-verified commit:
    here's why") + an invite loop, so the result travels to the other person.
 3. ⏳ **"Your next big moment" countdown** — reuses `/forecast` + `/returns`; an
    anticipation card ("Saturn return in 47 days", "Venus meets your Sun in 9 days").
-4. ⏳ **Daily-reading share card** — one-tap share of today's reading, Story-shaped.
+4. ✅ **Daily-reading share card** — one-tap share of today's reading, Story-shaped.
 5. ⏳ **Moon-ritual check-ins** — new-moon intention / full-moon release prompts on
    the real lunar phase (already have `/moon`). A genuine recurring ritual, not a
    streak.

@@ -112,15 +112,17 @@ struct TodayHubView: View {
     }
 
     private var dailyReadingCard: some View {
-        LuminaCard {
+        let reading = DailyReading.compose(from: viewModel.transits)
+        return LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 HStack(spacing: LuminaSpacing.sm) {
                     Text("Your reading")
                         .font(LuminaTypography.heading)
                     Spacer()
+                    DailyReadingShareButton(reading: reading, date: .now)
                     LuminaBadge(title: "Audio soon", tone: .neutral)
                 }
-                Text(DailyReading.compose(from: viewModel.transits))
+                Text(reading)
                     .font(LuminaTypography.body)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
                     .frame(maxWidth: .infinity, alignment: .leading)
