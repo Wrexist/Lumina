@@ -13,9 +13,44 @@ struct PaywallOfferView: View {
         var id: String { rawValue }
     }
 
+    /// Single source of truth for the copy in `priceRow`.
+    ///
+    /// These are the US App Store reference prices, NOT localized prices.
+    /// `IAPManager`'s public surface (`configure` / `currentEntitlements` /
+    /// `purchaseCurrentOffering` / `restorePurchases`) never exposes the
+    /// fetched `Offering` or a `localizedPriceString`, and views may not
+    /// reach for `Purchases.shared` themselves (`.swiftlint.yml`'s
+    /// `no_direct_revenuecat_calls_in_views`), so this view cannot show the
+    /// user's real regional price yet. Rather than invent regional prices,
+    /// we show the USD reference and say so in `disclosure` — Apple's
+    /// payment sheet always shows the true local price before purchase.
+    ///
+    /// TODO(lumina): when `IAPManager` grows an accessor for the current
+    /// offering's localized prices, load them on appear and keep this struct
+    /// only as the fallback for builds where RevenueCat isn't configured
+    /// (dev/CI without a real API key).
+    struct PriceDisplay: Equatable, Sendable {
+        let yearlyPrice: String
+        let subline: String
+        let disclosure: String
+
+        static func fallback(for variant: Variant) -> PriceDisplay {
+            PriceDisplay(
+                yearlyPrice: variant == .rescue ? "$41.99" : "$59.99",
+                subline: "Or $9.99 / month. 7-day free trial. Cancel anytime in Settings.",
+                disclosure: "Prices shown in USD — your exact local price appears "
+                    + "on Apple's payment sheet before you're charged."
+            )
+        }
+    }
+
     let variant: Variant
     let onStartTrial: () -> Void
     let onContinueFree: () -> Void
+
+    private var priceDisplay: PriceDisplay {
+        .fallback(for: variant)
+    }
 
     @Environment(\.dismiss) private var dismiss
 
@@ -56,7 +91,7 @@ struct PaywallOfferView: View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(variant == .rescue ? "$41.99" : "$59.99")
+                    Text(priceDisplay.yearlyPrice)
                         .font(LuminaTypography.heading)
                     Text("/year")
                         .font(LuminaTypography.bodyLight)
@@ -64,9 +99,12 @@ struct PaywallOfferView: View {
                     Spacer()
                     LuminaBadge(title: "Best value", tone: .neutral)
                 }
-                Text("Or $9.99 / month. 7-day free trial. Cancel anytime in Settings.")
+                Text(priceDisplay.subline)
                     .font(LuminaTypography.caption)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                Text(priceDisplay.disclosure)
+                    .font(LuminaTypography.caption)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
             }
         }
     }

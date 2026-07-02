@@ -43,16 +43,33 @@ struct JournalCalendarView: View {
             }
             .accessibilityLabel("Previous month")
             Spacer()
-            Text(monthLabel)
-                .font(LuminaTypography.heading)
+            Button {
+                monthCursor = .now
+            } label: {
+                Text(monthLabel)
+                    .font(LuminaTypography.heading)
+                    .foregroundStyle(LuminaColors.inkBlack)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(monthLabel)
+            .accessibilityHint("Jumps back to the current month")
             Spacer()
             Button {
                 monthCursor = calendar.date(byAdding: .month, value: 1, to: monthCursor) ?? monthCursor
             } label: {
-                Image(systemName: "chevron.right").foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(isAtCurrentMonth ? 0.25 : 0.7))
             }
+            .disabled(isAtCurrentMonth)
             .accessibilityLabel("Next month")
         }
+    }
+
+    /// Journaling is past-only (future days already render dimmed and
+    /// non-interactive), so there is nothing to page forward to beyond the
+    /// current month.
+    private var isAtCurrentMonth: Bool {
+        calendar.isDate(monthCursor, equalTo: .now, toGranularity: .month)
     }
 
     private var weekdayLabels: some View {
