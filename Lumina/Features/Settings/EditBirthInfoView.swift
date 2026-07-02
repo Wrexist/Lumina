@@ -274,12 +274,7 @@ private struct ManualBirthPlaceSheetEdit: View {
                         LuminaTextField(title: "Latitude", text: $latitudeText, placeholder: "59.3293", helper: "−90 to 90", keyboard: .numbersAndPunctuation)
                         LuminaTextField(title: "Longitude", text: $longitudeText, placeholder: "18.0686", helper: "−180 to 180", keyboard: .numbersAndPunctuation)
                     }
-                    Picker("Time zone", selection: $timeZoneIdentifier) {
-                        ForEach(TimeZone.knownTimeZoneIdentifiers, id: \.self) { id in
-                            Text(id).tag(id)
-                        }
-                    }
-                    .pickerStyle(.menu)
+                    TimeZonePickerField(identifier: $timeZoneIdentifier)
                     if let error {
                         Text(error)
                             .font(LuminaTypography.caption)

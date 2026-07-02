@@ -8,6 +8,8 @@ import Foundation
 enum LuminaDeepLink: Equatable, Sendable {
     /// The universal-link host this parser and QR/share generation must agree
     /// on. Kept here so both sides stay in sync if the domain ever changes.
+    /// Matching is case-insensitive and also accepts the `www.`-prefixed
+    /// variant — see `isUniversalLinkHost(_:)`.
     static let universalLinkHost = "lumina.app"
 
     case today
@@ -37,7 +39,8 @@ enum LuminaDeepLink: Equatable, Sendable {
     /// understood. Callers fall back to a default route (typically `.today`).
     ///
     /// Accepts either the custom `lumina://...` scheme (any host/path) or a
-    /// `https://lumina.app/...` universal link — both feed the exact same
+    /// `https://lumina.app/...` / `https://www.lumina.app/...` universal
+    /// link (host matched case-insensitively) — both feed the exact same
     /// path-parsing below, so adding a new route only ever needs one switch
     /// statement, not one per scheme.
     static func from(url: URL) -> LuminaDeepLink? {
@@ -60,6 +63,20 @@ enum LuminaDeepLink: Equatable, Sendable {
 
     // MARK: - Scheme handling
 
+    /// `true` when the URL belongs to Lumina at all — the custom
+    /// `lumina://` scheme or a `lumina.app` / `www.lumina.app` universal
+    /// link — regardless of whether its path parses to a known route.
+    /// `RootView.onOpenURL` uses this to honor the fallback promised by
+    /// `from(url:)`'s doc comment (route `.today` for our own unparseable
+    /// links) without ever hijacking foreign URLs.
+    static func isLuminaURL(_ url: URL) -> Bool {
+        switch url.scheme?.lowercased() {
+        case "lumina": return true
+        case "https": return isUniversalLinkHost(url.host)
+        default: return false
+        }
+    }
+
     /// Builds the route's path components (e.g. `["chart", "planet", "Mars"]`)
     /// for a supported URL, or `nil` if the scheme/host combination isn't a
     /// Lumina link at all. This is the only place the two supported shapes
@@ -67,20 +84,28 @@ enum LuminaDeepLink: Equatable, Sendable {
     /// past this point is one shared parser.
     private static func routePath(for url: URL) -> [String]? {
         let components = url.pathComponents.filter { $0 != "/" }
-        switch url.scheme {
+        switch url.scheme?.lowercased() {
         case "lumina":
             // SwiftUI gives us URLs where the host is the first path
             // component; normalise both shapes (`lumina://chart` and
             // `lumina:///chart`).
             return (url.host.map { [$0] } ?? []) + components
         case "https":
-            guard url.host == Self.universalLinkHost else { return nil }
+            guard isUniversalLinkHost(url.host) else { return nil }
             // Here the host is the real domain, not a route component —
             // the route lives entirely in the path (`/chart/...`).
             return components
         default:
             return nil
         }
+    }
+
+    /// Case-insensitive match for the universal-link domain, with or
+    /// without a `www.` prefix. Other subdomains (`evil.lumina.app`) and
+    /// look-alikes (`xlumina.app`) stay rejected.
+    private static func isUniversalLinkHost(_ host: String?) -> Bool {
+        guard let host = host?.lowercased() else { return false }
+        return host == universalLinkHost || host == "www." + universalLinkHost
     }
 
     // MARK: - Component parsers
