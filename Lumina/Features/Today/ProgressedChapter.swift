@@ -18,6 +18,20 @@ enum ProgressedChapter {
         return "Progressed Sun in \(sun)"
     }
 
+    /// Whether the progressed Moon sits within `orb` degrees of a sign cusp.
+    /// The backend exposes no sign-change dates, but the progressed Moon
+    /// moves roughly 1° a month, so the default 1.5° flags a sign change
+    /// within about the last / next six weeks — the only window the chapter
+    /// is timely news rather than slow-moving context. Derived from the real
+    /// progressed longitude; nothing invented.
+    static func isNearCusp(_ result: ProgressionsResult, orb: Double = 1.5) -> Bool {
+        guard let moon = result.planets.first(where: { $0.planet == "Moon" }) else { return false }
+        let wrapped = moon.longitude.truncatingRemainder(dividingBy: 360)
+        let normalized = wrapped < 0 ? wrapped + 360 : wrapped
+        let intoSign = normalized.truncatingRemainder(dividingBy: 30)
+        return intoSign < orb || intoSign > 30 - orb
+    }
+
     private static func sign(of planet: String, in result: ProgressionsResult) -> String? {
         result.planets
             .first(where: { $0.planet == planet })

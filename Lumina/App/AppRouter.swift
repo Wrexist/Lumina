@@ -106,7 +106,18 @@ final class AppRouter {
         if let tab = deepLink.tab {
             selectedTab = tab
         }
-        pendingPresentation = deepLink
+        // Clear before assigning so a repeat tap of the same link still
+        // registers as a change — consumers watch with `onChange`, and an
+        // equal-to-stale write would never fire it.
+        pendingPresentation = nil
+        switch deepLink {
+        case .today, .palmHistory:
+            // Bare tab switches carry no payload and have no consumer, so
+            // storing them would only leave a stale value behind.
+            break
+        default:
+            pendingPresentation = deepLink
+        }
         return true
     }
 }

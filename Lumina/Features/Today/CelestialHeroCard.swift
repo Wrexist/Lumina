@@ -44,14 +44,12 @@ struct CelestialHeroCard: View {
         .padding(LuminaSpacing.lg)
     }
 
-    private static let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE · MMM d"
-        return formatter
-    }()
-
+    /// "Wednesday · Jul 2" — each half is locale-aware (`Date.FormatStyle`
+    /// orders day/month per locale); the "·" separator is brand styling.
     private var dateLabel: String {
-        Self.dateFormatter.string(from: date)
+        let weekday = date.formatted(.dateTime.weekday(.wide))
+        let monthDay = date.formatted(.dateTime.month(.abbreviated).day())
+        return "\(weekday) · \(monthDay)"
     }
 }
 

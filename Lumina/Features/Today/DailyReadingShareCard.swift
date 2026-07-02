@@ -8,11 +8,13 @@ struct DailyReadingShareCard: View {
     let reading: String
     let date: Date
 
-    private static let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE · MMMM d"
-        return formatter
-    }()
+    /// "Wednesday · July 2" — each half is locale-aware (`Date.FormatStyle`
+    /// orders day/month per locale); the "·" separator is brand styling.
+    private var dateLabel: String {
+        let weekday = date.formatted(.dateTime.weekday(.wide))
+        let monthDay = date.formatted(.dateTime.month(.wide).day())
+        return "\(weekday) · \(monthDay)"
+    }
 
     var body: some View {
         VStack(spacing: LuminaSpacing.xl) {
@@ -21,7 +23,7 @@ struct DailyReadingShareCard: View {
                     .font(LuminaTypography.mono)
                     .tracking(6)
                     .foregroundStyle(LuminaColors.mutedGold)
-                Text(Self.dateFormatter.string(from: date).uppercased())
+                Text(dateLabel.uppercased())
                     .font(LuminaTypography.mono)
                     .tracking(2)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))

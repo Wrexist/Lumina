@@ -41,7 +41,10 @@ final class MoonPhaseTests: XCTestCase {
     }
 
     func testNextEventPicksTheNearerMilestone() {
-        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        // Anchored at local noon so the +1 hour "today" case never crosses
+        // midnight, whatever time zone the host runs in — the helper counts
+        // local calendar days.
+        let now = Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: .now) ?? .now
         let inDays: (Int) -> Date = { now.addingTimeInterval(Double($0) * 86_400) }
 
         // Full sooner than new.

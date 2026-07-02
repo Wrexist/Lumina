@@ -1,13 +1,17 @@
+import Combine
 import SwiftUI
 
-/// Phase-3 Today (Home) hub. Real Big-3 band off the user's natal chart,
-/// today's deterministic headline, the "what's happening" trio, and a
-/// quick-actions row that deep-links into the other tabs via `AppRouter`.
+/// The Today (Home) hub, restructured for signal over noise:
+/// hero → Big-3 band → the reading card (headline + body, remaining transits
+/// collapsed behind "Details") → the sky-context strip (Moon + retrogrades) →
+/// the "Ahead" card (imminent return + forecast) → quick actions. The
+/// progressed "chapter" card joins the flow only around a progressed-Moon
+/// sign change and sits below the quick actions otherwise.
 ///
-/// The audio-narrated reading body itself lands once the Anthropic +
-/// ElevenLabs keys are wired (Phase 5). Until then, the reading card
-/// shows a clearly-labelled "coming soon" affordance instead of stub
-/// reading text.
+/// All data comes from one `TodayViewModel` fan-out, so the secondary cards
+/// reveal together over fixed-height skeletons instead of popping in. The
+/// audio-narrated reading body lands once the Anthropic + ElevenLabs keys
+/// are wired (Phase 5).
 struct TodayHubView: View {
     @State private var viewModel = TodayViewModel()
     @Environment(AppRouter.self) private var router
@@ -26,6 +30,11 @@ struct TodayHubView: View {
         .navigationTitle("Today")
         .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.loadIfNeeded() }
+        // Freshness triggers: the calendar day rolling over in a long-lived
+        // process, and birth info edited in Settings. `loadIfNeeded()` no-ops
+        // when neither has actually moved.
+        .onReceive(dayChanged) { _ in refresh() }
+        .onReceive(birthDataChanged) { _ in refresh() }
         .sheet(isPresented: $showingWhy) {
             TodayTransparencySheet(transits: viewModel.transits)
         }
@@ -48,25 +57,25 @@ struct TodayHubView: View {
     }
 
     private var loadedContent: some View {
-        let lines = viewModel.todayLines
-        return VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
+        VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
             if let chart = viewModel.natalChart {
                 BigThreeBand(chart: chart)
             }
-            headlineCard(lines.headline)
-            dailyReadingCard
-            MoonPhaseCard()
-            RetrogradeCard()
-            ProgressedChapterCard()
-            WhatsComingCard()
-            ReturnsCard()
-            if !lines.secondary.isEmpty {
-                Divider()
-                whatsHappeningSection(lines.secondary)
-                LuminaButton(title: "Why these?", variant: .ghost) { showingWhy = true }
+            if viewModel.transitsUnavailable {
+                transitsUnavailableCard
+            } else {
+                readingCard
+            }
+            skyContextSection
+            aheadSection
+            if let progressions = viewModel.progressions, viewModel.chapterIsTimely {
+                ProgressedChapterCard(result: progressions)
             }
             Divider()
             quickActionsSection
+            if let progressions = viewModel.progressions, !viewModel.chapterIsTimely {
+                ProgressedChapterCard(result: progressions)
+            }
         }
     }
 
@@ -89,49 +98,115 @@ struct TodayHubView: View {
         )
     }
 
-    private func headlineCard(_ headline: String?) -> some View {
-        LuminaCard {
-            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                Text(headline ?? "A quiet sky today — nothing major is touching your chart right now.")
-                    .font(LuminaTypography.heading)
-                Text("Tap any planet on the Chart tab to learn more about your placements.")
-                    .font(LuminaTypography.bodyLight)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-            }
-        }
-    }
-
-    private var dailyReadingCard: some View {
-        let reading = DailyReading.compose(from: viewModel.transits)
+    /// The hero reading — headline as the title line, grounded body below,
+    /// and the remaining transits collapsed behind "Details". The "Why
+    /// these?" transparency control lives in the header, so it stays
+    /// reachable even when only one transit (or none) is active.
+    private var readingCard: some View {
+        let lines = viewModel.todayLines
         return LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                HStack(spacing: LuminaSpacing.sm) {
-                    Text("Your reading")
+                HStack(alignment: .firstTextBaseline, spacing: LuminaSpacing.md) {
+                    Text(lines.headline ?? "A quiet sky today")
                         .font(LuminaTypography.heading)
-                    Spacer()
-                    DailyReadingShareButton(reading: reading, date: .now)
-                    LuminaBadge(title: "Audio soon", tone: .neutral)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    whyTheseButton
+                    DailyReadingShareButton(
+                        reading: DailyReading.compose(from: viewModel.transits),
+                        date: .now
+                    )
                 }
-                Text(reading)
+                Text(DailyReading.bodyText(from: viewModel.transits))
                     .font(LuminaTypography.body)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
                     .frame(maxWidth: .infinity, alignment: .leading)
+                if !lines.secondary.isEmpty {
+                    detailsDisclosure(lines.secondary)
+                }
             }
         }
     }
 
-    private func whatsHappeningSection(_ lines: [String]) -> some View {
-        VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-            Text("WHAT'S HAPPENING")
-                .font(LuminaTypography.mono)
-                .tracking(1.4)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-            ForEach(lines, id: \.self) { line in
-                HStack(alignment: .top, spacing: LuminaSpacing.sm) {
-                    Text("•").font(LuminaTypography.body)
-                    Text(line).font(LuminaTypography.body)
+    /// Rendered when the transit fetch itself failed. Never the quiet-sky
+    /// copy — affirming a calm sky we couldn't actually read would be
+    /// invented content.
+    private var transitsUnavailableCard: some View {
+        LuminaCard {
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                Text("Couldn't read today's sky")
+                    .font(LuminaTypography.heading)
+                Text("Your reading is grounded in the real transits, and we couldn't fetch them just now.")
+                    .font(LuminaTypography.bodyLight)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                LuminaButton(
+                    title: "Retry",
+                    variant: .ghost,
+                    systemImage: "arrow.clockwise",
+                    isLoading: viewModel.transitsRetrying
+                ) {
+                    Task { await viewModel.retryTransits() }
                 }
             }
+        }
+    }
+
+    private var whyTheseButton: some View {
+        Button {
+            showingWhy = true
+        } label: {
+            Image(systemName: "questionmark.circle")
+                .foregroundStyle(LuminaColors.celestialBlue)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Why these?")
+        .accessibilityHint("Shows the exact transits behind today's reading")
+    }
+
+    private func detailsDisclosure(_ lines: [String]) -> some View {
+        DisclosureGroup {
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                ForEach(lines, id: \.self) { line in
+                    HStack(alignment: .top, spacing: LuminaSpacing.sm) {
+                        Text("•").font(LuminaTypography.body)
+                        Text(line).font(LuminaTypography.body)
+                    }
+                }
+            }
+            .padding(.top, LuminaSpacing.sm)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } label: {
+            Text("Details")
+                .font(LuminaTypography.caption)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+        }
+        .tint(LuminaColors.inkBlack.opacity(0.6))
+    }
+
+    /// Moon + retrogrades — the sky-context strip under the reading.
+    /// Fixed-height skeletons hold the layout until the whole fan-out
+    /// resolves, so the cards reveal together with no reflow.
+    @ViewBuilder
+    private var skyContextSection: some View {
+        if viewModel.skyContextLoading {
+            LuminaSkeleton(shape: .block(height: 150))
+            LuminaSkeleton(shape: .block(height: 64))
+        } else {
+            if let moon = viewModel.moonPhase {
+                MoonPhaseCard(phase: moon)
+            }
+            if let retro = viewModel.retrogrades, retro.planets.contains(where: \.isRetrograde) {
+                RetrogradeCard(result: retro)
+            }
+        }
+    }
+
+    /// The "Ahead" card — imminent return (when there is one) + forecast.
+    @ViewBuilder
+    private var aheadSection: some View {
+        if viewModel.skyContextLoading {
+            LuminaSkeleton(shape: .block(height: 88))
+        } else {
+            WhatsComingCard(imminentReturns: viewModel.imminentReturns)
         }
     }
 
@@ -167,6 +242,27 @@ struct TodayHubView: View {
             }
         }
         .buttonStyle(.plain)
+    }
+
+    /// Midnight rollover, mapped to `Void` before hopping to the main queue
+    /// so no non-Sendable `Notification` crosses an isolation boundary.
+    private var dayChanged: AnyPublisher<Void, Never> {
+        NotificationCenter.default.publisher(for: .NSCalendarDayChanged)
+            .map { _ in () }
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+    }
+
+    /// Birth info saved or cleared (Settings → "Update birth info", sign-out).
+    private var birthDataChanged: AnyPublisher<Void, Never> {
+        NotificationCenter.default.publisher(for: UserBirthDataStore.didChangeNotification)
+            .map { _ in () }
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+    }
+
+    private func refresh() {
+        Task { await viewModel.loadIfNeeded() }
     }
 
     private func jump(to tab: LuminaTab) {

@@ -22,7 +22,17 @@ enum ReturnPhrasing {
         case 1: "first"
         case 2: "second"
         case 3: "third"
-        default: "\(number)th"
+        default: spelledOrdinal(number)
         }
+    }
+
+    /// "4th", "21st" — `NumberFormatter` gets the suffix right where a naive
+    /// "\(number)th" produced "21th". A fresh formatter per call keeps this
+    /// pure and avoids sharing non-Sendable state across isolation domains
+    /// (returns past the third are rare enough that the cost is nil).
+    private static func spelledOrdinal(_ number: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .ordinal
+        return formatter.string(from: NSNumber(value: number)) ?? "\(number)"
     }
 }

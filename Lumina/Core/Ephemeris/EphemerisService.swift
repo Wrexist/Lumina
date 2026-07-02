@@ -181,7 +181,7 @@ actor EphemerisService {
             throw ServiceError.missingConfiguration
         }
         let body = ChartRequestBody(birthData: birthData, houseSystem: houseSystem)
-        let request = try makeChartRequest(baseURL: baseURL, apiSecret: apiSecret, body: body)
+        let request = try makeRequest(path: "chart", baseURL: baseURL, apiSecret: apiSecret, body: body)
         logger.debug("chart requested for \(birthData.placeName, privacy: .public)")
 
         let (data, response) = try await session.data(for: request)
@@ -193,9 +193,13 @@ actor EphemerisService {
         return try Self.chartDecoder.decode(NatalChart.self, from: data)
     }
 
-    private func makeChartRequest(baseURL: URL, apiSecret: String, body: ChartRequestBody) throws -> URLRequest {
-        var request = URLRequest(url: baseURL.appendingPathComponent("chart"))
+    /// Builds the authenticated JSON POST every route shares. The 10-second
+    /// timeout enforces `docs/NAVIGATION.md` §12 — beyond it, fail to a retry
+    /// state, never spin forever.
+    private func makeRequest(path: String, baseURL: URL, apiSecret: String, body: some Encodable) throws -> URLRequest {
+        var request = URLRequest(url: baseURL.appendingPathComponent(path))
         request.httpMethod = "POST"
+        request.timeoutInterval = 10
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
@@ -211,12 +215,7 @@ actor EphemerisService {
             throw ServiceError.missingConfiguration
         }
         let body = TransitsRequestBody(birthData: birthData, at: moment)
-        var request = URLRequest(url: baseURL.appendingPathComponent("transits"))
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
-        request.httpBody = try Self.chartEncoder.encode(body)
+        let request = try makeRequest(path: "transits", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
@@ -235,12 +234,7 @@ actor EphemerisService {
             throw ServiceError.missingConfiguration
         }
         let body = SynastryRequestBody(personA: personA, personB: personB)
-        var request = URLRequest(url: baseURL.appendingPathComponent("synastry"))
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
-        request.httpBody = try Self.chartEncoder.encode(body)
+        let request = try makeRequest(path: "synastry", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
@@ -259,12 +253,7 @@ actor EphemerisService {
             throw ServiceError.missingConfiguration
         }
         let body = SynastryRequestBody(personA: personA, personB: personB)
-        var request = URLRequest(url: baseURL.appendingPathComponent("composite"))
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
-        request.httpBody = try Self.chartEncoder.encode(body)
+        let request = try makeRequest(path: "composite", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
@@ -282,12 +271,7 @@ actor EphemerisService {
             throw ServiceError.missingConfiguration
         }
         let body = MoonRequestBody(at: moment)
-        var request = URLRequest(url: baseURL.appendingPathComponent("moon"))
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
-        request.httpBody = try Self.chartEncoder.encode(body)
+        let request = try makeRequest(path: "moon", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
@@ -305,12 +289,7 @@ actor EphemerisService {
             throw ServiceError.missingConfiguration
         }
         let body = MoonRequestBody(at: moment)
-        var request = URLRequest(url: baseURL.appendingPathComponent("retrogrades"))
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
-        request.httpBody = try Self.chartEncoder.encode(body)
+        let request = try makeRequest(path: "retrogrades", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
@@ -328,12 +307,7 @@ actor EphemerisService {
             throw ServiceError.missingConfiguration
         }
         let body = ProgressionsRequestBody(birthData: birthData, on: date)
-        var request = URLRequest(url: baseURL.appendingPathComponent("progressions"))
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
-        request.httpBody = try Self.chartEncoder.encode(body)
+        let request = try makeRequest(path: "progressions", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
@@ -351,12 +325,7 @@ actor EphemerisService {
             throw ServiceError.missingConfiguration
         }
         let body = ReturnsRequestBody(birthData: birthData, from: from)
-        var request = URLRequest(url: baseURL.appendingPathComponent("returns"))
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
-        request.httpBody = try Self.chartEncoder.encode(body)
+        let request = try makeRequest(path: "returns", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
@@ -374,12 +343,7 @@ actor EphemerisService {
             throw ServiceError.missingConfiguration
         }
         let body = ForecastRequestBody(birthData: birthData, from: from, days: days)
-        var request = URLRequest(url: baseURL.appendingPathComponent("forecast"))
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
-        request.httpBody = try Self.chartEncoder.encode(body)
+        let request = try makeRequest(path: "forecast", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }

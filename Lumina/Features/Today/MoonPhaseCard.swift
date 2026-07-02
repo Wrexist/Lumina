@@ -1,32 +1,16 @@
 import SwiftUI
 
 /// "Tonight's Moon" — the current lunar phase, illumination, and the nearer of
-/// the next new/full moon. Global sky data (needs no birth chart), so it loads
-/// itself and stays quiet on failure rather than blocking the Today tab.
+/// the next new/full moon. Global sky data fetched by `TodayViewModel`'s
+/// shared fan-out and passed in, so the card renders in step with the rest of
+/// the sky context instead of popping in on its own.
 struct MoonPhaseCard: View {
+    let phase: MoonPhaseResult
     @Environment(AppRouter.self) private var router
-    @State private var ephemeris = EphemerisService()
-    @State private var phase: MoonPhaseResult?
     @State private var showing3D = false
     @ScaledMetric private var glyphSize: CGFloat = 40
 
     var body: some View {
-        Group {
-            if let phase {
-                loaded(phase)
-            }
-        }
-        .task { await load() }
-        .sheet(isPresented: $showing3D) {
-            if let phase {
-                MoonSphereSheetView(phase: phase)
-            }
-        }
-    }
-
-    // MARK: - View building blocks
-
-    private func loaded(_ moon: MoonPhaseResult) -> some View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 Text("TONIGHT'S MOON")
@@ -34,27 +18,27 @@ struct MoonPhaseCard: View {
                     .tracking(1.4)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
                 HStack(spacing: LuminaSpacing.md) {
-                    Image(systemName: MoonPhasePresentation.symbol(for: moon.phase))
+                    Image(systemName: MoonPhasePresentation.symbol(for: phase.phase))
                         .font(.system(size: glyphSize, weight: .light))
                         .foregroundStyle(LuminaColors.mutedGold)
                     VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
-                        Text(moon.phase)
+                        Text(phase.phase)
                             .font(LuminaTypography.heading)
-                        Text(MoonPhasePresentation.illuminationText(moon.illumination))
+                        Text(MoonPhasePresentation.illuminationText(phase.illumination))
                             .font(LuminaTypography.body)
                             .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-                        Text(MoonPhasePresentation.nextEvent(nextNew: moon.nextNewMoon, nextFull: moon.nextFullMoon))
+                        Text(MoonPhasePresentation.nextEvent(nextNew: phase.nextNewMoon, nextFull: phase.nextFullMoon))
                             .font(LuminaTypography.caption)
                             .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
                     }
                 }
-                if let ritual = MoonRitual.prompt(forAngle: moon.angle) {
+                if let ritual = MoonRitual.prompt(forAngle: phase.angle) {
                     Divider()
                     Text(ritual)
                         .font(LuminaTypography.body)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    if let cta = MoonRitual.callToAction(forAngle: moon.angle) {
+                    if let cta = MoonRitual.callToAction(forAngle: phase.angle) {
                         LuminaButton(title: cta, variant: .ghost, systemImage: "moon.stars") {
                             jumpToReflect()
                         }
@@ -64,6 +48,9 @@ struct MoonPhaseCard: View {
                     show3D()
                 }
             }
+        }
+        .sheet(isPresented: $showing3D) {
+            MoonSphereSheetView(phase: phase)
         }
     }
 
@@ -78,29 +65,4 @@ struct MoonPhaseCard: View {
         Haptics.light.play()
         showing3D = true
     }
-
-    private func load() async {
-        do {
-            phase = try await ephemeris.moonPhase()
-        } catch {
-            #if DEBUG
-            phase = Self.sample
-            #else
-            phase = nil
-            #endif
-        }
-    }
-
-    #if DEBUG
-    /// Dev-only stand-in so previews and no-backend builds show the card.
-    private static let sample = MoonPhaseResult(
-        calculatedAt: .now,
-        at: .now,
-        angle: 236,
-        phase: "Waning Gibbous",
-        illumination: 0.78,
-        nextNewMoon: .now.addingTimeInterval(86_400 * 12),
-        nextFullMoon: .now.addingTimeInterval(86_400 * 24)
-    )
-    #endif
 }
