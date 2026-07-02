@@ -17,6 +17,7 @@ import UIKit
 struct ShareQRView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var qrImage: UIImage?
+    @State private var shareURL: URL?
     @State private var error: LuminaError?
 
     var body: some View {
@@ -25,6 +26,7 @@ struct ShareQRView: View {
                 explainer
                 Spacer()
                 qrSurface
+                sendLinkButton
                 Spacer()
                 footer
             }
@@ -74,6 +76,27 @@ struct ShareQRView: View {
         }
     }
 
+    /// Not everyone is in the same room — the same universal link the QR
+    /// encodes can be sent over Messages/WhatsApp instead.
+    @ViewBuilder
+    private var sendLinkButton: some View {
+        if let shareURL {
+            ShareLink(
+                item: shareURL,
+                preview: SharePreview("Add me on Lumina")
+            ) {
+                Label("Send the link", systemImage: "paperplane")
+                    .font(LuminaTypography.body)
+                    .foregroundStyle(LuminaColors.celestialBlue)
+                    .frame(maxWidth: .infinity)
+                    .padding(LuminaSpacing.md)
+                    .background(LuminaColors.celestialBlue.opacity(0.1))
+                    .luminaCornerRadius(LuminaRadii.md)
+            }
+            .accessibilityLabel("Send your share link")
+        }
+    }
+
     private var footer: some View {
         Text("Open it in the Lumina app to connect. Your journal, friends, and account stay private.")
             .font(LuminaTypography.caption)
@@ -113,10 +136,12 @@ struct ShareQRView: View {
             let shared = SharedBirthData(from: birthData)
             let json = try JSONEncoder.luminaShare.encode(shared)
             let payload = json.base64URLEncodedString()
-            let url = "https://\(LuminaDeepLink.universalLinkHost)/share/\(payload)"
-            qrImage = Self.makeQR(for: url)
+            let urlString = "https://\(LuminaDeepLink.universalLinkHost)/share/\(payload)"
+            qrImage = Self.makeQR(for: urlString)
             if qrImage == nil {
                 error = .unknown(underlyingMessage: "Couldn't render the QR code.")
+            } else {
+                shareURL = URL(string: urlString)
             }
         } catch {
             self.error = LuminaError.from(error)

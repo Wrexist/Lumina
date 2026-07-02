@@ -127,7 +127,9 @@ struct OnboardingFlowView: View {
     private func handleFinalTap(_ destination: LuminaDeepLink?) {
         pendingDestination = destination
         if paywall.hasSeenInitialOffer {
-            onComplete(destination)
+            // Still persist: skipping straight to `onComplete` here would
+            // finish onboarding without ever saving the captured birth data.
+            persistAndComplete()
         } else {
             paywallVariant = .initial
             paywallPresented = true
@@ -172,12 +174,21 @@ struct OnboardingFlowView: View {
 
     /// Writes the captured `BirthData` into the persistent store before
     /// completing onboarding so every other tab can read from one source.
+    /// Reached from both final-step paths (paywall flow and the
+    /// paywall-already-seen shortcut), so the snapshot cleanup below covers
+    /// every way out of onboarding.
     private func persistAndComplete() {
         guard !didComplete else { return }
         didComplete = true
         if let birthData = state.makeBirthData() {
             UserBirthDataStore.userDefaults.save(birthData)
         }
+        // Privacy: the resume-on-kill snapshot (name + full birth data) has
+        // served its purpose now that the data lives in `UserBirthDataStore`.
+        // Drop it so the Privacy dashboard's "Onboarding state: Cleared" is
+        // truthful. Routing is unaffected — `AppRouterStorage` keeps its own
+        // separate onboarding-done flag.
+        OnboardingStorage.userDefaults.clear()
         onComplete(pendingDestination)
     }
 }

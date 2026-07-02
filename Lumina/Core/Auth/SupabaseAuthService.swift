@@ -33,8 +33,17 @@ actor SupabaseAuthService {
     /// Production initializer — reads `LuminaSupabaseURL` and
     /// `LuminaSupabaseAnonKey` from `Info.plist` (populated by xcconfig).
     init(infoPlist: [String: Any] = Bundle.main.infoDictionary ?? [:]) {
-        self.url = (infoPlist["LuminaSupabaseURL"] as? String).flatMap(URL.init(string:))
-        self.anonKey = infoPlist["LuminaSupabaseAnonKey"] as? String
+        self.url = Self.realConfigValue(infoPlist["LuminaSupabaseURL"] as? String).flatMap(URL.init(string:))
+        self.anonKey = Self.realConfigValue(infoPlist["LuminaSupabaseAnonKey"] as? String)
+    }
+
+    /// A value is unusable if it's empty or still the unexpanded xcconfig
+    /// placeholder like `$(SUPABASE_URL)` (happens when
+    /// `secrets/Config.xcconfig` isn't generated yet) — the same rejection
+    /// `IAPManager.isRealAPIKey` applies to its RevenueCat key.
+    private static func realConfigValue(_ value: String?) -> String? {
+        guard let value, !value.isEmpty, !value.hasPrefix("$(") else { return nil }
+        return value
     }
 
     /// Test seam — construct directly with a known URL/key.

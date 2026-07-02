@@ -6,8 +6,9 @@ import Foundation
 /// today. The narrated *audio* version (ElevenLabs) layers on later; the words
 /// are real now.
 enum DailyReading {
-    /// A 1–3 sentence reading from `transits` (tightest first, as the backend
-    /// returns them). An empty sky gets an honest "quiet day" reading.
+    /// A 1–3 sentence *standalone* reading from `transits` (tightest first,
+    /// as the backend returns them) — used where the reading travels alone,
+    /// like the share image. An empty sky gets an honest "quiet day" reading.
     static func compose(from transits: [TransitReading]) -> String {
         guard let lead = transits.first else {
             return "A quiet sky today — no major transits are touching your chart. "
@@ -19,6 +20,20 @@ enum DailyReading {
         }
         text += " " + closing(applying: lead.applying)
         return text
+    }
+
+    /// The on-screen reading body that sits under the reading card's headline.
+    /// The headline (`TransitPhrasing.sentence`) already names the lead
+    /// contact and the collapsed "Details" rows carry the rest, so this opens
+    /// straight with the lead's invitation — no transit is phrased twice on
+    /// the screen.
+    static func bodyText(from transits: [TransitReading]) -> String {
+        guard let lead = transits.first else {
+            return "No major transits are touching your chart right now. "
+                + "A good day to set your own pace."
+        }
+        let domain = planetDomain[lead.natal] ?? "your chart"
+        return invitationSentence(lead.type, domain) + " " + closing(applying: lead.applying)
     }
 
     private static func leadSentence(_ transit: TransitReading) -> String {
@@ -50,6 +65,15 @@ enum DailyReading {
         case .trine, .sextile: "an easy current to lean into around \(domain)."
         case .conjunction: "an intense focus on \(domain)."
         case .square, .opposition: "some friction around \(domain), so move with care."
+        }
+    }
+
+    /// `invitation(_:_:)` as a standalone sentence, for `bodyText(from:)`.
+    private static func invitationSentence(_ type: AspectType, _ domain: String) -> String {
+        switch type {
+        case .trine, .sextile: "An easy current to lean into around \(domain)."
+        case .conjunction: "An intense focus on \(domain)."
+        case .square, .opposition: "Some friction around \(domain), so move with care."
         }
     }
 

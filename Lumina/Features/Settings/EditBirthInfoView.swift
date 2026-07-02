@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 /// Edit-birth-info form for Settings → Your info. Reuses the same field
@@ -10,6 +11,7 @@ import SwiftUI
 /// fresh reading" affordance on Today.
 struct EditBirthInfoView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     @State private var birthDate = Date.now
     @State private var birthTime = Date.now
@@ -171,8 +173,13 @@ struct EditBirthInfoView: View {
             hydrated = true
             return
         }
-        birthDate = existing.birthDate
-        if let time = existing.birthTime {
+        let pickers = BirthMoment.pickerValues(
+            birthDate: existing.birthDate,
+            birthTime: existing.birthTime,
+            timeZoneIdentifier: existing.timeZoneIdentifier
+        )
+        birthDate = pickers.day
+        if let time = pickers.time {
             birthTime = time
             birthTimeUnknown = false
         } else {
@@ -206,17 +213,41 @@ struct EditBirthInfoView: View {
 
     private func save() {
         guard let resolved else { return }
+        // Picker values are device-local wall clock; anchor them at the
+        // birth place before they reach the ephemeris.
+        let (anchoredDate, anchoredTime) = BirthMoment.combine(
+            pickedDay: birthDate,
+            pickedTime: birthTimeUnknown ? nil : birthTime,
+            timeZoneIdentifier: resolved.timeZoneIdentifier
+        )
         let birthData = BirthData(
-            birthDate: birthDate,
-            birthTime: birthTimeUnknown ? nil : birthTime,
+            birthDate: anchoredDate,
+            birthTime: anchoredTime,
             placeName: resolved.displayName,
             latitude: resolved.latitude,
             longitude: resolved.longitude,
             timeZoneIdentifier: resolved.timeZoneIdentifier
         )
         UserBirthDataStore.userDefaults.save(birthData)
+        refreshFriendScores(with: birthData)
         Haptics.success.play()
         dismiss()
+    }
+
+    /// Cached `Friend.compatibilityScore` values were computed against the
+    /// old birth data; recompute them so People doesn't show stale scores
+    /// forever. Synastry-backed scores refresh on the next friend-detail
+    /// fetch and overwrite these heuristics.
+    private func refreshFriendScores(with birthData: BirthData) {
+        guard let friends = try? modelContext.fetch(FetchDescriptor<Friend>()) else { return }
+        let userCalendar = BirthMoment.calendar(birthData.timeZoneIdentifier)
+        for friend in friends {
+            friend.compatibilityScore = CompatibilityScorer.score(
+                birthData.birthDate, calendar: userCalendar,
+                friend.birthDate, calendar: BirthMoment.calendar(friend.birthTimeZoneIdentifier)
+            )
+        }
+        modelContext.saveOrLog(category: "Settings")
     }
 }
 
@@ -243,12 +274,7 @@ private struct ManualBirthPlaceSheetEdit: View {
                         LuminaTextField(title: "Latitude", text: $latitudeText, placeholder: "59.3293", helper: "−90 to 90", keyboard: .numbersAndPunctuation)
                         LuminaTextField(title: "Longitude", text: $longitudeText, placeholder: "18.0686", helper: "−180 to 180", keyboard: .numbersAndPunctuation)
                     }
-                    Picker("Time zone", selection: $timeZoneIdentifier) {
-                        ForEach(TimeZone.knownTimeZoneIdentifiers, id: \.self) { id in
-                            Text(id).tag(id)
-                        }
-                    }
-                    .pickerStyle(.menu)
+                    TimeZonePickerField(identifier: $timeZoneIdentifier)
                     if let error {
                         Text(error)
                             .font(LuminaTypography.caption)

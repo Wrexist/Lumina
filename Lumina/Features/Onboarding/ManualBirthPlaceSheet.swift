@@ -87,26 +87,7 @@ struct ManualBirthPlaceSheet: View {
     }
 
     private var timeZonePicker: some View {
-        VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
-            Text("TIME ZONE")
-                .font(LuminaTypography.caption)
-                .tracking(1.2)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-            Picker("Time zone", selection: $timeZoneIdentifier) {
-                ForEach(TimeZone.knownTimeZoneIdentifiers, id: \.self) { id in
-                    Text(id).font(LuminaTypography.body).tag(id)
-                }
-            }
-            .pickerStyle(.menu)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(LuminaSpacing.sm)
-            .background(LuminaColors.parchment)
-            .overlay(
-                RoundedRectangle(cornerRadius: LuminaRadii.sm, style: .continuous)
-                    .stroke(LuminaColors.inkBlack.opacity(0.2), lineWidth: 1)
-            )
-            .luminaCornerRadius(LuminaRadii.sm)
-        }
+        TimeZonePickerField(identifier: $timeZoneIdentifier)
     }
 
     // MARK: - Logic

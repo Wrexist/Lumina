@@ -7,7 +7,23 @@
 
 ---
 
-## 📌 Latest — App capabilities: IAP, push, auth, universal links, 3D Moon (2026-07-01, branch `claude/app-capabilities-plan-br64fe`)
+## 📌 Latest — Full app review: critical fixes + tab declutter (2026-07-02, branch `claude/app-review-improvements-8w40x9`)
+
+Four parallel review passes over the whole app, then fixes:
+
+- [x] **Birth instant correctness** — pickers were sent verbatim (wrong day/time zone for every chart); new `BirthMoment` anchors instants at the birth place; QR payload now shares Y/M/D components; zone-aware compatibility scoring
+- [x] **Human Design corrections** — mandala `zeroOffset` was one gate off (0° Aries now correctly Gate 25); centers define only via complete channels
+- [x] **Palm CV** — Vision landmarks rescaled to pixel space (aspect-ratio skew misclassified hand types)
+- [x] **Onboarding** — resume-after-paywall no longer loses birth data; wheel defaults commit; back-and-edit invalidates the computed chart
+- [x] **Reflect** — no more phantom calendar entries; soft-delete/editor crash paths closed; softer-prompt escape hatch wired up
+- [x] **Today freshness** — day rollover + birth-info edits now reload; transit failure shows retry instead of false "quiet sky"; 10s request timeouts
+- [x] **Tab declutter** — Today 11 blocks → 6 with one coordinated load + skeletons; Chart wheel promoted to hero; Palm hub merged to one honest card; Settings "Soon" rows collapsed to footnotes
+- [x] **Round 3 — progression & delight** (same branch): chart discovery band (placements as a collection), Moments milestone system + timeline (anti-streak), daily "Know your chart" quiz from the real chart, daily reading reveal ritual
+- [ ] Follow-ups parked: transit alerts re-plan on launch/birth-edit (currently die after 5), config guards for unexpanded `$(...)` placeholders, Sign in with Apple nonce, paywall price from the StoreKit product, daily reflection reminder (new-feature idea)
+
+---
+
+## 📌 App capabilities: IAP, push, auth, universal links, 3D Moon (2026-07-01, branch `claude/app-capabilities-plan-br64fe`)
 
 Full plan at `docs/CAPABILITIES-PLAN.md`. Turns an Xcode capabilities audit
 ("Push Notifications: No", "Sign in with Apple: No", "Associated Domains: No",

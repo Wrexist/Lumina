@@ -41,7 +41,8 @@ struct BodygraphView: View {
 
     private func centerView(for center: HumanDesignCenter, in size: CGFloat) -> some View {
         let frame = center.layoutFrame
-        let isActivated = activation.definedCenters.contains(center)
+        // Only channel-defined centers fill; hanging gates leave a center open.
+        let isDefined = activation.definedCenters.contains(center)
         let width = frame.width * size
         let height = frame.height * size
         return Button {
@@ -49,15 +50,15 @@ struct BodygraphView: View {
             onTapCenter?(center)
         } label: {
             RoundedRectangle(cornerRadius: LuminaRadii.xs, style: .continuous)
-                .fill(isActivated ? center.fillColor : Color.clear)
+                .fill(isDefined ? center.fillColor : Color.clear)
                 .overlay(
                     RoundedRectangle(cornerRadius: LuminaRadii.xs, style: .continuous)
-                        .stroke(LuminaColors.inkBlack.opacity(isActivated ? 0.3 : 0.5), lineWidth: 1)
+                        .stroke(LuminaColors.inkBlack.opacity(isDefined ? 0.3 : 0.5), lineWidth: 1)
                 )
                 .overlay(
                     Text(center.displayName)
                         .font(LuminaTypography.caption)
-                        .foregroundStyle(isActivated ? LuminaColors.parchment : LuminaColors.inkBlack.opacity(0.7))
+                        .foregroundStyle(isDefined ? LuminaColors.parchment : LuminaColors.inkBlack.opacity(0.7))
                         .padding(LuminaSpacing.xs)
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.6)
@@ -69,7 +70,7 @@ struct BodygraphView: View {
             x: frame.minX * size + width / 2,
             y: frame.minY * size + height / 2
         )
-        .accessibilityLabel("\(center.displayName) — \(isActivated ? "activated" : "open")")
+        .accessibilityLabel("\(center.displayName) — \(isDefined ? "defined" : "open")")
     }
 
     // MARK: - Methods

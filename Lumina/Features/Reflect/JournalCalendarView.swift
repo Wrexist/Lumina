@@ -5,16 +5,10 @@ import SwiftUI
 /// dot indicator; tapping a day opens that day's entry detail (or a
 /// fresh editor if none exists).
 struct JournalCalendarView: View {
-    /// Identifiable wrapper so `.navigationDestination(item:)` can present
-    /// a tapped day without forcing `Date: Identifiable` globally.
-    private struct SelectedDay: Identifiable, Hashable, Sendable {
-        let date: Date
-        var id: TimeInterval { date.timeIntervalSinceReferenceDate }
-    }
-
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \JournalEntry.date, order: .reverse) private var entries: [JournalEntry]
-    @State private var selectedDay: SelectedDay?
+    @State private var openedExisting: JournalEntry?
+    @State private var openedNew: JournalEntry?
     @State private var monthCursor: Date = .now
 
     private let calendar = Calendar.current
@@ -30,12 +24,11 @@ struct JournalCalendarView: View {
         .background(LuminaColors.parchment)
         .navigationTitle("History")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(item: $selectedDay) { day in
-            if let existing = entry(on: day.date) {
-                JournalEntryDetailView(entry: existing)
-            } else {
-                JournalEntryView(entry: makeEntry(for: day.date))
-            }
+        .navigationDestination(item: $openedExisting) { entry in
+            JournalEntryDetailView(entry: entry)
+        }
+        .navigationDestination(item: $openedNew) { entry in
+            JournalEntryView(entry: entry)
         }
     }
 
@@ -50,16 +43,33 @@ struct JournalCalendarView: View {
             }
             .accessibilityLabel("Previous month")
             Spacer()
-            Text(monthLabel)
-                .font(LuminaTypography.heading)
+            Button {
+                monthCursor = .now
+            } label: {
+                Text(monthLabel)
+                    .font(LuminaTypography.heading)
+                    .foregroundStyle(LuminaColors.inkBlack)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(monthLabel)
+            .accessibilityHint("Jumps back to the current month")
             Spacer()
             Button {
                 monthCursor = calendar.date(byAdding: .month, value: 1, to: monthCursor) ?? monthCursor
             } label: {
-                Image(systemName: "chevron.right").foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(isAtCurrentMonth ? 0.25 : 0.7))
             }
+            .disabled(isAtCurrentMonth)
             .accessibilityLabel("Next month")
         }
+    }
+
+    /// Journaling is past-only (future days already render dimmed and
+    /// non-interactive), so there is nothing to page forward to beyond the
+    /// current month.
+    private var isAtCurrentMonth: Bool {
+        calendar.isDate(monthCursor, equalTo: .now, toGranularity: .month)
     }
 
     private var weekdayLabels: some View {
@@ -125,7 +135,7 @@ struct JournalCalendarView: View {
                     .accessibilityHidden(true)
             } else {
                 Button {
-                    selectedDay = SelectedDay(date: day)
+                    open(day)
                 } label: {
                     dayContent(day)
                 }
@@ -164,12 +174,36 @@ struct JournalCalendarView: View {
         calendar.compare(day, to: .now, toGranularity: .day) == .orderedDescending
     }
 
+    /// Resolve-or-create happens here in the tap handler, NOT in the
+    /// navigation destination builder — SwiftUI can evaluate that builder
+    /// during `body`, which would insert phantom blank entries (see
+    /// `ReflectHubView.primaryCTA` for the same pattern).
+    private func open(_ day: Date) {
+        if let existing = entry(on: day) {
+            openedExisting = existing
+        } else {
+            openedNew = makeEntry(for: day)
+        }
+    }
+
     private func makeEntry(for day: Date) -> JournalEntry {
         let prompt = JournalPromptGenerator.shared.prompt(for: day)
         let key = JournalPromptGenerator.shared.transitKey(for: day)
         let entry = JournalEntry(date: day, prompt: prompt, transitKey: key)
         modelContext.insert(entry)
         modelContext.saveOrLog(category: "Reflect")
+        recordReflectionMoments()
         return entry
+    }
+
+    /// Marks reflection Moments after a new entry is created here (backfill
+    /// path). Same rule as `ReflectHubView`: thresholds count what exists,
+    /// never consecutive days — no streaks. The fetch count is authoritative
+    /// because `@Query` may not refresh mid-action.
+    private func recordReflectionMoments() {
+        let count = (try? modelContext.fetchCount(FetchDescriptor<JournalEntry>())) ?? entries.count
+        if MomentsStore.shared.recordReflection(totalCount: max(count, 1)) {
+            Haptics.success.play()
+        }
     }
 }

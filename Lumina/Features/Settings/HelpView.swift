@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Phase-12 / Phase-13 starter Help & FAQ. Twelve hand-written articles
 /// grouped by topic, fully on-device. The pull-down search on Today
@@ -185,9 +186,31 @@ private struct ArticleView: View {
     }
 }
 
+/// Builds the pre-filled `mailto:` URL for `FeedbackView`. A separate type
+/// so the address and query encoding are unit-testable.
+enum FeedbackMail {
+    static let address = "feedback@lumina.app"
+
+    /// `nil` only if `URLComponents` can't serialize (practically never).
+    static func mailtoURL(subject: String, message: String) -> URL? {
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = address
+        var items: [URLQueryItem] = []
+        let trimmedSubject = subject.trimmingCharacters(in: .whitespaces)
+        if !trimmedSubject.isEmpty {
+            items.append(URLQueryItem(name: "subject", value: trimmedSubject))
+        }
+        items.append(URLQueryItem(name: "body", value: message))
+        components.queryItems = items
+        return components.url
+    }
+}
+
 private struct FeedbackView: View {
     @State private var subject = ""
     @State private var message = ""
+    @State private var mailUnavailable = false
 
     var body: some View {
         ScrollView {
@@ -211,19 +234,57 @@ private struct FeedbackView: View {
                                 .stroke(LuminaColors.inkBlack.opacity(0.2), lineWidth: 1)
                         )
                 }
-                LuminaButton(title: "Send", variant: .primary, isEnabled: !message.trimmingCharacters(in: .whitespaces).isEmpty) {
-                    // TODO(lumina): wire MFMailComposeViewController + diagnostic dump (Phase 12)
-                    Haptics.success.play()
+                LuminaButton(title: "Send", variant: .primary, isEnabled: canSend) {
+                    send()
                 }
-                Text("In the next phase this opens Mail with a diagnostic-dump attachment (device, build, anonymised state).")
-                    .font(LuminaTypography.caption)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
+                sendCaption
             }
             .padding(LuminaSpacing.lg)
         }
         .background(LuminaColors.parchment)
         .navigationTitle("Send feedback")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder
+    private var sendCaption: some View {
+        if mailUnavailable {
+            Text("Couldn't open a mail app on this device. Email us at \(FeedbackMail.address) — "
+                + "your message stays above so you can copy it.")
+                .font(LuminaTypography.caption)
+                .foregroundStyle(LuminaColors.error)
+        } else {
+            Text("Sending opens your mail app with this message addressed to \(FeedbackMail.address).")
+                .font(LuminaTypography.caption)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
+        }
+    }
+
+    private var canSend: Bool {
+        !message.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    /// Opens the user's mail app pre-filled. The fields are cleared only
+    /// after the system confirms it opened the URL — no success theater
+    /// when nothing actually happened.
+    /// TODO(lumina): MFMailComposeViewController + diagnostic-dump
+    /// attachment (device, build, anonymised state) in Phase 12.
+    private func send() {
+        guard let url = FeedbackMail.mailtoURL(subject: subject, message: message) else {
+            mailUnavailable = true
+            return
+        }
+        UIApplication.shared.open(url) { accepted in
+            if accepted {
+                Haptics.success.play()
+                subject = ""
+                message = ""
+                mailUnavailable = false
+            } else {
+                Haptics.warning.play()
+                mailUnavailable = true
+            }
+        }
     }
 }
 

@@ -78,9 +78,12 @@ extension ChartQAView {
 
     @ViewBuilder
     func conversationNote(_ error: LuminaError) -> some View {
-        // A missing server key is a "coming soon", not a scary failure — the
-        // curated answers below still work either way.
-        let comingSoon = error == .missingConfiguration(key: "AnthropicAPIKey")
+        // Missing configuration (the server has no Anthropic key yet) is a
+        // "coming soon", not a scary failure — the curated answers below
+        // still work either way. Key-agnostic on purpose: the free-text box
+        // is only shown when the backend itself is wired up, so any
+        // `.missingConfiguration` reaching here means the same thing.
+        let comingSoon = error.isMissingConfiguration
         Text(comingSoon
             ? "Conversational readings are being prepared. In the meantime, the questions below are answered straight from your chart."
             : error.userBody)

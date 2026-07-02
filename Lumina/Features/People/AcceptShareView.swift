@@ -59,7 +59,7 @@ struct AcceptShareView: View {
                 LuminaTextField(title: "Name", text: $name, placeholder: "Their name", maxCharacters: 60)
                 LuminaCard {
                     VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                        infoRow("Birth date", dateString(shared.birthDate))
+                        infoRow("Birth date", dateString(shared))
                         infoRow("City", shared.placeName)
                         infoRow("Birth time", "Not shared")
                     }
@@ -96,13 +96,24 @@ struct AcceptShareView: View {
         name = value.name ?? ""
     }
 
-    private func dateString(_ date: Date) -> String {
+    private func dateString(_ shared: SharedBirthData) -> String {
+        // Format in the shared time zone so the day never shifts on the
+        // recipient's device.
         let formatter = DateFormatter()
         formatter.dateStyle = .long
-        return formatter.string(from: date)
+        formatter.timeZone = BirthMoment.calendar(shared.timeZoneIdentifier).timeZone
+        return formatter.string(from: shared.birthDate)
     }
 
     private func add(_ shared: SharedBirthData) {
+        // Re-scanning the same QR shouldn't silently duplicate the person.
+        let incomingDate = shared.birthDate
+        if let existing = try? modelContext.fetch(FetchDescriptor<Friend>()),
+           existing.contains(where: { $0.birthDate == incomingDate && $0.birthPlaceName == shared.placeName }) {
+            Haptics.success.play()
+            dismiss()
+            return
+        }
         let friend = Friend(
             name: trimmedName,
             birthDate: shared.birthDate,
@@ -114,10 +125,18 @@ struct AcceptShareView: View {
             source: .qr
         )
         if let userBirth = UserBirthDataStore.userDefaults.load() {
-            friend.compatibilityScore = CompatibilityScorer.score(userBirth.birthDate, friend.birthDate)
+            friend.compatibilityScore = CompatibilityScorer.score(
+                userBirth.birthDate, calendar: BirthMoment.calendar(userBirth.timeZoneIdentifier),
+                friend.birthDate, calendar: BirthMoment.calendar(shared.timeZoneIdentifier)
+            )
         }
         modelContext.insert(friend)
         modelContext.saveOrLog(category: "People")
+        // A friend accepted via QR counts the same as one added by hand.
+        // The duplicate early-return above deliberately doesn't unlock —
+        // no new person was saved. `Haptics.success` below already covers
+        // the newly-unlocked case.
+        MomentsStore.shared.unlock(.firstFriend)
         Haptics.success.play()
         dismiss()
     }

@@ -6,6 +6,7 @@ import SwiftUI
 struct JournalEntryDetailView: View {
     let entry: JournalEntry
 
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @State private var editing = false
     @State private var confirmingDelete = false
@@ -112,5 +113,8 @@ struct JournalEntryDetailView: View {
     private func handleDelete() {
         modelContext.delete(entry)
         modelContext.saveOrLog(category: "Reflect")
+        // Pop immediately — this screen would otherwise keep rendering a
+        // deleted model.
+        dismiss()
     }
 }

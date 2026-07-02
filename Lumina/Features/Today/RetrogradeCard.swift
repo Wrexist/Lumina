@@ -1,12 +1,12 @@
 import SwiftUI
 
 /// "Retrogrades" — which bodies are currently in apparent backward motion and
-/// when each turns direct. Global sky data, so it loads itself; it stays hidden
-/// unless something is actually retrograde, keeping Today calm when the sky is
-/// clear. Real ephemeris, never faked.
+/// when each turns direct, as a compact strip under the Moon card (the two
+/// together are Today's "sky context"; the reading stays the hero). Data
+/// arrives from `TodayViewModel`'s shared fan-out, and the caller hides the
+/// strip entirely when nothing is retrograde. Real ephemeris, never faked.
 struct RetrogradeCard: View {
-    @State private var ephemeris = EphemerisService()
-    @State private var result: RetrogradesResult?
+    let result: RetrogradesResult
 
     private static let stationFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -15,65 +15,31 @@ struct RetrogradeCard: View {
     }()
 
     var body: some View {
-        Group {
-            if let result, result.planets.contains(where: \.isRetrograde) {
-                loaded(result)
-            }
-        }
-        .task { await load() }
-    }
-
-    private func loaded(_ result: RetrogradesResult) -> some View {
-        let retrograde = result.planets.filter(\.isRetrograde)
-        return LuminaCard {
-            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                Text("RETROGRADES")
-                    .font(LuminaTypography.mono)
-                    .tracking(1.4)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-                Text(RetrogradePhrasing.summary(for: result))
-                    .font(LuminaTypography.body)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                ForEach(retrograde) { state in
-                    if let line = RetrogradePhrasing.stationLine(for: state, formatter: Self.stationFormatter) {
-                        HStack(alignment: .top, spacing: LuminaSpacing.sm) {
-                            Text("•").font(LuminaTypography.caption)
-                            Text(line)
-                                .font(LuminaTypography.caption)
-                                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-                        }
+        LuminaCard {
+            HStack(alignment: .top, spacing: LuminaSpacing.md) {
+                Image(systemName: "arrow.uturn.backward")
+                    .foregroundStyle(LuminaColors.celestialBlue)
+                VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
+                    Text(RetrogradePhrasing.summary(for: result))
+                        .font(LuminaTypography.body)
+                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if !stationSummary.isEmpty {
+                        Text(stationSummary)
+                            .font(LuminaTypography.caption)
+                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
                     }
                 }
             }
         }
     }
 
-    private func load() async {
-        do {
-            result = try await ephemeris.retrogrades()
-        } catch {
-            #if DEBUG
-            result = Self.sample
-            #else
-            result = nil
-            #endif
-        }
+    /// The station dates joined into one caption line, keeping the strip to
+    /// two lines of text instead of a bullet per planet.
+    private var stationSummary: String {
+        result.planets
+            .filter(\.isRetrograde)
+            .compactMap { RetrogradePhrasing.stationLine(for: $0, formatter: Self.stationFormatter) }
+            .joined(separator: " ")
     }
-
-    #if DEBUG
-    private static let sample = RetrogradesResult(
-        calculatedAt: .now,
-        at: .now,
-        planets: [
-            RetrogradeState(
-                planet: "Mercury",
-                isRetrograde: true,
-                nextStationAt: .now.addingTimeInterval(86_400 * 9),
-                nextStationDirection: .direct
-            ),
-            RetrogradeState(planet: "Venus", isRetrograde: false, nextStationAt: nil, nextStationDirection: nil),
-        ]
-    )
-    #endif
 }

@@ -31,6 +31,15 @@ struct PlanetDetailSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .onAppear(perform: recordDiscovery)
+    }
+
+    /// Chart discovery: opening a placement's reading counts as meeting it.
+    /// One success haptic marks a first meeting — once per placement, ever.
+    private func recordDiscovery() {
+        if ChartDiscovery.shared.markExplored(planet.planet) {
+            Haptics.success.play()
+        }
     }
 
     private var header: some View {

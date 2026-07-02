@@ -1,6 +1,51 @@
 import SwiftData
 import SwiftUI
 
+/// Sort orders for the People list, persisted via `@AppStorage`. `@Query`'s
+/// sort descriptor is static, so `PeopleHubView` re-sorts the fetched array
+/// in a computed property instead of re-querying.
+enum FriendSortOrder: String, CaseIterable, Identifiable, Sendable {
+    case recentlyAdded
+    case name
+    case compatibility
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .recentlyAdded: "Recently added"
+        case .name: "Name"
+        case .compatibility: "Compatibility score"
+        }
+    }
+
+    func sorted(_ friends: [Friend]) -> [Friend] {
+        switch self {
+        case .recentlyAdded:
+            friends.sorted { $0.createdAt > $1.createdAt }
+        case .name:
+            friends.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        case .compatibility:
+            friends.sorted(by: Self.compatibilityFirst)
+        }
+    }
+
+    /// Highest score first; friends without a score sort last (newest first
+    /// among themselves, matching the default order).
+    private static func compatibilityFirst(_ lhs: Friend, _ rhs: Friend) -> Bool {
+        switch (lhs.compatibilityScore, rhs.compatibilityScore) {
+        case let (left?, right?) where left != right:
+            left > right
+        case (.some, .none):
+            true
+        case (.none, .some):
+            false
+        default:
+            lhs.createdAt > rhs.createdAt
+        }
+    }
+}
+
 /// Phase-7 / Phase-10 People hub. Real list of `Friend`s sorted by
 /// recency, manual add, share-my-chart QR. Synastry bi-wheel + the
 /// 5-dimension narrative report ship with the backend `/synastry`
@@ -14,6 +59,7 @@ struct PeopleHubView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(AppRouter.self) private var router
     @Query(sort: \Friend.createdAt, order: .reverse) private var friends: [Friend]
+    @AppStorage("peopleSortOrder") private var sortOrder: FriendSortOrder = .recentlyAdded
     @State private var addPresented = false
     @State private var qrPresented = false
     @State private var sharePayload: SharePayload?
@@ -79,10 +125,16 @@ struct PeopleHubView: View {
         }
     }
 
+    /// `@Query` always fetches newest-first; the user's chosen order is
+    /// applied here so switching it never re-runs the fetch.
+    private var sortedFriends: [Friend] {
+        sortOrder.sorted(friends)
+    }
+
     private var friendsList: some View {
         List {
             Section {
-                ForEach(friends.filter { $0.id != pendingDelete?.id }) { friend in
+                ForEach(sortedFriends.filter { $0.id != pendingDelete?.id }) { friend in
                     NavigationLink {
                         FriendDetailView(friend: friend)
                     } label: {
@@ -128,6 +180,20 @@ struct PeopleHubView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        if !friends.isEmpty {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Picker("Sort by", selection: $sortOrder) {
+                        ForEach(FriendSortOrder.allCases) { order in
+                            Text(order.displayName).tag(order)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "arrow.up.arrow.down.circle")
+                }
+                .accessibilityLabel("Sort people")
+            }
+        }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 Button("Add someone", systemImage: "person.fill.badge.plus") {
@@ -228,6 +294,8 @@ struct PeopleHubView: View {
     private func birthLine(_ friend: Friend) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
+        // Read the day in the friend's birth zone so it never shifts here.
+        formatter.timeZone = BirthMoment.calendar(friend.birthTimeZoneIdentifier).timeZone
         let date = formatter.string(from: friend.birthDate)
         if let place = friend.birthPlaceName {
             return "\(date) · \(place)"

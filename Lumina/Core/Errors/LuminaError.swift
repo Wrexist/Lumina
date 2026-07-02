@@ -24,6 +24,15 @@ enum LuminaError: Error, Equatable, Sendable {
         case location
     }
 
+    /// `true` for any `.missingConfiguration`, regardless of which key is
+    /// missing. Views branch on this instead of comparing against an exact
+    /// key string (e.g. `== .missingConfiguration(key: "AnthropicAPIKey")`),
+    /// which would silently stop matching if a key were ever renamed.
+    var isMissingConfiguration: Bool {
+        if case .missingConfiguration = self { return true }
+        return false
+    }
+
     /// 1-line title shown in the error state hero.
     var userTitle: String {
         switch self {

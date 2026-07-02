@@ -150,6 +150,10 @@ enum OnboardingScreens {
                 .datePickerStyle(.wheel)
                 .labelsHidden()
                 .frame(maxWidth: .infinity, alignment: .center)
+                // Commit the displayed default: the binding only fires when
+                // the wheel *moves*, so someone born on the shown date could
+                // never enable Continue without wiggling the wheel first.
+                .onAppear { if date == nil { date = defaultDate } }
                 Spacer()
             }
             .padding(LuminaSpacing.lg)
@@ -195,6 +199,10 @@ enum OnboardingScreens {
                     .datePickerStyle(.wheel)
                     .labelsHidden()
                     .frame(maxWidth: .infinity)
+                    // Same default-commit as `BirthDate`: the wheel already
+                    // shows noon, so make that the value until it's moved.
+                    // Also re-fires when "I'm not sure" is toggled back off.
+                    .onAppear { if time == nil { time = defaultTime } }
                 }
 
                 LuminaButton(

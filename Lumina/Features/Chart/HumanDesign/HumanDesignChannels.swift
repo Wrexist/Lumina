@@ -58,6 +58,13 @@ enum HumanDesignChannels {
 
     /// Returns the subset of channels both of whose gates are activated.
     static func defined(in activation: HumanDesignActivation) -> [HumanDesignChannel] {
-        all.filter { activation.activatedGates.contains($0.gateA) && activation.activatedGates.contains($0.gateB) }
+        defined(gates: activation.activatedGates)
+    }
+
+    /// Returns the subset of channels both of whose gates are in `gates`.
+    /// Used by `HumanDesignActivation.compute` before the activation value
+    /// itself exists.
+    static func defined(gates: Set<Int>) -> [HumanDesignChannel] {
+        all.filter { gates.contains($0.gateA) && gates.contains($0.gateB) }
     }
 }

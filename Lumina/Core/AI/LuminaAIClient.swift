@@ -63,8 +63,13 @@ actor LuminaAIClient {
     /// `Info.plist` (populated by xcconfig), same as `EphemerisService`.
     init(session: URLSession = .shared, infoPlist: [String: Any] = Bundle.main.infoDictionary ?? [:]) {
         self.session = session
-        self.baseURL = (infoPlist["LuminaSwissEphServiceURL"] as? String).flatMap(URL.init(string:))
-        self.apiSecret = infoPlist["LuminaSwissEphAPISecret"] as? String
+        // `BuildConfig.realValue` filters unexpanded "$(…)" xcconfig
+        // placeholders, so an unwired build throws `.missingConfiguration`
+        // (and `isConfigured` is false) instead of sending the literal
+        // placeholder as a credential.
+        self.baseURL = BuildConfig.realValue(infoPlist["LuminaSwissEphServiceURL"] as? String)
+            .flatMap(URL.init(string:))
+        self.apiSecret = BuildConfig.realValue(infoPlist["LuminaSwissEphAPISecret"] as? String)
     }
 
     /// Test seam — inject a mocked `URLSession` and explicit config.

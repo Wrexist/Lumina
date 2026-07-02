@@ -33,6 +33,12 @@ struct RootView: View {
         .onOpenURL { url in
             if let link = LuminaDeepLink.from(url: url) {
                 router.handle(deepLink: link)
+            } else if LuminaDeepLink.isLuminaURL(url) {
+                // One of our own links we couldn't parse (stale QR code,
+                // typo'd path): honor `LuminaDeepLink.from(url:)`'s
+                // documented fallback and land on Today. Foreign URLs are
+                // never routed.
+                router.handle(deepLink: .today)
             }
         }
     }

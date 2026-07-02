@@ -2,7 +2,8 @@ import Foundation
 
 /// Maps an ecliptic longitude (0–360°) to the Human Design gate it falls
 /// in. Each gate covers exactly 5°37'30" (5.625°), and the wheel is
-/// rotated so Gate 25 begins at 3°52'30" Aries (= 3.875°).
+/// rotated so Gate 25 begins at 28°15'00" Pisces (= 358.25°, i.e. −1.75°)
+/// and ends at 3°52'30" Aries — so 0° Aries itself falls inside Gate 25.
 ///
 /// The 64-gate sequence around the zodiac is fixed by the I Ching →
 /// Mandala mapping; we ship it as a literal array so any reviewer can
@@ -17,10 +18,12 @@ enum HumanDesignMandala {
     static let gateWidth = 5.625
 
     /// Offset of Gate 25's leading edge from 0° Aries, in degrees.
-    static let zeroOffset = 3.875
+    /// Gate 25 *ends* at 3°52'30" Aries; it *begins* one gate-width
+    /// earlier, at 28°15'00" Pisces = 358.25° = −1.75°.
+    static let zeroOffset = -1.75
 
     /// Gate sequence in zodiacal order from the leading edge of Gate 25
-    /// at ~3°52'30" Aries, then walking counter-clockwise around the
+    /// at 28°15'00" Pisces, then walking counter-clockwise around the
     /// wheel through the 12 signs. Index 0 is Gate 25 itself.
     static let sequence: [Int] = [
         25, 17, 21, 51, 42, 3,

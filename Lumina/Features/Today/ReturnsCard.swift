@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// "A major return is coming" — surfaces a Jupiter or Saturn return only when
-/// it's within the next year, so it's high-signal and never clutters Today the
-/// rest of the time. Self-contained; honest, never faked.
+/// "A major return is coming" — a Jupiter or Saturn return, rendered as the
+/// highlighted first row of the "Ahead" card (`WhatsComingCard`) rather than
+/// a card of its own. The caller passes only returns that are actually
+/// imminent (within the next year), so it stays high-signal and never
+/// clutters Today the rest of the time. Honest, never faked.
 struct ReturnsCard: View {
-    @State private var ephemeris = EphemerisService()
-    @State private var imminent: [ReturnEvent] = []
+    let imminent: [ReturnEvent]
 
     private static let monthFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -14,17 +15,10 @@ struct ReturnsCard: View {
     }()
 
     var body: some View {
-        Group {
-            if !imminent.isEmpty {
-                card
-            }
-        }
-        .task { await load() }
-    }
-
-    private var card: some View {
-        LuminaCard {
-            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+        HStack(alignment: .top, spacing: LuminaSpacing.md) {
+            Image(systemName: "sparkles")
+                .foregroundStyle(LuminaColors.mutedGold)
+            VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
                 Text("A MAJOR RETURN IS COMING")
                     .font(LuminaTypography.mono)
                     .tracking(1.4)
@@ -39,27 +33,6 @@ struct ReturnsCard: View {
                     .font(LuminaTypography.caption)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
             }
-        }
-    }
-
-    private func load() async {
-        guard let birth = UserBirthDataStore.userDefaults.load() else { return }
-        do {
-            let result = try await ephemeris.returns(for: birth)
-            imminent = ReturnPhrasing.imminent(result.events, within: 365, from: .now)
-        } catch {
-            #if DEBUG
-            imminent = [
-                ReturnEvent(
-                    planet: "Saturn",
-                    returnNumber: 1,
-                    exactAt: .now.addingTimeInterval(86_400 * 120),
-                    natalLongitude: 280
-                ),
-            ]
-            #else
-            imminent = []
-            #endif
         }
     }
 }

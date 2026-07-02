@@ -5,11 +5,10 @@ import UIKit
 /// because the nav-bar gear icon was a dead end without it — and the
 /// clarity charter forbids dead ends.
 ///
-/// Most rows are still placeholders that surface their future destination
-/// via `LuminaBadge(title: "Soon", tone: .neutral)`. The real Settings
-/// screens (manage subscription, edit birth info, privacy dashboard,
-/// export data, delete account, help & FAQ) ship per Phase 12 of
-/// `ROADMAP.md`.
+/// Every visible row does something. The destinations that haven't been
+/// built yet (data export, account deletion, legal documents) are collapsed
+/// into section footnotes rather than inert "Soon" rows; they ship per
+/// Phase 12 of `ROADMAP.md`.
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var preferences = AppPreferences.shared
@@ -93,12 +92,27 @@ struct SettingsView: View {
             } label: {
                 SettingsRow(title: "Birth date, time, and place", trailing: nil)
             }
+            NavigationLink {
+                MomentsView()
+            } label: {
+                SettingsRow(title: "Moments", trailing: nil)
+            }
         }
     }
 
     private var preferencesSection: some View {
         Section("Preferences") {
-            SettingsRow(title: "House system", trailing: .text("Placidus"))
+            // Read-only info until house-system selection ships — styled
+            // like the Version row (mono, dimmed) so it doesn't read as a
+            // tappable destination.
+            HStack {
+                Text("House system").font(LuminaTypography.body)
+                Spacer()
+                Text("Placidus")
+                    .font(LuminaTypography.mono)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            }
+            .accessibilityElement(children: .combine)
             NavigationLink {
                 NotificationSettingsView()
             } label: {
@@ -114,27 +128,26 @@ struct SettingsView: View {
     }
 
     private var privacySection: some View {
-        Section("Privacy") {
+        Section {
             NavigationLink {
                 PrivacyDashboardView()
             } label: {
                 SettingsRow(title: "Privacy dashboard", trailing: nil)
             }
-            SettingsRow(title: "Export my data", trailing: .badge("Soon"))
-            SettingsRow(title: "Delete my account", trailing: .badge("Soon"))
+        } header: {
+            Text("Privacy")
+        } footer: {
+            sectionFootnote("Data export and account deletion are coming before public launch.")
         }
     }
 
     private var aboutSection: some View {
-        Section("About") {
+        Section {
             NavigationLink {
                 HelpView()
             } label: {
                 SettingsRow(title: "Help & FAQ", trailing: nil)
             }
-            SettingsRow(title: "Terms of service", trailing: .badge("Soon"))
-            SettingsRow(title: "Privacy policy", trailing: .badge("Soon"))
-            SettingsRow(title: "Open-source acknowledgements", trailing: .badge("Soon"))
             HStack {
                 Text("Version").font(LuminaTypography.body)
                 Spacer()
@@ -142,7 +155,20 @@ struct SettingsView: View {
                     .font(LuminaTypography.mono)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
             }
+        } header: {
+            Text("About")
+        } footer: {
+            sectionFootnote("Terms of service, privacy policy, and open-source acknowledgements "
+                + "are coming before public launch.")
         }
+    }
+
+    /// Caption-style footnote for destinations that aren't built yet —
+    /// one honest line instead of a stack of inert "Soon" rows.
+    private func sectionFootnote(_ text: String) -> some View {
+        Text(text)
+            .font(LuminaTypography.caption)
+            .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
     }
 
     private var versionString: String {
@@ -182,7 +208,6 @@ struct SettingsView: View {
 
 private struct SettingsRow: View {
     enum Trailing {
-        case badge(String)
         case text(String)
     }
 
@@ -194,8 +219,6 @@ private struct SettingsRow: View {
             Text(title).font(LuminaTypography.body)
             Spacer()
             switch trailing {
-            case .badge(let value):
-                LuminaBadge(title: value, tone: .neutral)
             case .text(let value):
                 Text(value)
                     .font(LuminaTypography.body)
@@ -204,8 +227,8 @@ private struct SettingsRow: View {
                 EmptyView()
             }
             // No manual chevron: NavigationLink rows get the system disclosure
-            // indicator automatically, so the inert "Soon" rows correctly show
-            // none rather than a misleading affordance.
+            // indicator automatically, so plain rows correctly show none
+            // rather than a misleading affordance.
         }
         .accessibilityElement(children: .combine)
     }

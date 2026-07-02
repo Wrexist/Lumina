@@ -131,8 +131,11 @@ struct ChartWheelView: View {
 
     private func drawAspects(in context: GraphicsContext, center: CGPoint, radius: CGFloat) {
         let aspectRadius = radius * 0.50
+        // Tolerate duplicate planet names in a malformed payload (first wins)
+        // rather than trapping in `Dictionary(uniqueKeysWithValues:)`.
         let positions = Dictionary(
-            uniqueKeysWithValues: chart.planets.map { ($0.planet, $0.longitude) }
+            chart.planets.map { ($0.planet, $0.longitude) },
+            uniquingKeysWith: { first, _ in first }
         )
         for aspect in chart.aspects {
             guard let lon1 = positions[aspect.planet1],
@@ -190,8 +193,10 @@ struct ChartWheelView: View {
             step: radius * 0.12,
             band: (radius * 0.56)...(radius * 0.76)
         )
+        // First wins on duplicate planet names — same guard as `drawAspects`.
         let radiusByPlanet = Dictionary(
-            uniqueKeysWithValues: zip(chart.planets.map(\.planet), radii)
+            zip(chart.planets.map(\.planet), radii),
+            uniquingKeysWith: { first, _ in first }
         )
         return ZStack {
             ForEach(chart.planets, id: \.planet) { planet in

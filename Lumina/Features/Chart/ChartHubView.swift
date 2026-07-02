@@ -101,11 +101,16 @@ struct ChartHubView: View {
         )
     }
 
+    /// Compact "Chart settings" block at the end of the feed — switching
+    /// house systems is a rare, deliberate act and shouldn't sit mid-read.
     private var houseSystemPicker: some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-            Text("HOUSE SYSTEM")
+            Text("CHART SETTINGS")
                 .font(LuminaTypography.mono)
                 .tracking(1.4)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            Text("House system")
+                .font(LuminaTypography.caption)
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
             LuminaSegmentedControl(
                 options: [
@@ -124,36 +129,42 @@ struct ChartHubView: View {
         }
     }
 
-    private var interpretationsPlaceholder: some View {
-        LuminaCard {
-            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                Text("Tap any planet to learn more")
-                    .font(LuminaTypography.heading)
-                Text("Each reading is grounded in your exact placement — the planet, its sign, its house, and whether it's retrograde. Never a generic horoscope.")
-                    .font(LuminaTypography.bodyLight)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-            }
-        }
+    /// Short tap affordance directly beneath the wheel — replaces the old
+    /// standalone "interpretations" card so the tip sits where it applies.
+    private var wheelCaption: some View {
+        Text("Tap any planet to learn more — each reading is grounded in your exact placement, never a generic horoscope.")
+            .font(LuminaTypography.caption)
+            .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
     }
 
     // MARK: - Methods
 
+    /// The wheel is the hero: it follows the Big 3 immediately, with its tap
+    /// caption and aspect legend attached. Identity cards come after, the
+    /// "ask" CTA closes the feed, and settings sit last.
     private func astrologyContent(_ chart: NatalChart) -> some View {
         VStack(spacing: LuminaSpacing.lg) {
             if chart.houses == nil {
                 unknownTimeBanner
             }
             BigThreeBand(chart: chart)
-            CosmicSignatureCard(chart: chart)
-            ChartStandoutCard(chart: chart)
-            AskYourChartCard(chart: chart)
             ChartWheelView(chart: chart, onTapPlanet: handleTap)
                 .padding(LuminaSpacing.sm)
-            houseSystemPicker
+            wheelCaption
+            ChartDiscoveryBand(chart: chart)
             AspectLegend()
+            CosmicSignatureCard(chart: chart)
+            ChartStandoutCard(chart: chart)
             StrongestAspectsCard(chart: chart)
-            interpretationsPlaceholder
+            ChartQuizCard(chart: chart)
+            AskYourChartCard(chart: chart)
+            houseSystemPicker
         }
+        // Seeing a computed chart at all is the first Moment. `unlock` is
+        // idempotent, so re-renders are free.
+        .onAppear { MomentsStore.shared.unlock(.firstChart) }
     }
 
     private var unknownTimeBanner: some View {
@@ -198,7 +209,7 @@ struct ChartHubView: View {
 
     private func definedCentersSummary(_ activation: HumanDesignActivation) -> some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-            Text("ACTIVATED CENTERS")
+            Text("DEFINED CENTERS")
                 .font(LuminaTypography.mono)
                 .tracking(1.4)
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))

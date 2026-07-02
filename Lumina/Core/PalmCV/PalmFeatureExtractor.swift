@@ -18,6 +18,30 @@ struct HandLandmarks: Equatable, Sendable {
     let littleTip: CGPoint
 }
 
+extension HandLandmarks {
+    /// Vision normalizes each axis independently — x by image *width*, y by
+    /// image *height* — so Euclidean distances between raw normalized points
+    /// mix units on any non-square image (a square palm on a 4:3 capture reads
+    /// as a long one). Rescaling into pixel space restores a single uniform
+    /// coordinate space before any distance is measured.
+    func rescaled(to imageSize: CGSize) -> HandLandmarks {
+        func pixel(_ point: CGPoint) -> CGPoint {
+            CGPoint(x: point.x * imageSize.width, y: point.y * imageSize.height)
+        }
+        return HandLandmarks(
+            wrist: pixel(wrist),
+            indexMCP: pixel(indexMCP),
+            indexTip: pixel(indexTip),
+            middleMCP: pixel(middleMCP),
+            middleTip: pixel(middleTip),
+            ringMCP: pixel(ringMCP),
+            ringTip: pixel(ringTip),
+            littleMCP: pixel(littleMCP),
+            littleTip: pixel(littleTip)
+        )
+    }
+}
+
 /// Pure geometry: turns the key hand landmarks into `PalmFeatures`. Deliberately
 /// free of Vision types so it's unit-testable with synthetic points; a thin
 /// device-only Vision adapter (below) maps a real hand-pose observation onto it.
@@ -49,8 +73,13 @@ extension PalmFeatureExtractor {
     /// Device-only adapter: map a Vision hand-pose observation to `PalmFeatures`.
     /// Returns nil if any required joint is missing or below `minimumConfidence`
     /// — we'd rather decline a reading than fabricate one from noise.
+    /// `imageSize` is the pixel size of the analyzed image; it rescales the
+    /// per-axis normalized joints into one uniform space (see
+    /// `HandLandmarks.rescaled(to:)`), without which every proportion is
+    /// skewed by the image's aspect ratio.
     static func features(
         from observation: VNHumanHandPoseObservation,
+        imageSize: CGSize,
         minimumConfidence: Float = 0.3
     ) -> PalmFeatures? {
         func point(_ joint: VNHumanHandPoseObservation.JointName) -> CGPoint? {
@@ -75,7 +104,7 @@ extension PalmFeatureExtractor {
             ringTip: ringTip,
             littleMCP: littleMCP,
             littleTip: littleTip
-        ))
+        ).rescaled(to: imageSize))
     }
 }
 #endif

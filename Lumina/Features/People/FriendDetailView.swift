@@ -9,7 +9,8 @@ struct FriendDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @State private var confirmingRemove = false
-    @State private var score = 50
+    /// `nil` until a real score exists — we never render a fabricated number.
+    @State private var score: Int?
     @ScaledMetric private var scoreSize: CGFloat = 56
     @State private var ephemeris = EphemerisService()
     @State private var synastry: SynastryLoad = .idle
@@ -64,25 +65,29 @@ struct FriendDetailView: View {
     }
 
     private var scoreCard: some View {
-        let label = CompatibilityScorer.Label(score: score)
-        return LuminaCard {
+        LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text("\(score)")
-                        .font(.system(size: scoreSize, weight: .light, design: .serif))
-                        .foregroundStyle(LuminaColors.celestialBlue)
-                        .minimumScaleFactor(0.6)
-                        .lineLimit(1)
-                    Text("/100")
-                        .font(LuminaTypography.bodyLight)
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-                    Spacer()
-                    LuminaBadge(title: label.displayName, tone: .neutral)
+                if let score {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("\(score)")
+                            .font(.system(size: scoreSize, weight: .light, design: .serif))
+                            .foregroundStyle(LuminaColors.celestialBlue)
+                            .minimumScaleFactor(0.6)
+                            .lineLimit(1)
+                        Text("/100")
+                            .font(LuminaTypography.bodyLight)
+                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                        Spacer()
+                        LuminaBadge(title: CompatibilityScorer.Label(score: score).displayName, tone: .neutral)
+                    }
                 }
                 if let userBirth = UserBirthDataStore.userDefaults.load() {
-                    Text(CompatibilityScorer.summary(for: userBirth.birthDate, friend.birthDate))
-                        .font(LuminaTypography.body)
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                    Text(CompatibilityScorer.summary(
+                        for: userBirth.birthDate, calendar: BirthMoment.calendar(userBirth.timeZoneIdentifier),
+                        friend.birthDate, calendar: BirthMoment.calendar(friend.birthTimeZoneIdentifier)
+                    ))
+                    .font(LuminaTypography.body)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                 } else {
                     Text("Add your birth info in Settings to score this match.")
                         .font(LuminaTypography.caption)
@@ -105,7 +110,7 @@ struct FriendDetailView: View {
 
     @ViewBuilder
     private var shareSection: some View {
-        if case .loaded(let aspects) = synastry, !aspects.isEmpty {
+        if case .loaded(let aspects) = synastry, !aspects.isEmpty, let score {
             CompatibilityShareButton(
                 friendName: friend.name,
                 score: score,
@@ -180,7 +185,10 @@ struct FriendDetailView: View {
             return
         }
         guard let userBirth = UserBirthDataStore.userDefaults.load() else { return }
-        let computed = CompatibilityScorer.score(userBirth.birthDate, friend.birthDate)
+        let computed = CompatibilityScorer.score(
+            userBirth.birthDate, calendar: BirthMoment.calendar(userBirth.timeZoneIdentifier),
+            friend.birthDate, calendar: BirthMoment.calendar(friend.birthTimeZoneIdentifier)
+        )
         friend.compatibilityScore = computed
         modelContext.saveOrLog(category: "People")
         score = computed
@@ -257,15 +265,19 @@ struct FriendDetailView: View {
         }
     }
 
+    // Birth date/time render in the friend's birth-place zone (when known)
+    // so the day and wall-clock time never shift on the viewer's device.
     private func dateString(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
+        formatter.timeZone = BirthMoment.calendar(friend.birthTimeZoneIdentifier).timeZone
         return formatter.string(from: date)
     }
 
     private func timeString(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
+        formatter.timeZone = BirthMoment.calendar(friend.birthTimeZoneIdentifier).timeZone
         return formatter.string(from: date)
     }
 }

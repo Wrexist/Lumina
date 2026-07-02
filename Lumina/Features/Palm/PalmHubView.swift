@@ -7,6 +7,10 @@ import SwiftUI
 /// affordance so users understand what we're building.
 struct PalmHubView: View {
     @State private var transparencyPresented = false
+    /// Persisted so "Notify me" stays confirmed across launches — the
+    /// OneSignal tag is set once and the button swaps to a static
+    /// "you're on the list" state instead of staying tappable forever.
+    @AppStorage("palmWaitlistJoined") private var waitlistJoined = false
 
     var body: some View {
         ScrollView {
@@ -16,11 +20,14 @@ struct PalmHubView: View {
                     title: "Read your hand",
                     body: "Your phone's camera + on-device AI traces the four major lines. Photos never leave your device.",
                     primaryCTA: LuminaEmptyState.CTA(title: "How this works", action: presentTransparency),
-                    secondaryCTA: LuminaEmptyState.CTA(title: "Notify me when it ships", action: handleNotifyMe)
+                    secondaryCTA: waitlistJoined
+                        ? nil
+                        : LuminaEmptyState.CTA(title: "Notify me when it ships", action: handleNotifyMe)
                 )
-                differentiatorCard
-                premiumCard
-                blockerNote
+                if waitlistJoined {
+                    waitlistConfirmation
+                }
+                howWereBuildingItCard
             }
             .padding(LuminaSpacing.lg)
         }
@@ -33,51 +40,33 @@ struct PalmHubView: View {
 
     // MARK: - View building blocks
 
-    private var differentiatorCard: some View {
-        LuminaCard {
-            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                HStack(spacing: LuminaSpacing.sm) {
-                    Image(systemName: "wand.and.sparkles")
-                        .foregroundStyle(LuminaColors.celestialBlue)
-                    Text("Why ours is different")
-                        .font(LuminaTypography.heading)
-                }
-                Text("Every other major app in this category overlays a generic illustration on top of "
-                    + "your palm and writes a generic reading. Lumina actually traces your lines with an "
-                    + "on-device model trained on real palm images.")
-                    .font(LuminaTypography.body)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
-            }
-        }
+    /// Replaces the "Notify me" button once tapped — a confirmation, not a
+    /// control, so there's nothing left to re-tap.
+    private var waitlistConfirmation: some View {
+        Text("You're on the list ✓")
+            .font(LuminaTypography.body)
+            .foregroundStyle(LuminaColors.celestialBlue)
+            .frame(maxWidth: .infinity)
+            .accessibilityLabel("You're on the list")
     }
 
-    private var premiumCard: some View {
-        LuminaCard {
-            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                HStack(spacing: LuminaSpacing.sm) {
-                    LuminaBadge(title: "Plus", tone: .premium)
-                    Text("Unlimited scans")
-                        .font(LuminaTypography.body)
-                }
-                Text("Free includes one scan a month. Lumina Plus removes the limit and unlocks the deep narration.")
-                    .font(LuminaTypography.bodyLight)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-            }
-        }
-    }
-
-    private var blockerNote: some View {
+    /// The one honest status card: why palm scanning hasn't shipped yet
+    /// (fairness first) and what makes Lumina's approach different.
+    private var howWereBuildingItCard: some View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 HStack(spacing: LuminaSpacing.sm) {
                     LuminaBadge(title: "Soon", tone: .neutral)
-                    Text("Where we are")
-                        .font(LuminaTypography.body)
+                    Text("How we're building it")
+                        .font(LuminaTypography.heading)
                 }
-                Text("Palm scanning is coming soon. We're making sure the on-device line tracing works "
-                    + "fairly across every skin tone before we ship it — that's the part we won't rush.")
-                    .font(LuminaTypography.bodyLight)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                Text("We're making sure the on-device line tracing works fairly across every "
+                    + "skin tone before we ship it — that's the part we won't rush. Every other "
+                    + "major app in this category overlays a generic illustration on top of your "
+                    + "palm and writes a generic reading. Lumina actually traces your lines with "
+                    + "an on-device model trained on real palm images.")
+                    .font(LuminaTypography.body)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
             }
         }
     }
@@ -91,7 +80,8 @@ struct PalmHubView: View {
 
     private func handleNotifyMe() {
         PushNotificationManager.setTag(key: "palm_waitlist", value: "true")
-        Haptics.medium.play()
+        waitlistJoined = true
+        Haptics.success.play()
     }
 }
 

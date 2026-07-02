@@ -17,7 +17,9 @@ struct ChartShareButton: View {
                 .accessibilityLabel("Share your chart")
             }
         }
-        .task { renderShareFile() }
+        // Re-render whenever the chart changes (e.g. a house-system reload) —
+        // a plain `.task` runs once per view identity and would share a stale PNG.
+        .task(id: chart) { renderShareFile() }
     }
 
     private func renderShareFile() {
