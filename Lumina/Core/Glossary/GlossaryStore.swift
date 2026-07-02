@@ -90,7 +90,7 @@ struct GlossaryEntry: Codable, Hashable, Sendable, Identifiable {
     /// Hand-rolled so `aliases` is genuinely optional in the JSON — the
     /// synthesized `Decodable` ignores the `= []` default and would fail the
     /// whole glossary decode over one entry with no "aliases" key.
-    init(from decoder: Decoder) throws {
+    init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         key = try container.decode(String.self, forKey: .key)
         displayName = try container.decode(String.self, forKey: .displayName)
