@@ -200,8 +200,8 @@ struct NotificationSettingsView: View {
 
 // MARK: - Daily reflection reminder
 
-private extension NotificationSettingsView {
-    var reflectReminderCard: some View {
+extension NotificationSettingsView {
+    private var reflectReminderCard: some View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 Toggle(isOn: reflectReminderBinding) {
@@ -231,7 +231,7 @@ private extension NotificationSettingsView {
         }
     }
 
-    var reflectReminderBinding: Binding<Bool> {
+    private var reflectReminderBinding: Binding<Bool> {
         Binding(
             get: { preferences.reflectReminderEnabled },
             set: { newValue in
@@ -245,7 +245,7 @@ private extension NotificationSettingsView {
 
     /// The stored hour/minute surfaced as a `Date` for the compact picker;
     /// only the hour and minute components round-trip.
-    var reflectTimeBinding: Binding<Date> {
+    private var reflectTimeBinding: Binding<Date> {
         Binding(
             get: {
                 Calendar.current.date(
@@ -268,7 +268,7 @@ private extension NotificationSettingsView {
     /// Same gating flow as transit alerts: request permission on first
     /// enable; when denied, revert with a plain reason (the status card up
     /// top already offers the "Open iOS Settings" path).
-    func applyReflectReminder(enabled: Bool) async {
+    private func applyReflectReminder(enabled: Bool) async {
         reflectError = nil
         guard enabled else {
             ReflectReminderScheduler.shared.cancel()
