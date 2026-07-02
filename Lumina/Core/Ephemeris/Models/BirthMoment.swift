@@ -72,4 +72,3 @@ enum BirthMoment {
         return (day, time)
     }
 }
-
