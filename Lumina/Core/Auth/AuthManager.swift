@@ -1,6 +1,8 @@
 import AuthenticationServices
+import CryptoKit
 import Foundation
 import OSLog
+import Security
 import UIKit
 
 /// Sign in with Apple session manager. Mirrors the `AppLock` /
@@ -51,8 +53,14 @@ final class AuthManager {
             throw AuthError.noPresentationAnchor
         }
 
+        // Fresh nonce per sign-in attempt, never persisted: Apple embeds the
+        // raw value in the identity token it mints, so sending the SHA256
+        // digest here and the raw value to Supabase gives replay protection.
+        let rawNonce = AuthNonce.random()
+
         let request = ASAuthorizationAppleIDProvider().createRequest()
         request.requestedScopes = [.fullName, .email]
+        request.nonce = AuthNonce.sha256Hex(rawNonce)
 
         let controller = ASAuthorizationController(authorizationRequests: [request])
         let coordinator = AppleSignInCoordinator(anchor: anchor)
@@ -64,8 +72,14 @@ final class AuthManager {
         try persist(newSession)
         session = newSession
 
+        // The exchange is best-effort and its result is discarded, so it must
+        // not gate the return: local sign-in already succeeded, and a slow
+        // network would otherwise hang the sign-in sheet. The unstructured
+        // `Task` inherits `@MainActor`, and both captures are `Sendable`.
         let identityToken = credential.identityToken.flatMap { String(data: $0, encoding: .utf8) }
-        await exchangeWithSupabase(idToken: identityToken)
+        Task {
+            await self.exchangeWithSupabase(idToken: identityToken, rawNonce: rawNonce)
+        }
         return newSession
     }
 
@@ -98,12 +112,12 @@ final class AuthManager {
     /// is meaningful on its own, so that specific failure is swallowed; any
     /// other failure is logged, never surfaced (the on-device sign-in stands).
     ///
-    /// NOTE: no `nonce` is passed. Once Supabase exists, generate a random
-    /// nonce, set its SHA256 digest on `request.nonce` in `signIn()`, and pass
-    /// the raw value here for full replay protection.
-    private func exchangeWithSupabase(idToken: String?) async {
+    /// `rawNonce` is the un-hashed value whose SHA256 digest was set on the
+    /// authorization request in `signIn()`; Supabase re-hashes it to verify
+    /// the token's `nonce` claim, closing the replay window.
+    private func exchangeWithSupabase(idToken: String?, rawNonce: String) async {
         do {
-            try await supabaseAuthService.signInWithApple(idToken: idToken, nonce: nil)
+            try await supabaseAuthService.signInWithApple(idToken: idToken, nonce: rawNonce)
         } catch SupabaseAuthService.ServiceError.missingConfiguration {
             logger.debug("Supabase not configured yet (or no identity token available) — local sign-in only.")
         } catch {
@@ -191,6 +205,40 @@ final class AuthManager {
     private static let decoder = JSONDecoder()
 }
 
+/// Nonce helpers for Sign in with Apple replay protection: `signIn()` sets
+/// `sha256Hex(rawNonce)` on the authorization request, Apple embeds the raw
+/// value in the identity token, and the raw value is then sent to Supabase
+/// so it can verify the token's `nonce` claim. A plain nonisolated `enum`
+/// (not nested in the `@MainActor` manager) so unit tests can call it
+/// without actor hops.
+enum AuthNonce {
+    /// URL-safe charset of exactly 64 characters, so masking a random byte
+    /// with `0x3F` indexes it uniformly — no modulo bias, no rejection loop.
+    static let charset = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
+
+    /// Cryptographically random nonce string. Regenerated per sign-in
+    /// attempt and never persisted anywhere.
+    static func random(length: Int = 32) -> String {
+        var bytes = [UInt8](repeating: 0, count: length)
+        let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        if status != errSecSuccess {
+            // Practically unreachable; Swift's system generator is also a
+            // CSPRNG (arc4random-backed on Apple platforms), so degrade to
+            // it rather than crashing mid sign-in.
+            bytes = (0..<length).map { _ in UInt8.random(in: .min ... .max) }
+        }
+        return String(bytes.map { charset[Int($0 & 0x3F)] })
+    }
+
+    /// Lowercase hex SHA256 digest, the encoding Apple expects on
+    /// `ASAuthorizationAppleIDRequest.nonce`.
+    static func sha256Hex(_ input: String) -> String {
+        SHA256.hash(data: Data(input.utf8))
+            .map { String(format: "%02x", $0) }
+            .joined()
+    }
+}
+
 /// The handful of fields `AuthManager.signIn()` needs out of an
 /// `ASAuthorizationAppleIDCredential`, extracted into a plain `Sendable`
 /// value inside the `nonisolated` delegate callback. `ASAuthorization` /
@@ -218,6 +266,9 @@ private final class AppleSignInCoordinator: NSObject, @unchecked Sendable {
     /// `presentationAnchor(for:)` is safe under the type's `@unchecked Sendable`.
     private let anchor: ASPresentationAnchor
     private var continuation: CheckedContinuation<AppleIDCredentialResult, any Error>?
+    /// Latches on the first `finish(_:)` so the continuation can never be
+    /// resumed twice, even if both delegate callbacks somehow fire.
+    private var hasResumed = false
 
     init(anchor: ASPresentationAnchor) {
         self.anchor = anchor
@@ -281,7 +332,8 @@ extension AppleSignInCoordinator {
     /// though the type itself is `@unchecked Sendable`.
     @MainActor
     func finish(_ result: Result<AppleIDCredentialResult, any Error>) {
-        guard let continuation else { return }
+        guard !hasResumed, let continuation else { return }
+        hasResumed = true
         self.continuation = nil
         continuation.resume(with: result)
     }

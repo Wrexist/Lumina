@@ -8,9 +8,10 @@ import Security
 ///
 /// Uses `kSecClassGenericPassword` (the standard choice for small app-owned
 /// secrets that aren't literally an internet password), scoped to
-/// `kSecAttrAccessibleAfterFirstUnlock` so a background refresh can still
-/// read the session after the device reboots but before the user unlocks it
-/// again this boot.
+/// `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` so a background refresh
+/// can still read the session after the device reboots but before the user
+/// unlocks it again this boot, while keeping the item out of device backups
+/// and off any migrated/restored device.
 struct KeychainStore {
     enum StoreError: Error, Equatable, Sendable {
         case unhandledStatus(OSStatus)
@@ -28,7 +29,7 @@ struct KeychainStore {
     func save(_ data: Data) throws {
         var query = baseQuery
         query[kSecValueData as String] = data
-        query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
 
         let addStatus = SecItemAdd(query as CFDictionary, nil)
         if addStatus == errSecSuccess {
@@ -38,7 +39,13 @@ struct KeychainStore {
             throw StoreError.unhandledStatus(addStatus)
         }
 
-        let updateStatus = SecItemUpdate(baseQuery as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        // Re-assert accessibility on update so items written before the
+        // `ThisDeviceOnly` tightening get upgraded on their next write.
+        let attributes: [String: Any] = [
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+        ]
+        let updateStatus = SecItemUpdate(baseQuery as CFDictionary, attributes as CFDictionary)
         guard updateStatus == errSecSuccess else {
             throw StoreError.unhandledStatus(updateStatus)
         }
