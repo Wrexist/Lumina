@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 /// Edit-birth-info form for Settings → Your info. Reuses the same field
@@ -10,6 +11,7 @@ import SwiftUI
 /// fresh reading" affordance on Today.
 struct EditBirthInfoView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     @State private var birthDate = Date.now
     @State private var birthTime = Date.now
@@ -171,8 +173,13 @@ struct EditBirthInfoView: View {
             hydrated = true
             return
         }
-        birthDate = existing.birthDate
-        if let time = existing.birthTime {
+        let pickers = BirthMoment.pickerValues(
+            birthDate: existing.birthDate,
+            birthTime: existing.birthTime,
+            timeZoneIdentifier: existing.timeZoneIdentifier
+        )
+        birthDate = pickers.day
+        if let time = pickers.time {
             birthTime = time
             birthTimeUnknown = false
         } else {
@@ -206,17 +213,34 @@ struct EditBirthInfoView: View {
 
     private func save() {
         guard let resolved else { return }
-        let birthData = BirthData(
-            birthDate: birthDate,
-            birthTime: birthTimeUnknown ? nil : birthTime,
+        let birthData = BirthData.fromPickers(
+            pickedDay: birthDate,
+            pickedTime: birthTimeUnknown ? nil : birthTime,
             placeName: resolved.displayName,
             latitude: resolved.latitude,
             longitude: resolved.longitude,
             timeZoneIdentifier: resolved.timeZoneIdentifier
         )
         UserBirthDataStore.userDefaults.save(birthData)
+        refreshFriendScores(with: birthData)
         Haptics.success.play()
         dismiss()
+    }
+
+    /// Cached `Friend.compatibilityScore` values were computed against the
+    /// old birth data; recompute them so People doesn't show stale scores
+    /// forever. Synastry-backed scores refresh on the next friend-detail
+    /// fetch and overwrite these heuristics.
+    private func refreshFriendScores(with birthData: BirthData) {
+        guard let friends = try? modelContext.fetch(FetchDescriptor<Friend>()) else { return }
+        let userCalendar = BirthMoment.calendar(birthData.timeZoneIdentifier)
+        for friend in friends {
+            friend.compatibilityScore = CompatibilityScorer.score(
+                birthData.birthDate, calendar: userCalendar,
+                friend.birthDate, calendar: BirthMoment.calendar(friend.birthTimeZoneIdentifier)
+            )
+        }
+        modelContext.saveOrLog(category: "Settings")
     }
 }
 

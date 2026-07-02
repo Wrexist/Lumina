@@ -5,16 +5,10 @@ import SwiftUI
 /// dot indicator; tapping a day opens that day's entry detail (or a
 /// fresh editor if none exists).
 struct JournalCalendarView: View {
-    /// Identifiable wrapper so `.navigationDestination(item:)` can present
-    /// a tapped day without forcing `Date: Identifiable` globally.
-    private struct SelectedDay: Identifiable, Hashable, Sendable {
-        let date: Date
-        var id: TimeInterval { date.timeIntervalSinceReferenceDate }
-    }
-
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \JournalEntry.date, order: .reverse) private var entries: [JournalEntry]
-    @State private var selectedDay: SelectedDay?
+    @State private var openedExisting: JournalEntry?
+    @State private var openedNew: JournalEntry?
     @State private var monthCursor: Date = .now
 
     private let calendar = Calendar.current
@@ -30,12 +24,11 @@ struct JournalCalendarView: View {
         .background(LuminaColors.parchment)
         .navigationTitle("History")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(item: $selectedDay) { day in
-            if let existing = entry(on: day.date) {
-                JournalEntryDetailView(entry: existing)
-            } else {
-                JournalEntryView(entry: makeEntry(for: day.date))
-            }
+        .navigationDestination(item: $openedExisting) { entry in
+            JournalEntryDetailView(entry: entry)
+        }
+        .navigationDestination(item: $openedNew) { entry in
+            JournalEntryView(entry: entry)
         }
     }
 
@@ -125,7 +118,7 @@ struct JournalCalendarView: View {
                     .accessibilityHidden(true)
             } else {
                 Button {
-                    selectedDay = SelectedDay(date: day)
+                    open(day)
                 } label: {
                     dayContent(day)
                 }
@@ -162,6 +155,18 @@ struct JournalCalendarView: View {
 
     private func isFuture(_ day: Date) -> Bool {
         calendar.compare(day, to: .now, toGranularity: .day) == .orderedDescending
+    }
+
+    /// Resolve-or-create happens here in the tap handler, NOT in the
+    /// navigation destination builder — SwiftUI can evaluate that builder
+    /// during `body`, which would insert phantom blank entries (see
+    /// `ReflectHubView.primaryCTA` for the same pattern).
+    private func open(_ day: Date) {
+        if let existing = entry(on: day) {
+            openedExisting = existing
+        } else {
+            openedNew = makeEntry(for: day)
+        }
     }
 
     private func makeEntry(for day: Date) -> JournalEntry {

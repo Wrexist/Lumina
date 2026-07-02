@@ -175,10 +175,15 @@ struct AddFriendView: View {
     }
 
     private func save() {
+        let (normalizedDate, normalizedTime) = BirthMoment.combine(
+            pickedDay: birthDate,
+            pickedTime: birthTimeUnknown ? nil : birthTime,
+            timeZoneIdentifier: resolved?.timeZoneIdentifier
+        )
         let friend = Friend(
             name: name.trimmingCharacters(in: .whitespaces),
-            birthDate: birthDate,
-            birthTime: birthTimeUnknown ? nil : birthTime,
+            birthDate: normalizedDate,
+            birthTime: normalizedTime,
             birthPlaceName: resolved?.displayName,
             birthLatitude: resolved?.latitude,
             birthLongitude: resolved?.longitude,
@@ -186,7 +191,10 @@ struct AddFriendView: View {
             source: .manual
         )
         if let userBirth = UserBirthDataStore.userDefaults.load() {
-            friend.compatibilityScore = CompatibilityScorer.score(userBirth.birthDate, friend.birthDate)
+            friend.compatibilityScore = CompatibilityScorer.score(
+                userBirth.birthDate, calendar: BirthMoment.calendar(userBirth.timeZoneIdentifier),
+                friend.birthDate, calendar: BirthMoment.calendar(friend.birthTimeZoneIdentifier)
+            )
         }
         modelContext.insert(friend)
         modelContext.saveOrLog(category: "People")

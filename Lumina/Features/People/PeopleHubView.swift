@@ -228,6 +228,8 @@ struct PeopleHubView: View {
     private func birthLine(_ friend: Friend) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
+        // Read the day in the friend's birth zone so it never shifts here.
+        formatter.timeZone = BirthMoment.calendar(friend.birthTimeZoneIdentifier).timeZone
         let date = formatter.string(from: friend.birthDate)
         if let place = friend.birthPlaceName {
             return "\(date) · \(place)"

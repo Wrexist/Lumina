@@ -39,9 +39,18 @@ final class OnboardingState {
     var currentStep: Step
     var motivation: Motivation?
     var name: String
-    var birthDate: Date?
-    var birthTime: Date?
-    var birthTimeUnknown: Bool
+    // Any birth-field edit invalidates a previously computed chart so
+    // going back from the reveal and changing a value recomputes instead
+    // of showing the old chart.
+    var birthDate: Date? {
+        didSet { if oldValue != birthDate { chartReady = false } }
+    }
+    var birthTime: Date? {
+        didSet { if oldValue != birthTime { chartReady = false } }
+    }
+    var birthTimeUnknown: Bool {
+        didSet { if oldValue != birthTimeUnknown { chartReady = false } }
+    }
     var birthPlaceName: String
     var birthLatitude: Double?
     var birthLongitude: Double?
@@ -140,9 +149,9 @@ final class OnboardingState {
               let timeZoneIdentifier = birthTimeZoneIdentifier else {
             return nil
         }
-        return BirthData(
-            birthDate: birthDate,
-            birthTime: birthTimeUnknown ? nil : birthTime,
+        return BirthData.fromPickers(
+            pickedDay: birthDate,
+            pickedTime: birthTimeUnknown ? nil : birthTime,
             placeName: birthPlaceName,
             latitude: latitude,
             longitude: longitude,
@@ -157,6 +166,7 @@ final class OnboardingState {
         birthLatitude = latitude
         birthLongitude = longitude
         birthTimeZoneIdentifier = timeZoneIdentifier
+        chartReady = false
         stepError = nil
         persist()
     }

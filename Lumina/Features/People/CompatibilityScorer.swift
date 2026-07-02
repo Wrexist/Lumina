@@ -55,8 +55,15 @@ enum CompatibilityScorer {
 
     /// Returns a 0–100 score from two birth dates. Symmetric.
     static func score(_ left: Date, _ right: Date, calendar: Calendar = .current) -> Int {
-        let leftSign = sunSign(for: left, calendar: calendar)
-        let rightSign = sunSign(for: right, calendar: calendar)
+        score(left, calendar: calendar, right, calendar: calendar)
+    }
+
+    /// Zone-aware variant: each birth instant is read in its own birth-place
+    /// calendar so cusp dates don't shift a day (and a sign) when the two
+    /// people were born in distant time zones.
+    static func score(_ left: Date, calendar leftCalendar: Calendar, _ right: Date, calendar rightCalendar: Calendar) -> Int {
+        let leftSign = sunSign(for: left, calendar: leftCalendar)
+        let rightSign = sunSign(for: right, calendar: rightCalendar)
         let leftElement = element(for: leftSign)
         let rightElement = element(for: rightSign)
         let leftModality = modality(for: leftSign)
@@ -123,8 +130,13 @@ enum CompatibilityScorer {
 
     /// Combined sun-sign string for display ("Aries · Leo").
     static func summary(for left: Date, _ right: Date, calendar: Calendar = .current) -> String {
-        let a = sunSign(for: left, calendar: calendar)
-        let b = sunSign(for: right, calendar: calendar)
+        summary(for: left, calendar: calendar, right, calendar: calendar)
+    }
+
+    /// Zone-aware variant of `summary` — see `score(_:calendar:_:calendar:)`.
+    static func summary(for left: Date, calendar leftCalendar: Calendar, _ right: Date, calendar rightCalendar: Calendar) -> String {
+        let a = sunSign(for: left, calendar: leftCalendar)
+        let b = sunSign(for: right, calendar: rightCalendar)
         return "\(a) · \(b)"
     }
 

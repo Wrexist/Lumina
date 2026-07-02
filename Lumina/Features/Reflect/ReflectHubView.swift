@@ -20,6 +20,9 @@ struct ReflectHubView: View {
     @State private var ephemeris = EphemerisService()
     @State private var transits: [TransitReading] = []
     @State private var pendingDelete: JournalEntry?
+    @State private var premium = PremiumStatus.shared
+    @State private var usingSofterPrompt = false
+    @AppStorage("luminaReflectPlusBannerDismissed") private var plusBannerDismissed = false
     @ScaledMetric private var lockIconSize: CGFloat = 56
 
     var body: some View {
@@ -69,8 +72,8 @@ struct ReflectHubView: View {
             VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
                 todaysPromptCard
                 primaryCTA
-                premiumBanner
                 history
+                premiumBanner
             }
             .padding(LuminaSpacing.lg)
         }
@@ -104,6 +107,16 @@ struct ReflectHubView: View {
                 Text("Auto-saved on this device only.")
                     .font(LuminaTypography.caption)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                // Only before today's entry exists — once created, the
+                // entry's prompt is frozen and the card mirrors it.
+                if todayEntry == nil {
+                    LuminaButton(
+                        title: usingSofterPrompt ? "Back to today's prompt" : "Try a softer prompt",
+                        variant: .ghost
+                    ) {
+                        usingSofterPrompt.toggle()
+                    }
+                }
             }
         }
     }
@@ -118,13 +131,22 @@ struct ReflectHubView: View {
 
     @ViewBuilder
     private var premiumBanner: some View {
-        if entries.count >= 3 {
+        if entries.count >= 3 && !premium.isPremium && !plusBannerDismissed {
             LuminaCard {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                     HStack {
                         LuminaBadge(title: "Plus", tone: .premium)
                         Text("Pattern detection at 30 entries")
                             .font(LuminaTypography.body)
+                        Spacer()
+                        Button {
+                            plusBannerDismissed = true
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(LuminaTypography.caption)
+                                .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
+                        }
+                        .accessibilityLabel("Dismiss Plus banner")
                     }
                     Text("Once you've reflected for a month, Lumina Plus surfaces the emotional patterns connecting your entries. Free includes everything else.")
                         .font(LuminaTypography.bodyLight)
@@ -175,7 +197,10 @@ struct ReflectHubView: View {
 
     private var todayEntry: JournalEntry? {
         let calendar = Calendar.current
-        return entries.first { calendar.isDateInToday($0.date) }
+        // Exclude the pending soft-delete — otherwise the CTA would push the
+        // editor with an entry that `commitPendingDelete` removes out from
+        // under it.
+        return entries.first { calendar.isDateInToday($0.date) && $0.id != pendingDelete?.id }
     }
 
     /// The prompt shown on the card. Once today's entry exists, it shows the
@@ -185,6 +210,9 @@ struct ReflectHubView: View {
     private var todaysPrompt: String {
         if let existing = todayEntry {
             return existing.prompt
+        }
+        if usingSofterPrompt {
+            return JournalPromptGenerator.shared.softerPrompt(for: .now)
         }
         return JournalPromptGenerator.shared.prompt(forTransits: transits, on: .now)
     }
@@ -246,8 +274,18 @@ struct ReflectHubView: View {
 
     private func createTodayEntry() -> JournalEntry {
         let date = Date.now
-        let prompt = JournalPromptGenerator.shared.prompt(forTransits: transits, on: date)
-        let key = JournalPromptGenerator.shared.transitKey(forTransits: transits, on: date)
+        let prompt: String
+        let key: String
+        if usingSofterPrompt {
+            // The softer prompt isn't transit-tied, so it keeps the plain
+            // date key — the pattern detector shouldn't group it under a
+            // transit it never references.
+            prompt = JournalPromptGenerator.shared.softerPrompt(for: date)
+            key = JournalPromptGenerator.shared.transitKey(for: date)
+        } else {
+            prompt = JournalPromptGenerator.shared.prompt(forTransits: transits, on: date)
+            key = JournalPromptGenerator.shared.transitKey(forTransits: transits, on: date)
+        }
         let entry = JournalEntry(date: date, prompt: prompt, transitKey: key)
         modelContext.insert(entry)
         modelContext.saveOrLog(category: "Reflect")
