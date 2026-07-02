@@ -30,6 +30,15 @@ struct AscendantDetailSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .onAppear(perform: recordDiscovery)
+    }
+
+    /// Chart discovery: opening the ascendant reading counts as meeting it.
+    /// One success haptic marks a first meeting — once, ever.
+    private func recordDiscovery() {
+        if ChartDiscovery.shared.markExplored("Ascendant") {
+            Haptics.success.play()
+        }
     }
 
     private var sign: String {

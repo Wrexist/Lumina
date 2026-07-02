@@ -153,6 +153,7 @@ struct ChartHubView: View {
             ChartWheelView(chart: chart, onTapPlanet: handleTap)
                 .padding(LuminaSpacing.sm)
             wheelCaption
+            ChartDiscoveryBand(chart: chart)
             AspectLegend()
             CosmicSignatureCard(chart: chart)
             ChartStandoutCard(chart: chart)
