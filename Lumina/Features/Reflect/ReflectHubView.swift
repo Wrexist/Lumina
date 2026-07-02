@@ -289,6 +289,7 @@ struct ReflectHubView: View {
         let entry = JournalEntry(date: date, prompt: prompt, transitKey: key)
         modelContext.insert(entry)
         modelContext.saveOrLog(category: "Reflect")
+        recordReflectionMoments()
         return entry
     }
 
@@ -328,6 +329,21 @@ extension ReflectHubView {
         modelContext.delete(entry)
         modelContext.saveOrLog(category: "Reflect")
         pendingDelete = nil
+    }
+}
+
+// MARK: - Moments
+
+extension ReflectHubView {
+    /// Marks reflection Moments after a new entry is created. Thresholds
+    /// count what exists in the journal — never consecutive days (brand:
+    /// celebrate what happened; no streaks, no chains). The fetch count is
+    /// authoritative because `@Query` may not refresh mid-action.
+    private func recordReflectionMoments() {
+        let count = (try? modelContext.fetchCount(FetchDescriptor<JournalEntry>())) ?? entries.count
+        if MomentsStore.shared.recordReflection(totalCount: max(count, 1)) {
+            Haptics.success.play()
+        }
     }
 }
 

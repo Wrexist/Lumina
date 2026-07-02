@@ -18,6 +18,20 @@ struct TodayHubView: View {
     @ScaledMetric private var iconSize: CGFloat = 28
     @State private var showingWhy = false
 
+    // Daily reveal — the reading starts veiled on the first visit of each
+    // calendar day and is unveiled by a tap (happy path only; see
+    // `readingSection`).
+    @State private var reveal = DailyRevealState()
+    /// Set on an unveil that lands while the sky context is still loading,
+    /// so the strip's arrival gets one gentle tick (see `body`'s onChange).
+    @State private var pendingSkyContextHaptic = false
+    @State private var preferences = AppPreferences.shared
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+
+    private var reduceMotion: Bool {
+        LuminaMotion.isReduced(system: systemReduceMotion, appOverride: preferences.reduceMotionOverride)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
@@ -35,6 +49,9 @@ struct TodayHubView: View {
         // when neither has actually moved.
         .onReceive(dayChanged) { _ in refresh() }
         .onReceive(birthDataChanged) { _ in refresh() }
+        .onChange(of: viewModel.skyContextLoading) { _, isLoading in
+            skyContextLoadingChanged(isLoading: isLoading)
+        }
         .sheet(isPresented: $showingWhy) {
             TodayTransparencySheet(transits: viewModel.transits)
         }
@@ -64,7 +81,7 @@ struct TodayHubView: View {
             if viewModel.transitsUnavailable {
                 transitsUnavailableCard
             } else {
-                readingCard
+                readingSection
             }
             skyContextSection
             aheadSection
@@ -96,6 +113,22 @@ struct TodayHubView: View {
             body: "Add your birth date, time, and place to see your sky today.",
             primaryCTA: LuminaEmptyState.CTA(title: "Add birth info", action: openSettings)
         )
+    }
+
+    /// The reading slot for the happy path: veiled on the first visit of
+    /// each calendar day, the real card afterwards. Only `.ready` with
+    /// transits ever goes through here — the transits-unavailable card is
+    /// never veiled (an error is not a gift box), and loading /
+    /// missing-birth-data / failed states are untouched (see `content`).
+    @ViewBuilder
+    private var readingSection: some View {
+        if reveal.isRevealedToday {
+            readingCard
+                .transition(reduceMotion ? .identity : .opacity.combined(with: .scale(scale: 0.97)))
+        } else {
+            DailyRevealVeilCard(onUnveil: unveil)
+                .transition(reduceMotion ? .identity : .opacity)
+        }
     }
 
     /// The hero reading — headline as the title line, grounded body below,
@@ -226,9 +259,12 @@ struct TodayHubView: View {
             }
         }
     }
+}
 
-    // MARK: - Methods
-
+// MARK: - Methods
+// A plain extension (SwiftLint bans `private extension`) so the view's
+// type body stays inside the length limit; members stay `private`.
+extension TodayHubView {
     private func quickAction(_ title: String, systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             LuminaCard(padding: LuminaSpacing.md) {
@@ -263,6 +299,31 @@ struct TodayHubView: View {
 
     private func refresh() {
         Task { await viewModel.loadIfNeeded() }
+    }
+
+    /// Unveils today's reading: one success haptic, then the reading
+    /// transitions in — instantly (no animation) under Reduce Motion.
+    private func unveil() {
+        Haptics.success.play()
+        if viewModel.skyContextLoading {
+            pendingSkyContextHaptic = true
+        }
+        if reduceMotion {
+            reveal.markRevealed()
+        } else {
+            withAnimation(.smooth(duration: 0.4)) {
+                reveal.markRevealed()
+            }
+        }
+    }
+
+    /// One-time gentle tick when the sky-context strip finishes loading
+    /// *after* a reveal tap — the rest of the page arriving is part of the
+    /// payoff. `Haptics` itself no-ops under Reduce Motion.
+    private func skyContextLoadingChanged(isLoading: Bool) {
+        guard !isLoading, pendingSkyContextHaptic else { return }
+        pendingSkyContextHaptic = false
+        Haptics.light.play()
     }
 
     private func jump(to tab: LuminaTab) {

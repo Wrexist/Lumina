@@ -132,6 +132,11 @@ struct AcceptShareView: View {
         }
         modelContext.insert(friend)
         modelContext.saveOrLog(category: "People")
+        // A friend accepted via QR counts the same as one added by hand.
+        // The duplicate early-return above deliberately doesn't unlock —
+        // no new person was saved. `Haptics.success` below already covers
+        // the newly-unlocked case.
+        MomentsStore.shared.unlock(.firstFriend)
         Haptics.success.play()
         dismiss()
     }

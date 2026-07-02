@@ -198,6 +198,9 @@ struct AddFriendView: View {
         }
         modelContext.insert(friend)
         modelContext.saveOrLog(category: "People")
+        // First person ever added earns the "Your first companion" moment.
+        // `Haptics.success` below already covers the newly-unlocked case.
+        MomentsStore.shared.unlock(.firstFriend)
         Haptics.success.play()
         dismiss()
     }

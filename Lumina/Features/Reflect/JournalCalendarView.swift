@@ -192,6 +192,18 @@ struct JournalCalendarView: View {
         let entry = JournalEntry(date: day, prompt: prompt, transitKey: key)
         modelContext.insert(entry)
         modelContext.saveOrLog(category: "Reflect")
+        recordReflectionMoments()
         return entry
+    }
+
+    /// Marks reflection Moments after a new entry is created here (backfill
+    /// path). Same rule as `ReflectHubView`: thresholds count what exists,
+    /// never consecutive days — no streaks. The fetch count is authoritative
+    /// because `@Query` may not refresh mid-action.
+    private func recordReflectionMoments() {
+        let count = (try? modelContext.fetchCount(FetchDescriptor<JournalEntry>())) ?? entries.count
+        if MomentsStore.shared.recordReflection(totalCount: max(count, 1)) {
+            Haptics.success.play()
+        }
     }
 }
