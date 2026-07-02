@@ -17,6 +17,15 @@ final class NotificationPermission {
         case denied
         case provisional
         case ephemeral
+
+        /// Whether local notifications can actually be scheduled under this
+        /// status — the one check every scheduling call site should share.
+        var allowsScheduling: Bool {
+            switch self {
+            case .granted, .provisional, .ephemeral: true
+            case .notDetermined, .denied: false
+            }
+        }
     }
 
     static let shared = NotificationPermission()
@@ -65,8 +74,13 @@ final class NotificationPermission {
                 status = granted ? .granted : .denied
                 return status
             } catch {
+                // A thrown error means the *request* failed (e.g. it was
+                // interrupted) — not that the user denied. Re-read the real
+                // system status instead of forcing `.denied`, which would
+                // permanently route the user to iOS Settings and block the
+                // one system prompt they never actually saw.
                 logger.error("notification authorisation failed: \(error.localizedDescription)")
-                status = .denied
+                await refreshStatus()
                 return status
             }
         }

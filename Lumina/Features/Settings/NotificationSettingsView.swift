@@ -13,6 +13,9 @@ struct NotificationSettingsView: View {
     @State private var preferences = AppPreferences.shared
     @State private var ephemeris = EphemerisService()
     @State private var alertsError: String?
+    @State private var alertsTask: Task<Void, Never>?
+    @State private var reflectError: String?
+    @State private var reflectTask: Task<Void, Never>?
 
     var body: some View {
         ScrollView {
@@ -21,6 +24,7 @@ struct NotificationSettingsView: View {
                 primaryAction
                 quietHoursPlaceholder
                 transitAlertsCard
+                reflectReminderCard
             }
             .padding(LuminaSpacing.lg)
         }
@@ -140,7 +144,11 @@ struct NotificationSettingsView: View {
             get: { preferences.transitAlertsEnabled },
             set: { newValue in
                 preferences.transitAlertsEnabled = newValue
-                Task { await applyTransitAlerts(enabled: newValue) }
+                // Newest toggle wins: cancel the in-flight apply so a stale
+                // reschedule can't land after a later cancelAll (the
+                // `BirthChartViewModel.startLoad` idiom).
+                alertsTask?.cancel()
+                alertsTask = Task { await applyTransitAlerts(enabled: newValue) }
             }
         )
     }
@@ -152,14 +160,17 @@ struct NotificationSettingsView: View {
     private func applyTransitAlerts(enabled: Bool) async {
         alertsError = nil
         guard enabled else {
-            await TransitNotificationScheduler.shared.cancelAll()
+            if !Task.isCancelled {
+                await TransitNotificationScheduler.shared.cancelAll()
+            }
             return
         }
         var status = permission.status
         if status == .notDetermined {
             status = await permission.request()
         }
-        guard isAuthorized(status) else {
+        guard !Task.isCancelled else { return }
+        guard status.allowsScheduling else {
             preferences.transitAlertsEnabled = false
             alertsError = "Turn on notifications above first, then enable transit alerts."
             return
@@ -171,20 +182,112 @@ struct NotificationSettingsView: View {
         }
         do {
             let forecast = try await ephemeris.forecast(for: birth)
+            guard !Task.isCancelled else { return }
             await TransitNotificationScheduler.shared.reschedule(TransitNotificationPlanner.plan(from: forecast))
+            preferences.transitAlertsLastPlannedAt = .now
         } catch {
+            guard !Task.isCancelled else { return }
             preferences.transitAlertsEnabled = false
             alertsError = "Couldn't reach the sky just now. Try again in a moment."
         }
     }
 
-    private func isAuthorized(_ status: NotificationPermission.Status) -> Bool {
-        status == .granted || status == .provisional || status == .ephemeral
-    }
-
     private func openSystemSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
+    }
+}
+
+// MARK: - Daily reflection reminder
+
+private extension NotificationSettingsView {
+    var reflectReminderCard: some View {
+        LuminaCard {
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                Toggle(isOn: reflectReminderBinding) {
+                    VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
+                        Text("Daily reflection")
+                            .font(LuminaTypography.body)
+                        Text("One quiet evening nudge when the day's reflection prompt is ready. No streaks, no guilt — skip whenever you like.")
+                            .font(LuminaTypography.caption)
+                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                    }
+                }
+                .tint(LuminaColors.celestialBlue)
+                if preferences.reflectReminderEnabled {
+                    DatePicker(
+                        "Remind me at",
+                        selection: reflectTimeBinding,
+                        displayedComponents: .hourAndMinute
+                    )
+                    .font(LuminaTypography.body)
+                }
+                if let reflectError {
+                    Text(reflectError)
+                        .font(LuminaTypography.caption)
+                        .foregroundStyle(LuminaColors.error)
+                }
+            }
+        }
+    }
+
+    var reflectReminderBinding: Binding<Bool> {
+        Binding(
+            get: { preferences.reflectReminderEnabled },
+            set: { newValue in
+                preferences.reflectReminderEnabled = newValue
+                // Same newest-toggle-wins pattern as the transit toggle.
+                reflectTask?.cancel()
+                reflectTask = Task { await applyReflectReminder(enabled: newValue) }
+            }
+        )
+    }
+
+    /// The stored hour/minute surfaced as a `Date` for the compact picker;
+    /// only the hour and minute components round-trip.
+    var reflectTimeBinding: Binding<Date> {
+        Binding(
+            get: {
+                Calendar.current.date(
+                    bySettingHour: preferences.reflectReminderHour,
+                    minute: preferences.reflectReminderMinute,
+                    second: 0,
+                    of: .now
+                ) ?? .now
+            },
+            set: { newDate in
+                let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
+                preferences.reflectReminderHour = components.hour ?? 21
+                preferences.reflectReminderMinute = components.minute ?? 0
+                reflectTask?.cancel()
+                reflectTask = Task { await applyReflectReminder(enabled: true) }
+            }
+        )
+    }
+
+    /// Same gating flow as transit alerts: request permission on first
+    /// enable; when denied, revert with a plain reason (the status card up
+    /// top already offers the "Open iOS Settings" path).
+    func applyReflectReminder(enabled: Bool) async {
+        reflectError = nil
+        guard enabled else {
+            ReflectReminderScheduler.shared.cancel()
+            return
+        }
+        var status = permission.status
+        if status == .notDetermined {
+            status = await permission.request()
+        }
+        guard !Task.isCancelled else { return }
+        guard status.allowsScheduling else {
+            preferences.reflectReminderEnabled = false
+            reflectError = "Turn on notifications above first, then enable the daily reminder."
+            return
+        }
+        await ReflectReminderScheduler.shared.reschedule(
+            hour: preferences.reflectReminderHour,
+            minute: preferences.reflectReminderMinute
+        )
     }
 }
 
