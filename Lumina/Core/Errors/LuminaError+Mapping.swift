@@ -17,10 +17,62 @@ extension LuminaError {
         if let aiError = error as? LuminaAIClient.ClientError {
             return mapAI(aiError)
         }
+        if let authError = error as? AuthManager.AuthError {
+            return mapAuth(authError)
+        }
+        if let lockError = error as? AppLock.LockError {
+            return mapLock(lockError)
+        }
+        if let managerError = error as? IAPManager.ManagerError {
+            return mapIAP(managerError)
+        }
+        if error is KeychainStore.StoreError {
+            // Never surface the raw OSStatus — no numeric codes in copy.
+            return .unknown(underlyingMessage: "We couldn't securely save your session on this device. Try again.")
+        }
+        if error is SupabaseAuthService.ServiceError {
+            return .missingConfiguration(key: "SupabaseURL")
+        }
+        if error is DecodingError {
+            // A decode failure is *our* parsing, not the server erroring —
+            // don't dress it up as an HTTP status.
+            return .unknown(underlyingMessage: "We couldn't read the server's response. Try again in a moment.")
+        }
         if let urlError = error as? URLError {
             return mapURL(urlError)
         }
         return .unknown(underlyingMessage: error.localizedDescription)
+    }
+
+    private static func mapAuth(_ error: AuthManager.AuthError) -> LuminaError {
+        switch error {
+        case .invalidCredential:
+            return .unknown(underlyingMessage: "Apple sent back a sign-in we couldn't verify. Please try again.")
+        case .authorization:
+            return .unknown(underlyingMessage: "Sign in with Apple didn't complete. Please try again.")
+        case .noPresentationAnchor:
+            return .unknown(underlyingMessage: "We couldn't open the sign-in window. Please try again.")
+        }
+    }
+
+    private static func mapLock(_ error: AppLock.LockError) -> LuminaError {
+        switch error {
+        case .notEnrolled, .unavailable:
+            return .permissionDenied(kind: .faceID)
+        case .userCancelled:
+            return .unknown(underlyingMessage: "Unlock was cancelled. Try again when you're ready.")
+        case .failed:
+            return .unknown(underlyingMessage: "Face ID couldn't verify you this time. Please try again.")
+        }
+    }
+
+    private static func mapIAP(_ error: IAPManager.ManagerError) -> LuminaError {
+        switch error {
+        case .notConfigured:
+            return .missingConfiguration(key: "RevenueCatAPIKey")
+        case .noOfferingsAvailable:
+            return .unknown(underlyingMessage: "Subscription plans aren't available right now. Try again shortly.")
+        }
     }
 
     private static func mapEphemeris(_ error: EphemerisService.ServiceError) -> LuminaError {

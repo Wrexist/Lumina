@@ -165,8 +165,12 @@ actor EphemerisService {
     /// `LuminaSwissEphAPISecret` from `Info.plist` (populated by xcconfig).
     init(session: URLSession = .shared, infoPlist: [String: Any] = Bundle.main.infoDictionary ?? [:]) {
         self.session = session
-        self.baseURL = (infoPlist["LuminaSwissEphServiceURL"] as? String).flatMap(URL.init(string:))
-        self.apiSecret = infoPlist["LuminaSwissEphAPISecret"] as? String
+        // `BuildConfig.realValue` filters unexpanded "$(…)" xcconfig
+        // placeholders, so an unwired build throws `.missingConfiguration`
+        // instead of sending the literal placeholder as a credential.
+        self.baseURL = BuildConfig.realValue(infoPlist["LuminaSwissEphServiceURL"] as? String)
+            .flatMap(URL.init(string:))
+        self.apiSecret = BuildConfig.realValue(infoPlist["LuminaSwissEphAPISecret"] as? String)
     }
 
     /// Test seam — construct directly when injecting a mocked `URLSession`.
