@@ -127,7 +127,9 @@ struct OnboardingFlowView: View {
     private func handleFinalTap(_ destination: LuminaDeepLink?) {
         pendingDestination = destination
         if paywall.hasSeenInitialOffer {
-            onComplete(destination)
+            // Still persist: skipping straight to `onComplete` here would
+            // finish onboarding without ever saving the captured birth data.
+            persistAndComplete()
         } else {
             paywallVariant = .initial
             paywallPresented = true

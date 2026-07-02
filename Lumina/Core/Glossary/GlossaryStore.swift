@@ -14,6 +14,10 @@ final class GlossaryStore {
 
     private let logger = Logger(subsystem: "app.lumina.ios", category: "Glossary")
     private(set) var entries: [String: GlossaryEntry] = [:]
+    /// Canonical keys *plus* lowercased aliases, all pointing at the same
+    /// entry. Kept separate from `entries` so UI that lists `entries.values`
+    /// (the Glossary screen) never shows an entry once per alias.
+    private var lookup: [String: GlossaryEntry] = [:]
     private(set) var isLoaded = false
 
     init() {}
@@ -28,10 +32,7 @@ final class GlossaryStore {
             return
         }
         do {
-            let data = try Data(contentsOf: url)
-            let raw = try JSONDecoder().decode([GlossaryEntry].self, from: data)
-            entries = Dictionary(uniqueKeysWithValues: raw.map { ($0.key, $0) })
-            isLoaded = true
+            try load(data: Data(contentsOf: url))
             logger.info("loaded \(self.entries.count) glossary entries")
         } catch {
             logger.error("failed to decode glossary: \(error.localizedDescription)")
@@ -39,11 +40,31 @@ final class GlossaryStore {
         }
     }
 
-    /// Lookup is case-insensitive on the term; falls back to `nil` if not
-    /// found. The view renders the term as plain text in that case.
+    /// Decode and index a glossary payload. Internal so tests can exercise
+    /// alias resolution with fixture JSON instead of the app bundle.
+    func load(data: Data) throws {
+        let raw = try JSONDecoder().decode([GlossaryEntry].self, from: data)
+        // A duplicate key in the JSON is a content bug, not a crash — keep
+        // the first entry rather than trapping in `uniqueKeysWithValues`.
+        entries = Dictionary(raw.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
+        // Aliases resolve too, but never shadow another entry's canonical key.
+        var lookup = entries
+        for entry in raw {
+            for alias in entry.aliases {
+                let aliasKey = alias.lowercased()
+                if lookup[aliasKey] == nil { lookup[aliasKey] = entry }
+            }
+        }
+        self.lookup = lookup
+        isLoaded = true
+    }
+
+    /// Lookup is case-insensitive on the term (canonical key or alias);
+    /// falls back to `nil` if not found. The view renders the term as plain
+    /// text in that case.
     func entry(for term: String) -> GlossaryEntry? {
         let key = term.lowercased()
-        return entries[key]
+        return lookup[key]
     }
 }
 
@@ -65,4 +86,21 @@ struct GlossaryEntry: Codable, Hashable, Sendable, Identifiable {
     var aliases: [String] = []
 
     var id: String { key }
+
+    /// Hand-rolled so `aliases` is genuinely optional in the JSON — the
+    /// synthesized `Decodable` ignores the `= []` default and would fail the
+    /// whole glossary decode over one entry with no "aliases" key.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        key = try container.decode(String.self, forKey: .key)
+        displayName = try container.decode(String.self, forKey: .displayName)
+        category = try container.decode(Category.self, forKey: .category)
+        summary = try container.decode(String.self, forKey: .summary)
+        body = try container.decode(String.self, forKey: .body)
+        aliases = try container.decodeIfPresent([String].self, forKey: .aliases) ?? []
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case key, displayName, category, summary, body, aliases
+    }
 }

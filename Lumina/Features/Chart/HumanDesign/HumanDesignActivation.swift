@@ -4,8 +4,9 @@ import Foundation
 /// the centers those gates define.
 ///
 /// **What's real**: the gate activated by each natal planet, computed
-/// from `HumanDesignMandala`. Centers are marked defined if any owned
-/// gate is activated by the personality side.
+/// from `HumanDesignMandala`. Centers are marked defined only when a
+/// complete channel (both gates of a pair activated) connects them —
+/// hanging gates alone leave a center open, per the HD rule.
 ///
 /// **What's NOT real yet**: the design-side activations (Sun, Earth, etc.
 /// at the moment 88° of solar arc before birth). Real HD requires both
@@ -24,7 +25,7 @@ struct HumanDesignActivation: Sendable, Equatable {
     let personality: [GateActivation]
     /// Set of all activated gate numbers, derived from `personality`.
     let activatedGates: Set<Int>
-    /// Set of centers with at least one activated gate.
+    /// Set of centers connected by at least one complete channel.
     let definedCenters: Set<HumanDesignCenter>
 
     static func compute(from chart: NatalChart) -> HumanDesignActivation {
@@ -36,9 +37,10 @@ struct HumanDesignActivation: Sendable, Equatable {
             )
         }
         let activatedGates = Set(personality.map(\.gate))
-        let defined = Set(HumanDesignCenter.allCases.filter { center in
-            !center.gates.isDisjoint(with: activatedGates)
-        })
+        // A center is defined only when a complete channel reaches it;
+        // a hanging gate (its partner gate unactivated) does not define.
+        let defined = Set(HumanDesignChannels.defined(gates: activatedGates)
+            .flatMap { [$0.centerA, $0.centerB] })
         return HumanDesignActivation(
             personality: personality,
             activatedGates: activatedGates,

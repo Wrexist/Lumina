@@ -25,6 +25,10 @@ final class BirthChartViewModel {
     private(set) var state: LoadState = .idle
     var houseSystem: HouseSystem = .placidus
 
+    /// The in-flight load, kept so a newer request can cancel it — a rapid
+    /// house-system switch must never let a stale response overwrite `state`.
+    @ObservationIgnored private var loadTask: Task<Void, Never>?
+
     init(
         ephemeris: EphemerisService = EphemerisService(),
         store: UserBirthDataStore = .userDefaults
@@ -52,11 +56,13 @@ final class BirthChartViewModel {
             .init(planet: "Neptune", longitude: 285.7, latitude: 0.6, isRetrograde: true),
             .init(planet: "Pluto", longitude: 226.5, latitude: 5.4, isRetrograde: true),
         ]
+        // Sorted by orb ascending (tightest first) — `ChartOracle` and
+        // `StrongestAspectsCard` rely on that ordering, matching the server.
         let aspects: [NatalChart.Aspect] = [
-            .init(planet1: "Sun", planet2: "Moon", type: .square, exactAngle: 90, orb: 5.6),
             .init(planet1: "Mercury", planet2: "Venus", type: .sextile, exactAngle: 60, orb: 2.7),
-            .init(planet1: "Venus", planet2: "Mars", type: .trine, exactAngle: 120, orb: 4.3),
             .init(planet1: "Saturn", planet2: "Pluto", type: .trine, exactAngle: 120, orb: 3.9),
+            .init(planet1: "Venus", planet2: "Mars", type: .trine, exactAngle: 120, orb: 4.3),
+            .init(planet1: "Sun", planet2: "Moon", type: .square, exactAngle: 90, orb: 5.6),
         ]
         let houses = NatalChart.HouseCusps(
             system: .placidus,
@@ -81,14 +87,24 @@ final class BirthChartViewModel {
         case .loading: return
         default: break
         }
-        await load()
+        await startLoad()
     }
 
     /// Forces a reload. Called when the house-system picker changes or the
     /// user retries after an error.
     func reload() async {
         state = .idle
-        await load()
+        await startLoad()
+    }
+
+    /// Cancels any in-flight load before starting a new one, so the newest
+    /// request always wins — without this, rapid house-system switches could
+    /// let a stale response land last and overwrite the chart.
+    private func startLoad() async {
+        loadTask?.cancel()
+        let task = Task { await load() }
+        loadTask = task
+        await task.value
     }
 
     private func load() async {
@@ -99,12 +115,18 @@ final class BirthChartViewModel {
         state = .loading
         do {
             let chart = try await ephemeris.chart(for: birthData, houseSystem: houseSystem)
+            guard !Task.isCancelled else { return }
             setReady(chart)
+        } catch is CancellationError {
+            // Superseded by a newer load — its result owns `state` now.
         } catch let serviceError as EphemerisService.ServiceError where serviceError == .missingConfiguration {
+            guard !Task.isCancelled else { return }
             // Dev path — surface a deterministic sample chart so the
-            // UI is testable without a backend.
-            setReady(BirthChartViewModel.sampleChart())
+            // UI is testable without a backend. Deliberately NOT pushed to
+            // the widget: fake data must never reach the home screen.
+            state = .ready(BirthChartViewModel.sampleChart())
         } catch {
+            guard !Task.isCancelled else { return }
             logger.error("chart load failed: \(error.localizedDescription)")
             state = .failed(LuminaError.from(error))
         }

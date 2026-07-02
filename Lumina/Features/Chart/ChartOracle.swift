@@ -49,7 +49,8 @@ enum ChartOracle {
     }
 
     private static func strongestAspect(_ chart: NatalChart) -> String {
-        guard let aspect = chart.aspects.first else {
+        // Tightest orb wins, regardless of the order the server sent them in.
+        guard let aspect = chart.aspects.min(by: { $0.orb < $1.orb }) else {
             return "Your planets sit largely on their own right now — no tight major aspects to call out."
         }
         return AspectInterpreter.interpretation(
@@ -58,15 +59,24 @@ enum ChartOracle {
     }
 
     private static func dominantElement(_ chart: NatalChart) -> String {
+        guard !chart.planets.isEmpty else {
+            return "Your chart is still loading."
+        }
         var counts: [String: Int] = [:]
         for planet in chart.planets {
             counts[element(of: ChartGlyphs.sign(forLongitude: planet.longitude)), default: 0] += 1
         }
-        guard let top = counts.max(by: { $0.value < $1.value }) else {
-            return "Your chart is still loading."
+        // Highest count wins; ties break by canonical element order so the
+        // answer is stable (dictionary iteration order is not). Same pattern
+        // as `CosmicSignatureMaker.dominant`.
+        var top = elementOrder.first ?? "fire"
+        var topCount = -1
+        for candidate in elementOrder where (counts[candidate] ?? 0) > topCount {
+            topCount = counts[candidate] ?? 0
+            top = candidate
         }
-        return "Your chart leans \(top.key) — \(elementMeaning(top.key)) With \(top.value) of your ten "
-            + "planets there, it's a real throughline."
+        return "Your chart leans \(top) — \(elementMeaning(top)) With \(topCount) of your "
+            + "\(spelled(chart.planets.count)) planets there, it's a real throughline."
     }
 
     private static func retrogrades(_ chart: NatalChart) -> String {
@@ -94,8 +104,21 @@ enum ChartOracle {
 
     // MARK: - Helpers
 
+    /// Canonical tie-break order for `dominantElement`.
+    private static let elementOrder = ["fire", "earth", "air", "water"]
+
     private static func position(_ name: String, _ chart: NatalChart) -> NatalChart.PlanetPosition? {
         chart.planets.first { $0.planet == name }
+    }
+
+    /// Spells small counts naturally ("ten planets"); larger ones fall back
+    /// to digits. Locale-free so answers stay deterministic.
+    private static func spelled(_ count: Int) -> String {
+        let words = [
+            "zero", "one", "two", "three", "four", "five", "six",
+            "seven", "eight", "nine", "ten", "eleven", "twelve",
+        ]
+        return count < words.count ? words[count] : "\(count)"
     }
 
     private static func element(of sign: String) -> String {

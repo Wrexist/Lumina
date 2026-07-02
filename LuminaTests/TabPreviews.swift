@@ -110,25 +110,8 @@ enum TabPreviews {
             Text("Palm").font(LuminaTypography.display)
             infoCard(
                 icon: "wand.and.sparkles",
-                title: "Why ours is different",
-                body: "Every other app overlays a generic illustration and writes a generic reading. Lumina actually traces your lines with an on-device model trained on real palm images.",
-                badge: nil
-            )
-            LuminaCard {
-                VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                    HStack(spacing: LuminaSpacing.sm) {
-                        LuminaBadge(title: "Plus", tone: .premium)
-                        Text("Unlimited scans").font(LuminaTypography.body)
-                    }
-                    Text("Free includes one scan a month. Lumina Plus removes the limit.")
-                        .font(LuminaTypography.bodyLight)
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-                }
-            }
-            infoCard(
-                icon: nil,
-                title: "Where we are",
-                body: "Palm scanning is coming soon. We're making sure the on-device line tracing works fairly across every skin tone before we ship it.",
+                title: "How we're building it",
+                body: "We're making sure the on-device line tracing works fairly across every skin tone before we ship it. Every other app overlays a generic illustration — Lumina actually traces your lines with an on-device model trained on real palm images.",
                 badge: "Soon"
             )
         }

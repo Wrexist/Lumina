@@ -60,17 +60,18 @@ final class HumanDesignTests: XCTestCase {
     // MARK: - Activation
 
     @MainActor
-    func testActivationFromSampleChartLightsUpAtLeastOneCenter() {
+    func testActivationCentersFollowTheChannelRule() {
         let chart = BirthChartViewModel.sampleChart()
         let activation = HumanDesignActivation.compute(from: chart)
         XCTAssertEqual(activation.personality.count, 10, "one activation per natal planet")
         XCTAssertFalse(activation.activatedGates.isEmpty)
-        XCTAssertFalse(activation.definedCenters.isEmpty)
-        // Every activated gate must be owned by exactly one defined center.
-        for gate in activation.activatedGates {
-            let owner = HumanDesignCenter.allCases.first { $0.gates.contains(gate) }
-            XCTAssertNotNil(owner, "gate \(gate) has no owning center")
-            XCTAssertTrue(activation.definedCenters.contains(owner ?? .head))
-        }
+        // A center is defined only by a complete channel — never by a lone
+        // (hanging) gate. The defined set must be exactly the endpoints of
+        // the defined channels.
+        let expected = Set(
+            HumanDesignChannels.defined(gates: activation.activatedGates)
+                .flatMap { [$0.centerA, $0.centerB] }
+        )
+        XCTAssertEqual(activation.definedCenters, expected)
     }
 }
