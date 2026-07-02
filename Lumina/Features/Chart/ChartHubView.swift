@@ -158,9 +158,13 @@ struct ChartHubView: View {
             CosmicSignatureCard(chart: chart)
             ChartStandoutCard(chart: chart)
             StrongestAspectsCard(chart: chart)
+            ChartQuizCard(chart: chart)
             AskYourChartCard(chart: chart)
             houseSystemPicker
         }
+        // Seeing a computed chart at all is the first Moment. `unlock` is
+        // idempotent, so re-renders are free.
+        .onAppear { MomentsStore.shared.unlock(.firstChart) }
     }
 
     private var unknownTimeBanner: some View {

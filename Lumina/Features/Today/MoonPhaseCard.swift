@@ -57,6 +57,9 @@ struct MoonPhaseCard: View {
     // MARK: - Methods
 
     private func jumpToReflect() {
+        // Following a ritual prompt into Reflect is the "moon ritual begun"
+        // Moment — intention, not just a glance. `unlock` is idempotent.
+        MomentsStore.shared.unlock(.firstRitual)
         Haptics.light.play()
         router.selectedTab = .reflect
     }

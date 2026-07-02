@@ -92,6 +92,11 @@ struct SettingsView: View {
             } label: {
                 SettingsRow(title: "Birth date, time, and place", trailing: nil)
             }
+            NavigationLink {
+                MomentsView()
+            } label: {
+                SettingsRow(title: "Moments", trailing: nil)
+            }
         }
     }
 

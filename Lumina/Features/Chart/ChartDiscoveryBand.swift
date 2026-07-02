@@ -48,6 +48,7 @@ struct ChartDiscoveryBand: View {
         .accessibilityLabel(accessibilitySummary)
         .onChange(of: isComplete, initial: true) { _, complete in
             guard complete, discovery.celebrateCompletionIfNeeded() else { return }
+            MomentsStore.shared.unlock(.chartExplorer)
             Haptics.success.play()
         }
     }

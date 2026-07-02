@@ -22,6 +22,7 @@ struct TodayHubView: View {
     // calendar day and is unveiled by a tap (happy path only; see
     // `readingSection`).
     @State private var reveal = DailyRevealState()
+    @State private var moments = MomentsStore.shared
     /// Set on an unveil that lands while the sky context is still loading,
     /// so the strip's arrival gets one gentle tick (see `body`'s onChange).
     @State private var pendingSkyContextHaptic = false
@@ -77,6 +78,13 @@ struct TodayHubView: View {
         VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
             if let chart = viewModel.natalChart {
                 BigThreeBand(chart: chart)
+            }
+            // A freshly unlocked Moment surfaces once, dismissible, and
+            // never interrupts the reveal ritual below it.
+            if let moment = moments.latestUnseen {
+                MomentUnlockCard(moment: moment) {
+                    moments.markSeen(moment)
+                }
             }
             if viewModel.transitsUnavailable {
                 transitsUnavailableCard

@@ -158,6 +158,11 @@ final class TodayViewModel {
         async let progressionsLoad = ephemeris.progressions(for: birthData)
         async let returnsLoad = ephemeris.returns(for: birthData)
         moonPhase = try? await moonLoad
+        if let moon = moonPhase {
+            // Being here under tonight's real phase grows the "every face
+            // of the Moon" collection; the eighth distinct face unlocks it.
+            MomentsStore.shared.witnessMoonPhase(moon.phase)
+        }
         retrogrades = try? await retrogradesLoad
         progressions = try? await progressionsLoad
         let returnsResult = try? await returnsLoad

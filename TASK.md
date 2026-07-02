@@ -18,6 +18,7 @@ Four parallel review passes over the whole app, then fixes:
 - [x] **Reflect** — no more phantom calendar entries; soft-delete/editor crash paths closed; softer-prompt escape hatch wired up
 - [x] **Today freshness** — day rollover + birth-info edits now reload; transit failure shows retry instead of false "quiet sky"; 10s request timeouts
 - [x] **Tab declutter** — Today 11 blocks → 6 with one coordinated load + skeletons; Chart wheel promoted to hero; Palm hub merged to one honest card; Settings "Soon" rows collapsed to footnotes
+- [x] **Round 3 — progression & delight** (same branch): chart discovery band (placements as a collection), Moments milestone system + timeline (anti-streak), daily "Know your chart" quiz from the real chart, daily reading reveal ritual
 - [ ] Follow-ups parked: transit alerts re-plan on launch/birth-edit (currently die after 5), config guards for unexpanded `$(...)` placeholders, Sign in with Apple nonce, paywall price from the StoreKit product, daily reflection reminder (new-feature idea)
 
 ---
