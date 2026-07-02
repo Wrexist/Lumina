@@ -149,9 +149,16 @@ final class OnboardingState {
               let timeZoneIdentifier = birthTimeZoneIdentifier else {
             return nil
         }
-        return BirthData.fromPickers(
+        // Picker values are device-local wall clock; anchor them at the
+        // birth place before they reach the ephemeris.
+        let (anchoredDate, anchoredTime) = BirthMoment.combine(
             pickedDay: birthDate,
             pickedTime: birthTimeUnknown ? nil : birthTime,
+            timeZoneIdentifier: timeZoneIdentifier
+        )
+        return BirthData(
+            birthDate: anchoredDate,
+            birthTime: anchoredTime,
             placeName: birthPlaceName,
             latitude: latitude,
             longitude: longitude,

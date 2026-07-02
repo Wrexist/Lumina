@@ -213,9 +213,16 @@ struct EditBirthInfoView: View {
 
     private func save() {
         guard let resolved else { return }
-        let birthData = BirthData.fromPickers(
+        // Picker values are device-local wall clock; anchor them at the
+        // birth place before they reach the ephemeris.
+        let (anchoredDate, anchoredTime) = BirthMoment.combine(
             pickedDay: birthDate,
             pickedTime: birthTimeUnknown ? nil : birthTime,
+            timeZoneIdentifier: resolved.timeZoneIdentifier
+        )
+        let birthData = BirthData(
+            birthDate: anchoredDate,
+            birthTime: anchoredTime,
             placeName: resolved.displayName,
             latitude: resolved.latitude,
             longitude: resolved.longitude,

@@ -73,30 +73,3 @@ enum BirthMoment {
     }
 }
 
-extension BirthData {
-    /// The one sanctioned way to build `BirthData` from date/time pickers.
-    static func fromPickers(
-        pickedDay: Date,
-        pickedTime: Date?,
-        placeName: String,
-        latitude: Double,
-        longitude: Double,
-        timeZoneIdentifier: String,
-        deviceCalendar: Calendar = .current
-    ) -> BirthData {
-        let (birthDate, birthTime) = BirthMoment.combine(
-            pickedDay: pickedDay,
-            pickedTime: pickedTime,
-            timeZoneIdentifier: timeZoneIdentifier,
-            deviceCalendar: deviceCalendar
-        )
-        return BirthData(
-            birthDate: birthDate,
-            birthTime: birthTime,
-            placeName: placeName,
-            latitude: latitude,
-            longitude: longitude,
-            timeZoneIdentifier: timeZoneIdentifier
-        )
-    }
-}

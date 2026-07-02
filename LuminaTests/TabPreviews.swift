@@ -111,7 +111,9 @@ enum TabPreviews {
             infoCard(
                 icon: "wand.and.sparkles",
                 title: "How we're building it",
-                body: "We're making sure the on-device line tracing works fairly across every skin tone before we ship it. Every other app overlays a generic illustration — Lumina actually traces your lines with an on-device model trained on real palm images.",
+                body: "We're making sure the on-device line tracing works fairly across every skin tone "
+                    + "before we ship it. Every other app overlays a generic illustration — Lumina actually "
+                    + "traces your lines with an on-device model trained on real palm images.",
                 badge: "Soon"
             )
         }
