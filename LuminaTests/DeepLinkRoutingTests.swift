@@ -58,25 +58,27 @@ final class DeepLinkRoutingTests: XCTestCase {
 
     // MARK: - Unconsumed links leave no stale pending
 
-    /// `.palmScan` has no consumer (capture isn't shipped). It must switch to
-    /// the Palm tab and leave `pendingPresentation` nil, and a repeat of the
-    /// exact same link must re-switch the tab — never silently no-op because a
-    /// stale value was left behind.
+    /// `.palmScan` has no consumer (capture isn't shipped) and the Palm tab is
+    /// hidden for 1.0, so the router clamps it to a visible tab — `.today` —
+    /// and leaves `pendingPresentation` nil. A repeat of the exact same link
+    /// must still resolve to a visible tab (never a blank selection) and never
+    /// strand a stale value.
     @MainActor
-    func testUnconsumedPalmScanSwitchesTabAndLeavesNoStalePending() {
+    func testUnconsumedPalmScanClampsToVisibleTabAndLeavesNoStalePending() {
         let router = AppRouter(storage: .inMemory())
         router.bootstrap()
         router.completeOnboarding()
 
-        router.selectedTab = .today
+        router.selectedTab = .chart
         router.handle(deepLink: .palmScan)
-        XCTAssertEqual(router.selectedTab, .palm)
+        XCTAssertTrue(LuminaTab.visible.contains(router.selectedTab))
+        XCTAssertEqual(router.selectedTab, .today)
         XCTAssertNil(router.pendingPresentation)
 
-        // Repeat the same link from a different tab — it must re-switch.
-        router.selectedTab = .today
+        // Repeat the same link from a different tab — it must re-resolve.
+        router.selectedTab = .reflect
         router.handle(deepLink: .palmScan)
-        XCTAssertEqual(router.selectedTab, .palm)
+        XCTAssertEqual(router.selectedTab, .today)
         XCTAssertNil(router.pendingPresentation)
     }
 
