@@ -155,23 +155,28 @@ struct ChartQuizView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: LuminaSpacing.md) {
-            Image(systemName: "sparkles")
-                .foregroundStyle(LuminaColors.mutedGold)
-            Text("Your chart doesn't have enough detail for questions yet.")
-                .font(LuminaTypography.body)
-                .multilineTextAlignment(.center)
-            LuminaButton(title: "Done", variant: .secondary) { dismiss() }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, LuminaSpacing.xl)
+        LuminaEmptyState(
+            systemImage: "sparkles",
+            title: "No questions yet",
+            body: "Your chart doesn't have enough detail for questions yet.",
+            primaryCTA: LuminaEmptyState.CTA(title: "Done") { dismiss() }
+        )
     }
 
+    /// Mirrors `questionView`'s layout (kicker → prompt → three option rows) so
+    /// the real content reveals in place without reflowing (`docs/NAVIGATION.md`
+    /// §4).
     private var loadingPlaceholder: some View {
-        VStack(spacing: LuminaSpacing.md) {
-            LuminaSkeleton(shape: .line(height: 18))
-            LuminaSkeleton(shape: .block(height: 96))
+        VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
+            LuminaSkeleton(shape: .line(width: 140, height: 12))
+            LuminaSkeleton(shape: .line(height: 28))
+            VStack(spacing: LuminaSpacing.sm) {
+                ForEach(0..<3, id: \.self) { _ in
+                    LuminaSkeleton(shape: .block(height: 52))
+                }
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Methods

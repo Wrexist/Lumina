@@ -28,6 +28,12 @@ struct TodayHubView: View {
     @State private var pendingSkyContextHaptic = false
     @State private var preferences = AppPreferences.shared
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    /// The current calendar day as a stable key. Bumped when the day rolls
+    /// over (foreground midnight, or returning to an app left open past
+    /// midnight), so the reading section re-veils instead of lingering
+    /// unveiled from yesterday.
+    @State private var revealDayKey = DailyRevealState.dayKey(for: .now)
 
     private var reduceMotion: Bool {
         LuminaMotion.isReduced(system: systemReduceMotion, appOverride: preferences.reduceMotionOverride)
@@ -48,8 +54,14 @@ struct TodayHubView: View {
         // Freshness triggers: the calendar day rolling over in a long-lived
         // process, and birth info edited in Settings. `loadIfNeeded()` no-ops
         // when neither has actually moved.
-        .onReceive(dayChanged) { _ in refresh() }
+        .onReceive(dayChanged) { _ in
+            revealDayKey = DailyRevealState.dayKey(for: .now)
+            refresh()
+        }
         .onReceive(birthDataChanged) { _ in refresh() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { revealDayKey = DailyRevealState.dayKey(for: .now) }
+        }
         .onChange(of: viewModel.skyContextLoading) { _, isLoading in
             skyContextLoadingChanged(isLoading: isLoading)
         }
@@ -90,6 +102,7 @@ struct TodayHubView: View {
                 transitsUnavailableCard
             } else {
                 readingSection
+                    .id(revealDayKey)
             }
             skyContextSection
             aheadSection
@@ -262,7 +275,7 @@ struct TodayHubView: View {
                     quickAction("See chart", systemImage: "circle.dotted") { jump(to: .chart) }
                     quickAction("Reflect", systemImage: "moonphase.first.quarter") { jump(to: .reflect) }
                     quickAction("Add a friend", systemImage: "person.2.badge.plus") { jump(to: .people) }
-                    quickAction("Scan a hand", systemImage: "hand.raised") { jump(to: .palm) }
+                    momentsQuickAction
                 }
             }
         }
@@ -275,15 +288,32 @@ struct TodayHubView: View {
 extension TodayHubView {
     private func quickAction(_ title: String, systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            LuminaCard(padding: LuminaSpacing.md) {
-                VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                    Image(systemName: systemImage)
-                        .font(.system(size: iconSize, weight: .light))
-                        .foregroundStyle(LuminaColors.celestialBlue)
-                    Text(title).font(LuminaTypography.body)
-                }
-                .frame(width: 140, alignment: .leading)
+            quickActionTile(title, systemImage: systemImage)
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// The tile face shared by the tab-jump quick actions and the Moments
+    /// NavigationLink, so both keep the row's rhythm.
+    private func quickActionTile(_ title: String, systemImage: String) -> some View {
+        LuminaCard(padding: LuminaSpacing.md) {
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                Image(systemName: systemImage)
+                    .font(.system(size: iconSize, weight: .light))
+                    .foregroundStyle(LuminaColors.celestialBlue)
+                Text(title).font(LuminaTypography.body)
             }
+            .frame(width: 140, alignment: .leading)
+        }
+    }
+
+    /// Moments has no tab of its own — this NavigationLink is its persistent
+    /// home in the main flow (it was previously buried in Settings).
+    private var momentsQuickAction: some View {
+        NavigationLink {
+            MomentsView()
+        } label: {
+            quickActionTile("Moments", systemImage: "sparkles")
         }
         .buttonStyle(.plain)
     }

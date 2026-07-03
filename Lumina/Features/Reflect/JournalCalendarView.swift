@@ -78,7 +78,7 @@ struct JournalCalendarView: View {
                 Text(symbol)
                     .font(LuminaTypography.mono)
                     .tracking(1.0)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                     .frame(maxWidth: .infinity)
             }
         }
@@ -95,9 +95,7 @@ struct JournalCalendarView: View {
     }
 
     private var monthLabel: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        return formatter.string(from: monthCursor)
+        monthCursor.formatted(.dateTime.month(.wide).year())
     }
 
     private var weekdaySymbols: [String] {
@@ -196,13 +194,15 @@ struct JournalCalendarView: View {
         return entry
     }
 
-    /// Marks reflection Moments after a new entry is created here (backfill
-    /// path). Same rule as `ReflectHubView`: thresholds count what exists,
-    /// never consecutive days — no streaks. The fetch count is authoritative
-    /// because `@Query` may not refresh mid-action.
+    /// Marks reflection Moments after a new entry is created here. Same rule
+    /// as `ReflectHubView`: thresholds count only entries with real writing
+    /// (`wordCount > 0`), so opening a blank day and leaving earns nothing,
+    /// and never consecutive days — no streaks. The fetch count is
+    /// authoritative because `@Query` may not refresh mid-action.
     private func recordReflectionMoments() {
-        let count = (try? modelContext.fetchCount(FetchDescriptor<JournalEntry>())) ?? entries.count
-        if MomentsStore.shared.recordReflection(totalCount: max(count, 1)) {
+        let descriptor = FetchDescriptor<JournalEntry>(predicate: #Predicate { $0.wordCount > 0 })
+        let count = (try? modelContext.fetchCount(descriptor)) ?? entries.filter { $0.wordCount > 0 }.count
+        if MomentsStore.shared.recordReflection(totalCount: count) {
             Haptics.success.play()
         }
     }

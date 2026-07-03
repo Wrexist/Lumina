@@ -60,7 +60,7 @@ struct JournalEntryDetailView: View {
         if entry.body.isEmpty {
             Text("You didn't write anything that day.")
                 .font(LuminaTypography.body)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
         } else {
             Text(entry.body)
                 .font(LuminaTypography.body)
@@ -71,13 +71,13 @@ struct JournalEntryDetailView: View {
 
     private var metaRow: some View {
         HStack {
-            Text("\(entry.wordCount) words")
+            Text("^[\(entry.wordCount) word](inflect: true)")
                 .font(LuminaTypography.mono)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
             Spacer()
             Text("Edited \(relativeUpdatedAt)")
                 .font(LuminaTypography.caption)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
         }
     }
 
@@ -99,9 +99,9 @@ struct JournalEntryDetailView: View {
     // MARK: - Logic
 
     private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE · MMM d"
-        return formatter.string(from: entry.date)
+        let weekday = entry.date.formatted(.dateTime.weekday(.wide))
+        let monthDay = entry.date.formatted(.dateTime.month(.abbreviated).day())
+        return "\(weekday) · \(monthDay)"
     }
 
     private var relativeUpdatedAt: String {

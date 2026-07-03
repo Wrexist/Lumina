@@ -78,7 +78,7 @@ struct ChartDiscoveryBand: View {
         if isComplete {
             Text("You've met your whole chart ✦")
                 .font(LuminaTypography.caption)
-                .foregroundStyle(LuminaColors.mutedGold)
+                .foregroundStyle(LuminaColors.goldInk)
                 .multilineTextAlignment(.center)
         } else {
             Text("You've met \(exploredCount) of \(keys.count) placements — tap any planet to keep exploring.")

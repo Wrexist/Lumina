@@ -10,7 +10,8 @@ struct ReturnsCard: View {
 
     private static let monthFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
+        // Locale-aware month/year ordering (e.g. "July 2026" vs "juillet 2026").
+        formatter.setLocalizedDateFormatFromTemplate("MMMMyyyy")
         return formatter
     }()
 

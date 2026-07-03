@@ -11,7 +11,8 @@ struct ForecastView: View {
         case idle
         case loading
         case loaded([ForecastEvent])
-        case unavailable
+        case missingBirthData
+        case failed(LuminaError)
     }
 
     var body: some View {
@@ -34,9 +35,7 @@ struct ForecastView: View {
     private var content: some View {
         switch state {
         case .idle, .loading:
-            Text("Reading the road ahead…")
-                .font(LuminaTypography.body)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            loadingState
         case .loaded(let events) where events.isEmpty:
             Text("No major exact transits in the next month — a steady stretch.")
                 .font(LuminaTypography.body)
@@ -45,10 +44,40 @@ struct ForecastView: View {
             ForEach(events) { event in
                 eventRow(event)
             }
-        case .unavailable:
+        case .missingBirthData:
             Text("Add your birth info in Settings to see your timing.")
                 .font(LuminaTypography.body)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+        case .failed:
+            failedCard
+        }
+    }
+
+    /// Fixed-height skeletons that mirror the event rows (NAVIGATION.md §4)
+    /// instead of a bare "Reading…" line.
+    private var loadingState: some View {
+        VStack(spacing: LuminaSpacing.md) {
+            LuminaSkeleton(shape: .block(height: 72))
+            LuminaSkeleton(shape: .block(height: 72))
+            LuminaSkeleton(shape: .block(height: 72))
+        }
+    }
+
+    /// Honest transit-fetch failure with a retry — never the missing-birth-data
+    /// copy, which would send users to re-enter data they already have. Mirrors
+    /// Today's `transitsUnavailableCard`.
+    private var failedCard: some View {
+        LuminaCard {
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                Text("Couldn't reach the sky just now")
+                    .font(LuminaTypography.heading)
+                Text("Your timing is grounded in the real transits, and we couldn't fetch them just now.")
+                    .font(LuminaTypography.bodyLight)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                LuminaButton(title: "Retry", variant: .ghost, systemImage: "arrow.clockwise") {
+                    Task { await load() }
+                }
+            }
         }
     }
 
@@ -67,7 +96,7 @@ struct ForecastView: View {
 
     private func load() async {
         guard let birth = UserBirthDataStore.userDefaults.load() else {
-            state = .unavailable
+            state = .missingBirthData
             return
         }
         state = .loading
@@ -79,15 +108,17 @@ struct ForecastView: View {
             #if DEBUG
             state = .loaded(Self.sampleEvents)
             #else
-            state = .unavailable
+            // Birth data is present (we loaded it above); a fetch failure is a
+            // network problem, not missing data — offer a retry, don't lie.
+            state = .failed(LuminaError.from(error))
             #endif
         }
     }
 
+    /// Locale-aware weekday + month/day (e.g. "Thu, Jul 2" in en-US, reordered
+    /// and localized elsewhere) — never a hardcoded `DateFormatter` template.
     private static func dateText(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEE, MMM d"
-        return formatter.string(from: date)
+        date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
     }
 
     #if DEBUG

@@ -41,7 +41,10 @@ final class AppRouter {
     /// `LuminaApp` to drive the root `WindowGroup`.
     init(storage: AppRouterStorage = .userDefaults) {
         self.storage = storage
-        self.selectedTab = storage.lastSelectedTab
+        // A prior build could have persisted `.palm`; clamp to a visible tab
+        // so launch never restores the now-hidden Palm tab (blank selection).
+        let restored = storage.lastSelectedTab
+        self.selectedTab = LuminaTab.visible.contains(restored) ? restored : .today
         if storage.hasCompletedOnboarding {
             self.stage = .mainTabs
         } else {
@@ -104,18 +107,26 @@ final class AppRouter {
             return true
         }
         if let tab = deepLink.tab {
-            selectedTab = tab
+            // Clamp to a visible tab: `.palm` is hidden for 1.0, so a stale
+            // palm deep link lands on Today rather than a blank selection.
+            selectedTab = LuminaTab.visible.contains(tab) ? tab : .today
         }
         // Clear before assigning so a repeat tap of the same link still
         // registers as a change — consumers watch with `onChange`, and an
         // equal-to-stale write would never fire it.
         pendingPresentation = nil
         switch deepLink {
-        case .today, .palmHistory:
-            // Bare tab switches carry no payload and have no consumer, so
-            // storing them would only leave a stale value behind.
+        case .today, .palmHistory, .palmScan, .people, .reflect:
+            // Tab-switch-only links. Either a bare tab jump (`.today`,
+            // `.palmHistory`) or a link whose payload no shipped view consumes:
+            // palm capture isn't built, and nothing reads `.people(friendID:)`
+            // or `.reflect(entryID:)` yet. Selecting the tab above is the whole
+            // effect — storing them would only strand a stale `pendingPresentation`
+            // that also blocks a repeat of the same link from re-firing `onChange`.
             break
         default:
+            // Consumed links: `.chart` (planet sheet), `.acceptShare` (accept
+            // flow), `.settings` / `.help` (sheets over the current tab).
             pendingPresentation = deepLink
         }
         return true

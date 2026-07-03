@@ -7,6 +7,11 @@ enum LuminaColors {
     static let parchment = color(hex: "#F5F0E6")
     static let celestialBlue = color(hex: "#3D5A8C")
     static let mutedGold = color(hex: "#C9A96E")
+    /// Gold intended for TEXT and glyphs on light surfaces. `mutedGold` as
+    /// text on `parchment` is only ~2:1 (fails WCAG AA), so use `goldInk`
+    /// (~4.96:1 on `parchment`) whenever a gold word or symbol must be read.
+    /// Keep `mutedGold` for fills, strokes, and dots — decoration, not text.
+    static let goldInk = color(hex: "#806326")
     static let midnight = color(hex: "#0B1437")
     static let blush = color(hex: "#E5C8C2")
     /// Error / destructive accent. A muted oxblood that keeps the editorial

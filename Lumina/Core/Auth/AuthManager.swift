@@ -166,6 +166,30 @@ final class AuthManager {
         clearLocalSession()
     }
 
+    /// In-app account deletion for Apple Guideline 5.1.1(v). Best-effort by
+    /// design: it asks `SupabaseAuthService` to delete the server-side user
+    /// (a no-op that throws `.missingConfiguration` until a backend exists —
+    /// swallowed exactly like the sign-in exchange), then always clears the
+    /// local Keychain session so no credential survives on device.
+    ///
+    /// There is no client-side API to *revoke* a Sign in with Apple
+    /// credential — that needs the server-side token-revocation endpoint the
+    /// Supabase delete stands in for — so the honest on-device guarantee is
+    /// the Keychain wipe. Safe to call for a local-only user with no live
+    /// `session`: the server step throws-and-is-swallowed, the Keychain
+    /// delete is a no-op, and the caller (Settings) still erases all
+    /// on-device data.
+    func deleteAccount() async throws {
+        do {
+            try await supabaseAuthService.deleteAccount()
+        } catch SupabaseAuthService.ServiceError.missingConfiguration {
+            logger.debug("Supabase not configured — skipping server-side account delete.")
+        } catch {
+            logger.error("Supabase account delete failed (continuing local wipe): \(error.localizedDescription, privacy: .public)")
+        }
+        clearLocalSession()
+    }
+
     private func persist(_ session: AuthSession) throws {
         let data = try Self.encoder.encode(session)
         try keychain.save(data)

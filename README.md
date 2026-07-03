@@ -24,16 +24,23 @@ A best-in-class astrology + AI palm reading app for iOS 26. Real computer vision
 
 ---
 
-## Features (v1)
+## Features (v1 — shipped)
 
-- **🔮 Birth Chart** — Placidus / Whole-Sign / Sidereal toggle, interactive wheel, plain-English planet interpretations
-- **🤚 AI Palm Reading** — On-device Vision + Core ML line segmentation with transparent trace overlay
-- **📅 Daily Reading** — Transit-grounded LLM content narrated via ElevenLabs audio
-- **💫 Compatibility** — Synastry + composite + narrative compatibility dimensions via contact import
-- **⚙️ Human Design** — Bodygraph from birth data (differentiator — no competitor ships this)
-- **📓 Journal** — Daily transit-tied prompts with longitudinal pattern review
-- **👯 Friend Graph** — Deep-link share cards, chart comparison threads
+- **🔮 Birth Chart** — Placidus / Whole-Sign toggle, interactive wheel, plain-English planet interpretations, "know your chart" daily quiz, and a placement-discovery collection
+- **📅 Daily Reading** — Transit-grounded, deterministic reading with a once-a-day reveal; moon phase, retrogrades, progressed chapter, and upcoming returns
+- **💫 Compatibility** — Synastry + composite + narrative dimensions; add people manually or by QR share
+- **⚙️ Human Design** — Personality-side bodygraph from birth data (differentiator — no competitor ships this)
+- **📓 Journal** — Daily transit-tied prompts, calendar review, optional evening reminder
+- **✦ Moments** — quiet, streak-free milestones for real things you've done
+- **👯 Friend Graph** — deep-link / QR share cards, chart comparison
 - **💳 Subscription** — $9.99/month or $59.99/year · 7-day free trial · visible cancel button
+
+### Roadmap (not yet shipped — deliberately not advertised in-app)
+
+- **🤚 AI Palm Reading** — on-device Vision + Core ML line segmentation (the Palm tab is hidden until the capture pipeline and fairness testing land)
+- **🔊 Audio narration** of the daily reading (ElevenLabs)
+- **💬 Conversational "Ask your chart"** (RAG-grounded LLM) — the deterministic Q&A ships today; the free-text path unlocks when the key is provisioned
+- **📇 Contacts import** for compatibility
 
 ---
 

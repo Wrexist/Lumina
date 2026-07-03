@@ -14,6 +14,14 @@ struct MoonSphereSheetView: View {
         LuminaMotion.isReduced(system: systemReduceMotion, appOverride: preferences.reduceMotionOverride)
     }
 
+    /// Spoken description of the sphere for VoiceOver — the phase name plus
+    /// how much of the disc is lit, so the info conveyed visually by the 3D
+    /// terminator is also available non-visually.
+    private var sphereAccessibilityLabel: String {
+        let percent = Int((phase.illumination * 100).rounded())
+        return "The Moon tonight — \(phase.phase), \(percent)% lit"
+    }
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
@@ -23,6 +31,12 @@ struct MoonSphereSheetView: View {
                     .ignoresSafeArea()
                 MoonSphere3DView(phase: phase, reduceMotion: reduceMotion)
                     .ignoresSafeArea()
+                    // The raw SceneKit `SCNView` exposes an unlabeled
+                    // interactive element; collapse it into one described
+                    // element so VoiceOver announces the actual phase.
+                    .accessibilityElement()
+                    .accessibilityLabel(sphereAccessibilityLabel)
+                    .accessibilityHint("Drag to explore the Moon's surface.")
                 caption
             }
             .background(LuminaColors.midnight)

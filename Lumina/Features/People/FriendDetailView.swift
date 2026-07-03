@@ -19,7 +19,8 @@ struct FriendDetailView: View {
         case idle
         case loading
         case loaded([SynastryAspect])
-        case unavailable
+        case missingBirthData
+        case failed(LuminaError)
     }
 
     var body: some View {
@@ -133,9 +134,11 @@ struct FriendDetailView: View {
     private var synastryBody: some View {
         switch synastry {
         case .idle, .loading:
-            Text("Reading the aspects between you…")
-                .font(LuminaTypography.body)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                LuminaSkeleton(shape: .line(height: 16))
+                LuminaSkeleton(shape: .line(width: 220, height: 14))
+                LuminaSkeleton(shape: .line(width: 260, height: 14))
+            }
         case .loaded(let aspects) where aspects.isEmpty:
             Text("No major aspects between your charts — an easy, low-friction connection.")
                 .font(LuminaTypography.body)
@@ -153,10 +156,25 @@ struct FriendDetailView: View {
                     Text(SynastryPhrasing.sentence(for: aspect)).font(LuminaTypography.body)
                 }
             }
-        case .unavailable:
+        case .missingBirthData:
             Text("Add your birth info in Settings to see the aspects between your charts.")
                 .font(LuminaTypography.body)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+        case .failed:
+            synastryFailed
+        }
+    }
+
+    /// Honest fetch failure with a retry — the user's birth data is present, so
+    /// a network error must not send them to Settings to re-enter it.
+    private var synastryFailed: some View {
+        VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+            Text("Couldn't reach the sky just now")
+                .font(LuminaTypography.body)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+            LuminaButton(title: "Retry", variant: .ghost, systemImage: "arrow.clockwise") {
+                Task { await loadSynastry() }
+            }
         }
     }
 
@@ -200,7 +218,7 @@ struct FriendDetailView: View {
     /// need birth place, so a friend with only a date still works.
     private func loadSynastry() async {
         guard let userBirth = UserBirthDataStore.userDefaults.load() else {
-            synastry = .unavailable
+            synastry = .missingBirthData
             return
         }
         let mine = SynastryPerson(
@@ -221,7 +239,9 @@ struct FriendDetailView: View {
             #if DEBUG
             applyLoadedAspects(Self.sampleSynastry)
             #else
-            synastry = .unavailable
+            // Birth data is present; a fetch failure is a network problem —
+            // offer a retry rather than the missing-data copy.
+            synastry = .failed(LuminaError.from(error))
             #endif
         }
     }

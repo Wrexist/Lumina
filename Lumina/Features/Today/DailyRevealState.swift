@@ -56,9 +56,16 @@ final class DailyRevealState {
     }
 
     /// "yyyy-MM-dd" from the injected calendar (whose time zone decides
-    /// when "today" rolls over) — components, not `DateFormatter`, so no
-    /// locale or era surprises.
+    /// when "today" rolls over).
     private func dayString(for date: Date) -> String {
+        Self.dayKey(for: date, calendar: calendar)
+    }
+
+    /// "yyyy-MM-dd" for `date` — components, not `DateFormatter`, so no locale
+    /// or era surprises. `nonisolated static` so a view can use it as a stable
+    /// `.id` that flips at the midnight rollover, re-veiling the reading even
+    /// if the app was left foregrounded past midnight.
+    nonisolated static func dayKey(for date: Date, calendar: Calendar = .current) -> String {
         let parts = calendar.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
     }

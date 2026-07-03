@@ -10,7 +10,7 @@ struct MainTabsView: View {
 
     var body: some View {
         TabView(selection: $router.selectedTab) {
-            ForEach(LuminaTab.allCases, id: \.self) { tab in
+            ForEach(LuminaTab.visible, id: \.self) { tab in
                 tabContent(for: tab)
                     .tabItem {
                         Label(tab.title, systemImage: tab.systemImage)

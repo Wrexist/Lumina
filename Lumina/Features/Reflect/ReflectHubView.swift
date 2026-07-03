@@ -24,6 +24,12 @@ struct ReflectHubView: View {
     @State private var usingSofterPrompt = false
     @AppStorage("luminaReflectPlusBannerDismissed") private var plusBannerDismissed = false
     @ScaledMetric private var lockIconSize: CGFloat = 56
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+
+    /// Effective Reduce Motion — the OS setting or the in-app override.
+    private var reduceMotion: Bool {
+        LuminaMotion.isReduced(system: systemReduceMotion, appOverride: preferences.reduceMotionOverride)
+    }
 
     var body: some View {
         Group {
@@ -84,6 +90,7 @@ struct ReflectHubView: View {
         .overlay(alignment: .bottom) { undoBar }
         .animation(.smooth, value: pendingDelete?.id)
         .task(id: pendingDelete?.id) { await autoCommitPendingDelete() }
+        .onAppear(perform: backfillReflectionMoments)
         .onDisappear(perform: commitPendingDelete)
     }
 
@@ -91,7 +98,7 @@ struct ReflectHubView: View {
     private var undoBar: some View {
         if pendingDelete != nil {
             LuminaSnackbarView(message: "Entry removed", actionTitle: "Undo", onAction: cancelPendingDelete)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .transition(reduceMotion ? .identity : .move(edge: .bottom).combined(with: .opacity))
         }
     }
 
@@ -265,9 +272,9 @@ struct ReflectHubView: View {
                 Text(entry.prompt)
                     .font(LuminaTypography.body)
                     .lineLimit(2)
-                Text("\(entry.wordCount) words")
+                Text("^[\(entry.wordCount) word](inflect: true)")
                     .font(LuminaTypography.caption)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
             }
         }
     }
@@ -294,9 +301,9 @@ struct ReflectHubView: View {
     }
 
     private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE · MMM d"
-        return formatter.string(from: date).uppercased()
+        let weekday = date.formatted(.dateTime.weekday(.wide))
+        let monthDay = date.formatted(.dateTime.month(.abbreviated).day())
+        return "\(weekday) · \(monthDay)".uppercased()
     }
 }
 
@@ -336,14 +343,31 @@ extension ReflectHubView {
 
 extension ReflectHubView {
     /// Marks reflection Moments after a new entry is created. Thresholds
-    /// count what exists in the journal — never consecutive days (brand:
-    /// celebrate what happened; no streaks, no chains). The fetch count is
-    /// authoritative because `@Query` may not refresh mid-action.
+    /// count only entries with real writing (`wordCount > 0`) — a blank
+    /// entry the user opened but never wrote in earns nothing. Never
+    /// consecutive days (brand: celebrate what happened; no streaks). The
+    /// fetch count is authoritative because `@Query` may not refresh
+    /// mid-action.
     private func recordReflectionMoments() {
-        let count = (try? modelContext.fetchCount(FetchDescriptor<JournalEntry>())) ?? entries.count
-        if MomentsStore.shared.recordReflection(totalCount: max(count, 1)) {
+        if MomentsStore.shared.recordReflection(totalCount: writtenEntryCount()) {
             Haptics.success.play()
         }
+    }
+
+    /// One-time silent reconcile on hub appearance: a user who upgrades (or
+    /// returns after finally writing in a blank entry) with existing pages
+    /// earns the reflection Moments they've already lived — no haptic, since
+    /// this is backfill, not a fresh celebration.
+    private func backfillReflectionMoments() {
+        MomentsStore.shared.recordReflection(totalCount: writtenEntryCount())
+    }
+
+    /// Count of entries that actually contain writing. `wordCount` is a
+    /// stored column, so the `#Predicate` count runs in the store; the array
+    /// filter is only a fallback for a thrown fetch.
+    private func writtenEntryCount() -> Int {
+        let descriptor = FetchDescriptor<JournalEntry>(predicate: #Predicate { $0.wordCount > 0 })
+        return (try? modelContext.fetchCount(descriptor)) ?? entries.filter { $0.wordCount > 0 }.count
     }
 }
 

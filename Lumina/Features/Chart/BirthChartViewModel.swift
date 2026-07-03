@@ -29,6 +29,13 @@ final class BirthChartViewModel {
     /// house-system switch must never let a stale response overwrite `state`.
     @ObservationIgnored private var loadTask: Task<Void, Never>?
 
+    /// What the ready chart was loaded against — `loadIfNeeded()` reloads when
+    /// either moves (birth info edited in Settings, or the calendar day rolled
+    /// over in a long-lived process), so the Chart tab and the widget never go
+    /// stale after a Settings edit. Mirrors `TodayViewModel`.
+    private var loadedRevision: Int?
+    private var loadedDay: Date?
+
     init(
         ephemeris: EphemerisService = EphemerisService(),
         store: UserBirthDataStore = .userDefaults
@@ -83,11 +90,18 @@ final class BirthChartViewModel {
     /// the existing chart when the house system hasn't changed.
     func loadIfNeeded() async {
         switch state {
-        case .ready: return
         case .loading: return
+        case .ready where contentIsFresh: return
         default: break
         }
         await startLoad()
+    }
+
+    /// The ready chart is still current unless the birth data was edited in
+    /// Settings or the calendar day rolled over since we loaded.
+    private var contentIsFresh: Bool {
+        guard loadedRevision == store.revision, let loadedDay else { return false }
+        return Calendar.current.isDate(loadedDay, inSameDayAs: .now)
     }
 
     /// Forces a reload. Called when the house-system picker changes or the
@@ -112,6 +126,8 @@ final class BirthChartViewModel {
             state = .missingBirthData
             return
         }
+        loadedRevision = store.revision
+        loadedDay = .now
         state = .loading
         do {
             let chart = try await ephemeris.chart(for: birthData, houseSystem: houseSystem)
