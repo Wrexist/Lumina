@@ -99,6 +99,9 @@ actor LuminaAIClient {
         let body = InterpretRequestBody(kind: kind, facts: facts, question: question)
         var request = URLRequest(url: baseURL.appendingPathComponent("interpret"))
         request.httpMethod = "POST"
+        // Match EphemerisService: fail fast to a retry state rather than
+        // hanging on URLSession's 60s default (docs/NAVIGATION.md §12).
+        request.timeoutInterval = 10
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")

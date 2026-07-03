@@ -137,10 +137,16 @@ final class BirthChartViewModel {
             // Superseded by a newer load — its result owns `state` now.
         } catch let serviceError as EphemerisService.ServiceError where serviceError == .missingConfiguration {
             guard !Task.isCancelled else { return }
-            // Dev path — surface a deterministic sample chart so the
-            // UI is testable without a backend. Deliberately NOT pushed to
-            // the widget: fake data must never reach the home screen.
+            #if DEBUG
+            // Dev path — surface a deterministic sample chart so the UI is
+            // testable without a backend. Deliberately NOT pushed to the
+            // widget: fake data must never reach the home screen.
             state = .ready(BirthChartViewModel.sampleChart())
+            #else
+            // Release must never render a fabricated chart as the user's own —
+            // an unconfigured backend fails honestly, like every other surface.
+            state = .failed(LuminaError.from(serviceError))
+            #endif
         } catch {
             guard !Task.isCancelled else { return }
             logger.error("chart load failed: \(error.localizedDescription)")

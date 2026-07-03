@@ -138,7 +138,7 @@ struct ReflectHubView: View {
 
     @ViewBuilder
     private var premiumBanner: some View {
-        if entries.count >= 3 && !premium.isPremium && !plusBannerDismissed {
+        if writtenEntryCount() >= 3 && !premium.isPremium && !plusBannerDismissed {
             LuminaCard {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                     HStack {
