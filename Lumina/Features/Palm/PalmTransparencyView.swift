@@ -74,7 +74,7 @@ struct PalmTransparencyView: View {
         HStack(alignment: .top, spacing: LuminaSpacing.md) {
             Text(number)
                 .font(LuminaTypography.mono)
-                .foregroundStyle(LuminaColors.mutedGold)
+                .foregroundStyle(LuminaColors.goldInk)
                 .frame(width: 32, alignment: .leading)
             VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
                 Text(title)

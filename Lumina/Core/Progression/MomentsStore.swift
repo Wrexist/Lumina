@@ -126,7 +126,22 @@ final class MomentsStore {
         let stored = defaults.dictionary(forKey: Keys.unlocked) ?? [:]
         self.unlockDates = stored.compactMapValues { $0 as? Date }
         self.seenMoments = Set(defaults.stringArray(forKey: Keys.seen) ?? [])
-        self.witnessedPhases = Set(defaults.stringArray(forKey: Keys.witnessedMoonPhases) ?? [])
+        // Drop any stored name no longer in the canonical set (symmetric with
+        // `ChartDiscovery`), so a renamed phase can't inflate the count and
+        // falsely satisfy — or permanently block — "Every face of the Moon".
+        let storedPhases = Set(defaults.stringArray(forKey: Keys.witnessedMoonPhases) ?? [])
+        self.witnessedPhases = storedPhases.intersection(Self.moonPhaseNames)
+    }
+
+    /// Erases all progression state — used by account deletion so a fresh
+    /// account on the same device starts with no unlocked moments.
+    func clear() {
+        unlockDates = [:]
+        seenMoments = []
+        witnessedPhases = []
+        defaults.removeObject(forKey: Keys.unlocked)
+        defaults.removeObject(forKey: Keys.seen)
+        defaults.removeObject(forKey: Keys.witnessedMoonPhases)
     }
 
     // MARK: - Unlocking

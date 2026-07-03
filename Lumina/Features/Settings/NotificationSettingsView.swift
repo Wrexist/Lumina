@@ -127,7 +127,7 @@ struct NotificationSettingsView: View {
     private var statusBody: String {
         switch permission.status {
         case .granted:
-            return "You'll get tomorrow morning's reading delivered between 7:30–9:00 AM local."
+            return "Notifications are on. Choose what reaches you below — transit alerts and your daily reflection reminder. Nothing else."
         case .provisional:
             return "Notifications arrive quietly without sound or banner."
         case .ephemeral:

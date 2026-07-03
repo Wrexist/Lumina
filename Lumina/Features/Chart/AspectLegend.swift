@@ -6,6 +6,13 @@ import SwiftUI
 /// the colors.
 struct AspectLegend: View {
     @State private var expanded = false
+    @State private var preferences = AppPreferences.shared
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+
+    /// Effective Reduce Motion — the OS setting or the in-app override.
+    private var reduceMotion: Bool {
+        LuminaMotion.isReduced(system: systemReduceMotion, appOverride: preferences.reduceMotionOverride)
+    }
 
     var body: some View {
         LuminaCard {
@@ -25,7 +32,11 @@ struct AspectLegend: View {
 
     private var header: some View {
         Button {
-            withAnimation(.smooth(duration: 0.2)) { expanded.toggle() }
+            if reduceMotion {
+                expanded.toggle()
+            } else {
+                withAnimation(.smooth(duration: 0.2)) { expanded.toggle() }
+            }
             Haptics.selection.play()
         } label: {
             HStack {

@@ -45,7 +45,7 @@ struct PrivacyDashboardView: View {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 sectionHeader("On this device", systemImage: "iphone")
                 row("Your birth chart", value: hasBirthData ? "Yes" : "Not set")
-                row("Reflect entries", value: "\(journalEntries.count)")
+                row("Reflect entries", value: "\(writtenEntryCount)")
                 row("Friends", value: "\(friends.count)")
                 row("Onboarding state", value: hasOnboardingState ? "Saved" : "Cleared")
             }
@@ -78,6 +78,13 @@ struct PrivacyDashboardView: View {
     }
 
     // MARK: - Methods
+
+    /// Counts only entries with real writing — merely opening a Reflect day
+    /// inserts a blank (`wordCount == 0`) entry, which shouldn't inflate the
+    /// on-device tally the user sees here.
+    private var writtenEntryCount: Int {
+        journalEntries.filter { $0.wordCount > 0 }.count
+    }
 
     private func sectionHeader(_ title: String, systemImage: String) -> some View {
         HStack(spacing: LuminaSpacing.sm) {

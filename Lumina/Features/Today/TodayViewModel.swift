@@ -133,6 +133,10 @@ final class TodayViewModel {
             }
             state = .ready
         } catch {
+            // A cancelled load (e.g. tab switch during the first fetch, which
+            // throws URLError.cancelled) must not paint the full-screen error
+            // card on the landing tab — the reissued `.task` will reload.
+            if Self.isCancellation(error) { return }
             logger.error("today load failed: \(error.localizedDescription)")
             transits = []
             #if DEBUG
@@ -201,9 +205,17 @@ final class TodayViewModel {
             transits = try await ephemeris.transits(for: birthData).transits
             transitsUnavailable = false
         } catch {
+            if Self.isCancellation(error) { return }
             logger.error("transit retry failed: \(error.localizedDescription)")
             transitsUnavailable = true
         }
+    }
+
+    /// A cancelled `URLSession` request throws `URLError.cancelled` (not Swift's
+    /// `CancellationError`), so both are checked — a superseded load should be a
+    /// silent no-op, never an error state.
+    static func isCancellation(_ error: any Error) -> Bool {
+        Task.isCancelled || error is CancellationError || (error as? URLError)?.code == .cancelled
     }
 
     #if DEBUG

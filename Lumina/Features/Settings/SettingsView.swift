@@ -262,22 +262,34 @@ extension SettingsView {
         isDeletingAccount = true
         Task {
             try? await AuthManager.shared.deleteAccount()
-            eraseLocalData()
+            await eraseLocalData()
             router.resetForSignOut()
             isDeletingAccount = false
             dismiss()
         }
     }
 
-    /// Wipes every on-device store: SwiftData (`JournalEntry` + `Friend`),
-    /// birth data, the onboarding snapshot, tunable preferences, and the
-    /// app-lock session. Keychain is handled inside `deleteAccount()`.
-    private func eraseLocalData() {
+    /// Wipes every on-device store so nothing of the deleted account survives:
+    /// SwiftData (`JournalEntry` + `Friend`), birth data, the onboarding
+    /// snapshot, the widget App-Group snapshot, progression state (Moments +
+    /// chart discovery), tunable preferences, and the app-lock session; and
+    /// cancels every scheduled notification derived from that data. Keychain
+    /// is handled inside `deleteAccount()`.
+    private func eraseLocalData() async {
+        // Stop future notifications first — a repeating reflect reminder would
+        // otherwise keep firing forever, and transit alerts carry the deleted
+        // chart. (Setting the prefs off below does not itself cancel them.)
+        ReflectReminderScheduler.shared.cancel()
+        await TransitNotificationScheduler.shared.cancelAll()
+
         try? modelContext.delete(model: JournalEntry.self)
         try? modelContext.delete(model: Friend.self)
         try? modelContext.save()
         UserBirthDataStore.userDefaults.clear()
         OnboardingStorage.userDefaults.clear()
+        WidgetSharedStore.clear()
+        MomentsStore.shared.clear()
+        ChartDiscovery.shared.clear()
         resetPreferences()
         AppLock.shared.resetSessionUnlocks()
     }

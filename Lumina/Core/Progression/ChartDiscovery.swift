@@ -78,4 +78,13 @@ final class ChartDiscovery {
         defaults.set(true, forKey: Keys.completionCelebrated)
         return true
     }
+
+    /// Erases all discovery progress — used by account deletion so a new
+    /// account on the same device starts with an empty chart to explore.
+    func clear() {
+        explored = []
+        completionCelebrated = false
+        defaults.removeObject(forKey: Keys.explored)
+        defaults.removeObject(forKey: Keys.completionCelebrated)
+    }
 }

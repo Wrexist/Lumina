@@ -160,8 +160,11 @@ struct JournalCalendarView: View {
         entries.first { calendar.isDate($0.date, inSameDayAs: day) }
     }
 
+    /// Gold dot means "you wrote here" — a day merely opened (a blank
+    /// `wordCount == 0` entry) shows no dot. `entry(on:)` still resolves that
+    /// blank entry so tapping reopens it instead of inserting a duplicate.
     private func hasEntry(on day: Date) -> Bool {
-        entry(on: day) != nil
+        (entry(on: day)?.wordCount ?? 0) > 0
     }
 
     private func isToday(_ day: Date) -> Bool {

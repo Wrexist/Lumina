@@ -202,6 +202,12 @@ struct ChartQuizView: View {
         } else {
             Haptics.warning.play()
         }
+        // Record play on the first answer so abandoning mid-run still counts —
+        // the one-play-a-day rhythm holds even if the sheet is dismissed before
+        // the last question. `finish()` finalizes the same values on completion.
+        lastPlayedDay = ChartQuizEngine.dayString()
+        lastScore = correctCount
+        lastTotal = questions.count
     }
 
     private func advance() {

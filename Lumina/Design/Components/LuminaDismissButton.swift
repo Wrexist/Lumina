@@ -9,8 +9,10 @@ import SwiftUI
 /// ships the reusable component and its preview.
 struct LuminaDismissButton: View {
     private let action: () -> Void
+    private let accessibilityLabel: String
 
-    init(action: @escaping () -> Void) {
+    init(accessibilityLabel: String = "Dismiss", action: @escaping () -> Void) {
+        self.accessibilityLabel = accessibilityLabel
         self.action = action
     }
 
@@ -20,10 +22,13 @@ struct LuminaDismissButton: View {
                 .font(LuminaTypography.caption)
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
                 .frame(width: LuminaSpacing.lg, height: LuminaSpacing.lg)
+                // Keep the glyph small but enlarge the tappable area to
+                // Apple's 44pt minimum (the visual size stays LuminaSpacing.lg).
+                .frame(minWidth: 44, minHeight: 44)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Dismiss")
+        .accessibilityLabel(accessibilityLabel)
         .accessibilityAddTraits(.isButton)
     }
 }

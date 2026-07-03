@@ -116,7 +116,7 @@ struct PaywallOfferView: View {
             featureRow("The Human Design bodygraph, in full")
             featureRow("Synastry + composite compatibility")
             featureRow("Your daily transit reading")
-            featureRow("Unlimited journal + a daily reflection reminder")
+            featureRow("Pattern detection across your journal — the emotional threads over a month")
             featureRow("The home-screen widget")
         }
     }

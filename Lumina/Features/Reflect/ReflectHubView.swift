@@ -163,9 +163,16 @@ struct ReflectHubView: View {
         }
     }
 
+    /// Recent history excludes blank (`wordCount == 0`) entries — merely
+    /// opening a day inserts one, and a page with no writing isn't history.
+    /// Blank entries are kept in the store (never deleted), just not shown.
+    private var recentWrittenEntries: [JournalEntry] {
+        entries.filter { $0.wordCount > 0 && $0.id != pendingDelete?.id }
+    }
+
     @ViewBuilder
     private var history: some View {
-        if entries.isEmpty {
+        if recentWrittenEntries.isEmpty {
             // No empty-state CTA here — the primary CTA above already
             // serves the empty state. Hide the history section to avoid
             // a "no entries" dead-end.
@@ -183,7 +190,7 @@ struct ReflectHubView: View {
                     }
                     .font(LuminaTypography.caption)
                 }
-                ForEach(Array(entries.filter { $0.id != pendingDelete?.id }.prefix(5))) { entry in
+                ForEach(Array(recentWrittenEntries.prefix(5))) { entry in
                     NavigationLink {
                         JournalEntryDetailView(entry: entry)
                     } label: {

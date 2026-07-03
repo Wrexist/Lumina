@@ -80,6 +80,15 @@ targets:
           UIApplicationSupportsMultipleScenes: false
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        # Registers the custom `lumina://` scheme so the app can open its own
+        # deep links — the daily-reflection reminder tap routes through
+        # `UIApplication.open("lumina://reflect")` → `RootView.onOpenURL`
+        # (`NotificationTapRouter`). Universal `https://lumina.app/...` links
+        # ride the Associated Domains entitlement separately.
+        CFBundleURLTypes:
+          - CFBundleURLName: app.lumina.ios
+            CFBundleURLSchemes:
+              - lumina
         # The brand is a single light "parchment + ink" editorial theme; we
         # ship light-only rather than a half-built dark mode. Revisit when a
         # dark palette exists (see docs/AUDIT-2026-06-03.md R6).

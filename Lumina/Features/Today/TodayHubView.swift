@@ -2,16 +2,12 @@ import Combine
 import SwiftUI
 
 /// The Today (Home) hub, restructured for signal over noise:
-/// hero → Big-3 band → the reading card (headline + body, remaining transits
-/// collapsed behind "Details") → the sky-context strip (Moon + retrogrades) →
-/// the "Ahead" card (imminent return + forecast) → quick actions. The
-/// progressed "chapter" card joins the flow only around a progressed-Moon
-/// sign change and sits below the quick actions otherwise.
-///
-/// All data comes from one `TodayViewModel` fan-out, so the secondary cards
-/// reveal together over fixed-height skeletons instead of popping in. The
-/// audio-narrated reading body lands once the Anthropic + ElevenLabs keys
-/// are wired (Phase 5).
+/// hero → Big-3 band → reading card (headline + body, extra transits behind
+/// "Details") → sky-context strip (Moon + retrogrades) → "Ahead" card → quick
+/// actions. The progressed "chapter" card joins only around a progressed-Moon
+/// sign change, else sits below the quick actions. All data comes from one
+/// `TodayViewModel` fan-out, so the secondary cards reveal together over
+/// fixed-height skeletons instead of popping in.
 struct TodayHubView: View {
     @State private var viewModel = TodayViewModel()
     @Environment(AppRouter.self) private var router
@@ -248,8 +244,10 @@ struct TodayHubView: View {
             if let moon = viewModel.moonPhase {
                 MoonPhaseCard(phase: moon)
             }
-            if let retro = viewModel.retrogrades, retro.planets.contains(where: \.isRetrograde) {
-                RetrogradeCard(result: retro)
+            if let retro = viewModel.retrogrades {
+                if retro.planets.contains(where: \.isRetrograde) {
+                    RetrogradeCard(result: retro)
+                } else { noRetrogradesCard }
             }
         }
     }
@@ -307,6 +305,19 @@ extension TodayHubView {
         }
     }
 
+    private var noRetrogradesCard: some View {
+        LuminaCard {
+            VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
+                Text("RETROGRADES")
+                    .font(LuminaTypography.mono)
+                    .tracking(1.4)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                Text("No retrogrades right now — all planets are direct.")
+                    .font(LuminaTypography.body)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+            }
+        }
+    }
     /// Moments has no tab of its own — this NavigationLink is its persistent
     /// home in the main flow (it was previously buried in Settings).
     private var momentsQuickAction: some View {
