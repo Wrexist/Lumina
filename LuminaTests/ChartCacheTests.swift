@@ -5,6 +5,10 @@ import XCTest
 /// behaviours the app leans on: the natal chart is fetched once then served from
 /// memory and disk (offline-instant cold launch), day-scoped reads are memoized
 /// for the calendar day, and `clear()` erases the persisted chart (Apple 5.1.1(v)).
+///
+/// `@MainActor` because the fixtures call `BirthChartViewModel.sampleChart()`,
+/// which is main-actor isolated.
+@MainActor
 final class ChartCacheTests: XCTestCase {
     private func makeDefaults() throws -> UserDefaults {
         let suite = "lumina.tests.chartcache.\(UUID().uuidString)"
