@@ -237,7 +237,7 @@ enum OnboardingScreens {
                             .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                     }
                     quickWin("Read today", body: "Your reading, grounded in today's real transits.", destination: .today)
-                    quickWin("See your chart", body: "The full wheel — tap any planet to explore it.", destination: .chart)
+                    quickWin("See your chart", body: "The full wheel — tap any planet to explore it.", destination: .chart(planet: nil))
                     quickWin("Add a friend", body: "Compare charts and see what's between you.", destination: .people(friendID: nil))
                 }
                 .padding(LuminaSpacing.lg)
