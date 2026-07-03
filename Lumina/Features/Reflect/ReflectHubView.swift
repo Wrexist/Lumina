@@ -17,7 +17,6 @@ struct ReflectHubView: View {
     @State private var unlockError: LuminaError?
     @State private var unlocking = false
     @State private var openedEntry: JournalEntry?
-    @State private var ephemeris = EphemerisService()
     @State private var transits: [TransitReading] = []
     @State private var pendingDelete: JournalEntry?
     @State private var premium = PremiumStatus.shared
@@ -243,7 +242,7 @@ struct ReflectHubView: View {
     private func loadTransits() async {
         guard transits.isEmpty, let birth = UserBirthDataStore.userDefaults.load() else { return }
         do {
-            transits = try await ephemeris.transits(for: birth).transits
+            transits = try await ChartCache.shared.transits(for: birth).transits
         } catch {
             transits = []
         }

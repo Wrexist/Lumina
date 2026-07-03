@@ -19,7 +19,7 @@ final class BirthChartViewModel {
     }
 
     private let logger = Logger(subsystem: "app.lumina.ios", category: "BirthChartViewModel")
-    private let ephemeris: EphemerisService
+    private let chartCache: ChartCache
     private let store: UserBirthDataStore
 
     private(set) var state: LoadState = .idle
@@ -37,10 +37,10 @@ final class BirthChartViewModel {
     private var loadedDay: Date?
 
     init(
-        ephemeris: EphemerisService = EphemerisService(),
+        chartCache: ChartCache = .shared,
         store: UserBirthDataStore = .userDefaults
     ) {
-        self.ephemeris = ephemeris
+        self.chartCache = chartCache
         self.store = store
     }
 
@@ -130,7 +130,7 @@ final class BirthChartViewModel {
         loadedDay = .now
         state = .loading
         do {
-            let chart = try await ephemeris.chart(for: birthData, houseSystem: houseSystem)
+            let chart = try await chartCache.chart(for: birthData, houseSystem: houseSystem)
             guard !Task.isCancelled else { return }
             setReady(chart)
         } catch is CancellationError {

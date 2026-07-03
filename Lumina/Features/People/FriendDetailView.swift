@@ -12,7 +12,6 @@ struct FriendDetailView: View {
     /// `nil` until a real score exists — we never render a fabricated number.
     @State private var score: Int?
     @ScaledMetric private var scoreSize: CGFloat = 56
-    @State private var ephemeris = EphemerisService()
     @State private var synastry: SynastryLoad = .idle
 
     private enum SynastryLoad {
@@ -233,7 +232,7 @@ struct FriendDetailView: View {
         )
         synastry = .loading
         do {
-            let result = try await ephemeris.synastry(personA: mine, personB: theirs)
+            let result = try await ChartCache.shared.synastry(personA: mine, personB: theirs)
             applyLoadedAspects(result.aspects)
         } catch {
             #if DEBUG

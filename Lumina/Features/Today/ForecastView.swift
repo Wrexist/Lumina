@@ -4,7 +4,6 @@ import SwiftUI
 /// from the backend `/forecast`. The fast Moon is filtered out so the
 /// meaningful slower-planet timing stands out. Pushed from the Today tab.
 struct ForecastView: View {
-    @State private var ephemeris = EphemerisService()
     @State private var state: Load = .idle
 
     private enum Load {
@@ -101,7 +100,7 @@ struct ForecastView: View {
         }
         state = .loading
         do {
-            let result = try await ephemeris.forecast(for: birth)
+            let result = try await ChartCache.shared.forecast(for: birth)
             // Drop the fast Moon — it aspects everything daily and drowns out signal.
             state = .loaded(result.events.filter { $0.transiting != "Moon" })
         } catch {

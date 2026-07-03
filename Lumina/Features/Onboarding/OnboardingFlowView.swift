@@ -11,7 +11,6 @@ import SwiftUI
 /// resume-on-kill persistence, and the "I don't know my time" path.
 struct OnboardingFlowView: View {
     @State private var state = OnboardingState()
-    @State private var ephemeris = EphemerisService()
     @State private var paywall = PaywallTracker.shared
     @State private var paywallPresented = false
     @State private var paywallVariant: PaywallOfferView.Variant = .initial
@@ -99,7 +98,7 @@ struct OnboardingFlowView: View {
         case .birthPlace:
             OnboardingScreens.BirthPlace(state: state)
         case .chartReveal:
-            OnboardingScreens.ChartReveal(state: state, ephemeris: ephemeris)
+            OnboardingScreens.ChartReveal(state: state)
         case .whatNext:
             OnboardingScreens.WhatNext { handleFinalTap($0) }
         }

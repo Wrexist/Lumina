@@ -7,7 +7,6 @@ import SwiftUI
 struct CompositeCard: View {
     let friend: Friend
 
-    @State private var ephemeris = EphemerisService()
     @State private var state: Load = .idle
     @ScaledMetric private var glyphSize: CGFloat = 28
 
@@ -126,7 +125,7 @@ struct CompositeCard: View {
         )
         state = .loading
         do {
-            let result = try await ephemeris.composite(personA: mine, personB: theirs)
+            let result = try await ChartCache.shared.composite(personA: mine, personB: theirs)
             state = .loaded(result)
         } catch {
             #if DEBUG

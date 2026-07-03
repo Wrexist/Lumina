@@ -290,6 +290,9 @@ extension SettingsView {
         WidgetSharedStore.clear()
         MomentsStore.shared.clear()
         ChartDiscovery.shared.clear()
+        // Drop the persisted natal chart + every cached ephemeris read so the
+        // deleted account leaves nothing behind (Apple 5.1.1(v)).
+        await ChartCache.shared.clear()
         resetPreferences()
         AppLock.shared.resetSessionUnlocks()
     }
