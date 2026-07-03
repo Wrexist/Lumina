@@ -64,6 +64,13 @@ struct PeopleHubView: View {
     @State private var qrPresented = false
     @State private var sharePayload: SharePayload?
     @State private var pendingDelete: Friend?
+    @State private var preferences = AppPreferences.shared
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+
+    /// Effective Reduce Motion — the OS setting or the in-app override.
+    private var reduceMotion: Bool {
+        LuminaMotion.isReduced(system: systemReduceMotion, appOverride: preferences.reduceMotionOverride)
+    }
 
     var body: some View {
         Group {
@@ -90,7 +97,7 @@ struct PeopleHubView: View {
             consumeShare(link)
         }
         .overlay(alignment: .bottom) { undoBar }
-        .animation(.smooth, value: pendingDelete?.id)
+        .animation(reduceMotion ? nil : .smooth, value: pendingDelete?.id)
         .task(id: pendingDelete?.id) { await autoCommitPendingDelete() }
         .onDisappear(perform: commitPendingDelete)
     }
@@ -103,7 +110,7 @@ struct PeopleHubView: View {
                 actionTitle: "Undo",
                 onAction: cancelPendingDelete
             )
-            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .transition(reduceMotion ? .identity : .move(edge: .bottom).combined(with: .opacity))
         }
     }
 

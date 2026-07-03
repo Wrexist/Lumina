@@ -77,7 +77,7 @@ struct MomentsView: View {
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                     Text(date.formatted(date: .long, time: .omitted))
                         .font(LuminaTypography.caption)
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
+                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                 }
             }
         }

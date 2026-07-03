@@ -140,6 +140,9 @@ enum ChartQuizEngine {
         using generator: inout SeededGenerator
     ) -> ChartQuizQuestion? {
         guard let tightest = chart.aspects.min(by: { $0.orb < $1.orb }) else { return nil }
+        // Skip on an exact-orb tie: a second equally-tight aspect would be a
+        // second correct answer, so a user tapping it would be wrongly marked.
+        guard chart.aspects.filter({ $0.orb == tightest.orb }).count == 1 else { return nil }
         let correct = pairLabel(tightest.planet1, tightest.planet2)
         let distractors = distractorPairs(in: chart, excluding: correct, using: &generator)
         guard !distractors.isEmpty else { return nil }
@@ -174,6 +177,9 @@ enum ChartQuizEngine {
             best = counts[candidate] ?? 0
             leading = candidate
         }
+        // Skip on a tally tie (e.g. Fire 4 / Air 4): two elements equally
+        // "lead", so tapping the other one shouldn't be marked wrong.
+        guard elements.filter({ (counts[$0] ?? 0) == best }).count == 1 else { return nil }
         var options = elements
         options.shuffle(using: &generator)
         guard let answerIndex = options.firstIndex(of: leading) else { return nil }

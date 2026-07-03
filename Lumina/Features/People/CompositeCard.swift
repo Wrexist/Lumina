@@ -7,7 +7,6 @@ import SwiftUI
 struct CompositeCard: View {
     let friend: Friend
 
-    @State private var ephemeris = EphemerisService()
     @State private var state: Load = .idle
     @ScaledMetric private var glyphSize: CGFloat = 28
 
@@ -15,7 +14,8 @@ struct CompositeCard: View {
         case idle
         case loading
         case loaded(CompositeResult)
-        case unavailable
+        case missingBirthData
+        case failed(LuminaError)
     }
 
     var body: some View {
@@ -35,15 +35,37 @@ struct CompositeCard: View {
     private var content: some View {
         switch state {
         case .idle, .loading:
-            Text("Merging your two charts…")
-                .font(LuminaTypography.body)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            loadingState
         case .loaded(let composite):
             loaded(composite)
-        case .unavailable:
+        case .missingBirthData:
             Text("Add your birth info in Settings to see your composite chart.")
                 .font(LuminaTypography.body)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+        case .failed:
+            failedState
+        }
+    }
+
+    /// Skeletons that mirror the loaded layout (NAVIGATION.md §4) rather than
+    /// a bare "Merging…" line.
+    private var loadingState: some View {
+        VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+            LuminaSkeleton(shape: .line(height: 16))
+            LuminaSkeleton(shape: .block(height: 60))
+        }
+    }
+
+    /// Honest fetch failure with a retry — never the missing-birth-data copy,
+    /// since the user's data is present. Compact, inside the existing card.
+    private var failedState: some View {
+        VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+            Text("Couldn't reach the sky just now")
+                .font(LuminaTypography.body)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+            LuminaButton(title: "Retry", variant: .ghost, systemImage: "arrow.clockwise") {
+                Task { await load() }
+            }
         }
     }
 
@@ -88,7 +110,7 @@ struct CompositeCard: View {
     /// failure shows an honest locked state rather than fabricating a reading.
     private func load() async {
         guard let userBirth = UserBirthDataStore.userDefaults.load() else {
-            state = .unavailable
+            state = .missingBirthData
             return
         }
         let mine = SynastryPerson(
@@ -103,13 +125,18 @@ struct CompositeCard: View {
         )
         state = .loading
         do {
-            let result = try await ephemeris.composite(personA: mine, personB: theirs)
+            let result = try await ChartCache.shared.composite(personA: mine, personB: theirs)
             state = .loaded(result)
         } catch {
+            // A cancelled load (card dismissed mid-fetch) must not paint a retry
+            // error — the reissued `.task` reloads if the card returns.
+            if TodayViewModel.isCancellation(error) { return }
             #if DEBUG
             state = .loaded(Self.sample)
             #else
-            state = .unavailable
+            // Birth data is present; a fetch failure is a network problem, not
+            // missing data — offer a retry rather than the Settings lie.
+            state = .failed(LuminaError.from(error))
             #endif
         }
     }

@@ -18,7 +18,6 @@ struct PrivacyDashboardView: View {
             VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
                 hero
                 onDeviceCard
-                onServerCard
                 notStoredCard
                 actionsCard
             }
@@ -36,7 +35,7 @@ struct PrivacyDashboardView: View {
     // MARK: - View building blocks
 
     private var hero: some View {
-        Text("Lumina is honest about what it stores and where. This dashboard reflects exactly what's on your device and on our servers right now.")
+        Text("Lumina is honest about what it stores and where. This dashboard reflects exactly what's on your device right now — nothing here leaves it unless you explicitly share it.")
             .font(LuminaTypography.body)
             .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
     }
@@ -46,23 +45,9 @@ struct PrivacyDashboardView: View {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 sectionHeader("On this device", systemImage: "iphone")
                 row("Your birth chart", value: hasBirthData ? "Yes" : "Not set")
-                row("Reflect entries", value: "\(journalEntries.count)")
+                row("Reflect entries", value: "\(writtenEntryCount)")
                 row("Friends", value: "\(friends.count)")
                 row("Onboarding state", value: hasOnboardingState ? "Saved" : "Cleared")
-            }
-        }
-    }
-
-    private var onServerCard: some View {
-        LuminaCard {
-            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                sectionHeader("On our server", systemImage: "server.rack")
-                row("Your account", value: "—")
-                row("Active subscription status", value: "—")
-                row("Push token", value: "—")
-                Text("Account and subscription details will appear here once sign-in and purchases are available.")
-                    .font(LuminaTypography.caption)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
             }
         }
     }
@@ -73,8 +58,7 @@ struct PrivacyDashboardView: View {
                 sectionHeader("What's never stored", systemImage: "lock.shield")
                 bullet("Your palm photos — discarded after on-device line extraction")
                 bullet("Your Reflect entry text — never leaves this device")
-                bullet("Your contacts — only birthdays you import are read, and they're stored locally")
-                bullet("Your location — used at onboarding to find your birth place, then forgotten")
+                bullet("Your device location — never read; your birth coordinates come from the city you type at onboarding")
             }
         }
     }
@@ -83,15 +67,24 @@ struct PrivacyDashboardView: View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 sectionHeader("Your data", systemImage: "tray.and.arrow.down")
-                Text("Exporting your data and deleting your account are coming soon. Until then, your data lives only on this device — uninstalling the app removes everything.")
+                Text("Delete your account any time from Settings → Account — it erases your chart, "
+                    + "journal, and friends for good. Exporting your data is coming soon. Either way, "
+                    + "your data lives only on this device, so uninstalling the app also removes everything.")
                     .font(LuminaTypography.bodyLight)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-                LuminaBadge(title: "Soon", tone: .neutral)
+                LuminaBadge(title: "Export soon", tone: .neutral)
             }
         }
     }
 
     // MARK: - Methods
+
+    /// Counts only entries with real writing — merely opening a Reflect day
+    /// inserts a blank (`wordCount == 0`) entry, which shouldn't inflate the
+    /// on-device tally the user sees here.
+    private var writtenEntryCount: Int {
+        journalEntries.filter { $0.wordCount > 0 }.count
+    }
 
     private func sectionHeader(_ title: String, systemImage: String) -> some View {
         HStack(spacing: LuminaSpacing.sm) {

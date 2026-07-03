@@ -256,7 +256,7 @@ private struct FeedbackView: View {
         } else {
             Text("Sending opens your mail app with this message addressed to \(FeedbackMail.address).")
                 .font(LuminaTypography.caption)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
         }
     }
 

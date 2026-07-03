@@ -19,7 +19,7 @@ final class BirthChartViewModel {
     }
 
     private let logger = Logger(subsystem: "app.lumina.ios", category: "BirthChartViewModel")
-    private let ephemeris: EphemerisService
+    private let chartCache: ChartCache
     private let store: UserBirthDataStore
 
     private(set) var state: LoadState = .idle
@@ -29,11 +29,18 @@ final class BirthChartViewModel {
     /// house-system switch must never let a stale response overwrite `state`.
     @ObservationIgnored private var loadTask: Task<Void, Never>?
 
+    /// What the ready chart was loaded against — `loadIfNeeded()` reloads when
+    /// either moves (birth info edited in Settings, or the calendar day rolled
+    /// over in a long-lived process), so the Chart tab and the widget never go
+    /// stale after a Settings edit. Mirrors `TodayViewModel`.
+    private var loadedRevision: Int?
+    private var loadedDay: Date?
+
     init(
-        ephemeris: EphemerisService = EphemerisService(),
+        chartCache: ChartCache = .shared,
         store: UserBirthDataStore = .userDefaults
     ) {
-        self.ephemeris = ephemeris
+        self.chartCache = chartCache
         self.store = store
     }
 
@@ -83,11 +90,18 @@ final class BirthChartViewModel {
     /// the existing chart when the house system hasn't changed.
     func loadIfNeeded() async {
         switch state {
-        case .ready: return
         case .loading: return
+        case .ready where contentIsFresh: return
         default: break
         }
         await startLoad()
+    }
+
+    /// The ready chart is still current unless the birth data was edited in
+    /// Settings or the calendar day rolled over since we loaded.
+    private var contentIsFresh: Bool {
+        guard loadedRevision == store.revision, let loadedDay else { return false }
+        return Calendar.current.isDate(loadedDay, inSameDayAs: .now)
     }
 
     /// Forces a reload. Called when the house-system picker changes or the
@@ -112,19 +126,27 @@ final class BirthChartViewModel {
             state = .missingBirthData
             return
         }
+        loadedRevision = store.revision
+        loadedDay = .now
         state = .loading
         do {
-            let chart = try await ephemeris.chart(for: birthData, houseSystem: houseSystem)
+            let chart = try await chartCache.chart(for: birthData, houseSystem: houseSystem)
             guard !Task.isCancelled else { return }
             setReady(chart)
         } catch is CancellationError {
             // Superseded by a newer load — its result owns `state` now.
         } catch let serviceError as EphemerisService.ServiceError where serviceError == .missingConfiguration {
             guard !Task.isCancelled else { return }
-            // Dev path — surface a deterministic sample chart so the
-            // UI is testable without a backend. Deliberately NOT pushed to
-            // the widget: fake data must never reach the home screen.
+            #if DEBUG
+            // Dev path — surface a deterministic sample chart so the UI is
+            // testable without a backend. Deliberately NOT pushed to the
+            // widget: fake data must never reach the home screen.
             state = .ready(BirthChartViewModel.sampleChart())
+            #else
+            // Release must never render a fabricated chart as the user's own —
+            // an unconfigured backend fails honestly, like every other surface.
+            state = .failed(LuminaError.from(serviceError))
+            #endif
         } catch {
             guard !Task.isCancelled else { return }
             logger.error("chart load failed: \(error.localizedDescription)")

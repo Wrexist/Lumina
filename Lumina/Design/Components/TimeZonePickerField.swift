@@ -33,7 +33,7 @@ struct TimeZonePickerField: View {
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down")
                     .font(LuminaTypography.caption)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
             }
             .padding(LuminaSpacing.md)
             .background(LuminaColors.parchment)

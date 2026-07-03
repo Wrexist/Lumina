@@ -63,6 +63,7 @@ struct PaywallOfferView: View {
                 primaryCTA
                 continueFreeLink
                 trustNote
+                LuminaLegalLinks()
             }
             .padding(LuminaSpacing.lg)
         }
@@ -81,7 +82,7 @@ struct PaywallOfferView: View {
                 .foregroundStyle(LuminaColors.inkBlack)
             Text(variant == .rescue
                 ? "We'd love to keep you. Take 30% off your first year — only this once."
-                : "Real readings, daily. The full chart, palm scans without limits, your own narrated audio.")
+                : "Your full chart, daily transits, and every compatibility tool — the real depth, unlocked.")
                 .font(LuminaTypography.body)
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.8))
         }
@@ -104,18 +105,19 @@ struct PaywallOfferView: View {
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
                 Text(priceDisplay.disclosure)
                     .font(LuminaTypography.caption)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
             }
         }
     }
 
     private var featureList: some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-            featureRow("Audio narration of every daily reading")
-            featureRow("Unlimited palm scans (free is 1 / month)")
-            featureRow("Full Human Design bodygraph + authority")
-            featureRow("Monthly journal pattern detection")
-            featureRow("Crush Report unlocked")
+            featureRow("Your full interactive birth chart")
+            featureRow("The Human Design bodygraph, in full")
+            featureRow("Synastry + composite compatibility")
+            featureRow("Your daily transit reading")
+            featureRow("Pattern detection across your journal — the emotional threads over a month")
+            featureRow("The home-screen widget")
         }
     }
 

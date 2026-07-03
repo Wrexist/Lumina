@@ -37,4 +37,11 @@ enum WidgetSharedStore {
         guard let data = defaults.data(forKey: snapshotKey) else { return nil }
         return try? JSONDecoder().decode(WidgetSnapshot.self, from: data)
     }
+
+    /// Wipes the shared snapshot so the home-screen widget stops showing a
+    /// chart after account deletion — the App Group container survives an
+    /// app-data wipe otherwise.
+    static func clear() {
+        defaults.removeObject(forKey: snapshotKey)
+    }
 }

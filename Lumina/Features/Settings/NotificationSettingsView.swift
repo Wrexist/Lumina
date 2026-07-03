@@ -11,7 +11,6 @@ import UIKit
 struct NotificationSettingsView: View {
     @State private var permission = NotificationPermission.shared
     @State private var preferences = AppPreferences.shared
-    @State private var ephemeris = EphemerisService()
     @State private var alertsError: String?
     @State private var alertsTask: Task<Void, Never>?
     @State private var reflectError: String?
@@ -127,7 +126,7 @@ struct NotificationSettingsView: View {
     private var statusBody: String {
         switch permission.status {
         case .granted:
-            return "You'll get tomorrow morning's reading delivered between 7:30–9:00 AM local."
+            return "Notifications are on. Choose what reaches you below — transit alerts and your daily reflection reminder. Nothing else."
         case .provisional:
             return "Notifications arrive quietly without sound or banner."
         case .ephemeral:
@@ -181,7 +180,7 @@ struct NotificationSettingsView: View {
             return
         }
         do {
-            let forecast = try await ephemeris.forecast(for: birth)
+            let forecast = try await ChartCache.shared.forecast(for: birth)
             guard !Task.isCancelled else { return }
             await TransitNotificationScheduler.shared.reschedule(TransitNotificationPlanner.plan(from: forecast))
             preferences.transitAlertsLastPlannedAt = .now

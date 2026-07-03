@@ -21,7 +21,7 @@ enum OnboardingScreens {
                     .font(LuminaTypography.body)
                     .foregroundStyle(LuminaColors.celestialBlue)
                 Spacer()
-                Text("Real chart math. Real palm analysis. No fake mysticism.")
+                Text("Real chart math. Real astronomy. No fake mysticism.")
                     .font(LuminaTypography.bodyLight)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
@@ -236,8 +236,8 @@ enum OnboardingScreens {
                             .font(LuminaTypography.bodyLight)
                             .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                     }
-                    quickWin("Read today", body: "Your transit-grounded reading, narrated.", destination: .today)
-                    quickWin("Scan a hand", body: "On-device AI reads your palm in 4 seconds.", destination: .palmScan)
+                    quickWin("Read today", body: "Your reading, grounded in today's real transits.", destination: .today)
+                    quickWin("See your chart", body: "The full wheel — tap any planet to explore it.", destination: .chart(planet: nil))
                     quickWin("Add a friend", body: "Compare charts and see what's between you.", destination: .people(friendID: nil))
                 }
                 .padding(LuminaSpacing.lg)

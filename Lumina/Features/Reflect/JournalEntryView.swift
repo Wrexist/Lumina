@@ -70,13 +70,13 @@ struct JournalEntryView: View {
 
     private var footer: some View {
         HStack {
-            Text("\(JournalEntry.countWords(in: draft)) words")
+            Text("^[\(JournalEntry.countWords(in: draft)) word](inflect: true)")
                 .font(LuminaTypography.mono)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
             Spacer()
             Text(saveLabel)
                 .font(LuminaTypography.caption)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
         }
     }
 
@@ -94,9 +94,9 @@ struct JournalEntryView: View {
     // MARK: - Logic
 
     private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE · MMM d"
-        return formatter.string(from: entry.date)
+        let weekday = entry.date.formatted(.dateTime.weekday(.wide))
+        let monthDay = entry.date.formatted(.dateTime.month(.abbreviated).day())
+        return "\(weekday) · \(monthDay)"
     }
 
     private var saveLabel: String {

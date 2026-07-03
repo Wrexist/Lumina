@@ -2,16 +2,12 @@ import Combine
 import SwiftUI
 
 /// The Today (Home) hub, restructured for signal over noise:
-/// hero → Big-3 band → the reading card (headline + body, remaining transits
-/// collapsed behind "Details") → the sky-context strip (Moon + retrogrades) →
-/// the "Ahead" card (imminent return + forecast) → quick actions. The
-/// progressed "chapter" card joins the flow only around a progressed-Moon
-/// sign change and sits below the quick actions otherwise.
-///
-/// All data comes from one `TodayViewModel` fan-out, so the secondary cards
-/// reveal together over fixed-height skeletons instead of popping in. The
-/// audio-narrated reading body lands once the Anthropic + ElevenLabs keys
-/// are wired (Phase 5).
+/// hero → Big-3 band → reading card (headline + body, extra transits behind
+/// "Details") → sky-context strip (Moon + retrogrades) → "Ahead" card → quick
+/// actions. The progressed "chapter" card joins only around a progressed-Moon
+/// sign change, else sits below the quick actions. All data comes from one
+/// `TodayViewModel` fan-out, so the secondary cards reveal together over
+/// fixed-height skeletons instead of popping in.
 struct TodayHubView: View {
     @State private var viewModel = TodayViewModel()
     @Environment(AppRouter.self) private var router
@@ -28,6 +24,12 @@ struct TodayHubView: View {
     @State private var pendingSkyContextHaptic = false
     @State private var preferences = AppPreferences.shared
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    /// The current calendar day as a stable key. Bumped when the day rolls
+    /// over (foreground midnight, or returning to an app left open past
+    /// midnight), so the reading section re-veils instead of lingering
+    /// unveiled from yesterday.
+    @State private var revealDayKey = DailyRevealState.dayKey(for: .now)
 
     private var reduceMotion: Bool {
         LuminaMotion.isReduced(system: systemReduceMotion, appOverride: preferences.reduceMotionOverride)
@@ -45,11 +47,20 @@ struct TodayHubView: View {
         .navigationTitle("Today")
         .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.loadIfNeeded() }
-        // Freshness triggers: the calendar day rolling over in a long-lived
-        // process, and birth info edited in Settings. `loadIfNeeded()` no-ops
-        // when neither has actually moved.
-        .onReceive(dayChanged) { _ in refresh() }
+        // Freshness triggers — day rollover in a long-lived process, and birth
+        // info edited in Settings. `loadIfNeeded()` no-ops when neither moved.
+        .onReceive(dayChanged) { _ in
+            revealDayKey = DailyRevealState.dayKey(for: .now)
+            refresh()
+        }
         .onReceive(birthDataChanged) { _ in refresh() }
+        .onChange(of: scenePhase) { _, phase in
+            // Resume after midnight must reload, not just re-veil; `loadIfNeeded` no-ops if fresh.
+            if phase == .active {
+                revealDayKey = DailyRevealState.dayKey(for: .now)
+                refresh()
+            }
+        }
         .onChange(of: viewModel.skyContextLoading) { _, isLoading in
             skyContextLoadingChanged(isLoading: isLoading)
         }
@@ -90,6 +101,7 @@ struct TodayHubView: View {
                 transitsUnavailableCard
             } else {
                 readingSection
+                    .id(revealDayKey)
             }
             skyContextSection
             aheadSection
@@ -235,8 +247,10 @@ struct TodayHubView: View {
             if let moon = viewModel.moonPhase {
                 MoonPhaseCard(phase: moon)
             }
-            if let retro = viewModel.retrogrades, retro.planets.contains(where: \.isRetrograde) {
-                RetrogradeCard(result: retro)
+            if let retro = viewModel.retrogrades {
+                if retro.planets.contains(where: \.isRetrograde) {
+                    RetrogradeCard(result: retro)
+                } else { noRetrogradesCard }
             }
         }
     }
@@ -262,7 +276,7 @@ struct TodayHubView: View {
                     quickAction("See chart", systemImage: "circle.dotted") { jump(to: .chart) }
                     quickAction("Reflect", systemImage: "moonphase.first.quarter") { jump(to: .reflect) }
                     quickAction("Add a friend", systemImage: "person.2.badge.plus") { jump(to: .people) }
-                    quickAction("Scan a hand", systemImage: "hand.raised") { jump(to: .palm) }
+                    momentsQuickAction
                 }
             }
         }
@@ -275,15 +289,45 @@ struct TodayHubView: View {
 extension TodayHubView {
     private func quickAction(_ title: String, systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            LuminaCard(padding: LuminaSpacing.md) {
-                VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                    Image(systemName: systemImage)
-                        .font(.system(size: iconSize, weight: .light))
-                        .foregroundStyle(LuminaColors.celestialBlue)
-                    Text(title).font(LuminaTypography.body)
-                }
-                .frame(width: 140, alignment: .leading)
+            quickActionTile(title, systemImage: systemImage)
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// The tile face shared by the tab-jump quick actions and the Moments
+    /// NavigationLink, so both keep the row's rhythm.
+    private func quickActionTile(_ title: String, systemImage: String) -> some View {
+        LuminaCard(padding: LuminaSpacing.md) {
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                Image(systemName: systemImage)
+                    .font(.system(size: iconSize, weight: .light))
+                    .foregroundStyle(LuminaColors.celestialBlue)
+                Text(title).font(LuminaTypography.body)
             }
+            .frame(width: 140, alignment: .leading)
+        }
+    }
+
+    private var noRetrogradesCard: some View {
+        LuminaCard {
+            VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
+                Text("RETROGRADES")
+                    .font(LuminaTypography.mono)
+                    .tracking(1.4)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                Text("No retrogrades right now — all planets are direct.")
+                    .font(LuminaTypography.body)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+            }
+        }
+    }
+    /// Moments has no tab of its own — this NavigationLink is its persistent
+    /// home in the main flow (it was previously buried in Settings).
+    private var momentsQuickAction: some View {
+        NavigationLink {
+            MomentsView()
+        } label: {
+            quickActionTile("Moments", systemImage: "sparkles")
         }
         .buttonStyle(.plain)
     }

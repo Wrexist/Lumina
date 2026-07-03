@@ -56,7 +56,12 @@ struct ChartQuizView: View {
 
     @ViewBuilder
     private var content: some View {
-        if playedToday || isFinished {
+        // `playedToday` also flips mid-run (the first answer records the day so
+        // an abandoned run still counts), so it can't gate the live quiz — an
+        // in-progress session always has questions loaded. Only a fresh open on
+        // an already-played day (no questions prepared) or a finished run shows
+        // the end state.
+        if isFinished || (playedToday && questions.isEmpty) {
             endState
         } else if let question = currentQuestion {
             questionView(question)
@@ -155,23 +160,28 @@ struct ChartQuizView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: LuminaSpacing.md) {
-            Image(systemName: "sparkles")
-                .foregroundStyle(LuminaColors.mutedGold)
-            Text("Your chart doesn't have enough detail for questions yet.")
-                .font(LuminaTypography.body)
-                .multilineTextAlignment(.center)
-            LuminaButton(title: "Done", variant: .secondary) { dismiss() }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, LuminaSpacing.xl)
+        LuminaEmptyState(
+            systemImage: "sparkles",
+            title: "No questions yet",
+            body: "Your chart doesn't have enough detail for questions yet.",
+            primaryCTA: LuminaEmptyState.CTA(title: "Done") { dismiss() }
+        )
     }
 
+    /// Mirrors `questionView`'s layout (kicker → prompt → three option rows) so
+    /// the real content reveals in place without reflowing (`docs/NAVIGATION.md`
+    /// §4).
     private var loadingPlaceholder: some View {
-        VStack(spacing: LuminaSpacing.md) {
-            LuminaSkeleton(shape: .line(height: 18))
-            LuminaSkeleton(shape: .block(height: 96))
+        VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
+            LuminaSkeleton(shape: .line(width: 140, height: 12))
+            LuminaSkeleton(shape: .line(height: 28))
+            VStack(spacing: LuminaSpacing.sm) {
+                ForEach(0..<3, id: \.self) { _ in
+                    LuminaSkeleton(shape: .block(height: 52))
+                }
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Methods
@@ -197,6 +207,12 @@ struct ChartQuizView: View {
         } else {
             Haptics.warning.play()
         }
+        // Record play on the first answer so abandoning mid-run still counts —
+        // the one-play-a-day rhythm holds even if the sheet is dismissed before
+        // the last question. `finish()` finalizes the same values on completion.
+        lastPlayedDay = ChartQuizEngine.dayString()
+        lastScore = correctCount
+        lastTotal = questions.count
     }
 
     private func advance() {

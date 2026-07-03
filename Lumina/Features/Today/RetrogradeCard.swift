@@ -10,7 +10,8 @@ struct RetrogradeCard: View {
 
     private static let stationFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d"
+        // Locale-aware ordering of the same fields (e.g. "Jul 2" vs "2 juil.").
+        formatter.setLocalizedDateFormatFromTemplate("MMMd")
         return formatter
     }()
 

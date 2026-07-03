@@ -7,6 +7,13 @@ import SwiftUI
 struct OnboardingProgressBar: View {
     let total: Int
     let current: Int
+    @State private var preferences = AppPreferences.shared
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+
+    /// Effective Reduce Motion — the OS setting or the in-app override.
+    private var reduceMotion: Bool {
+        LuminaMotion.isReduced(system: systemReduceMotion, appOverride: preferences.reduceMotionOverride)
+    }
 
     var body: some View {
         HStack(spacing: LuminaSpacing.xs) {
@@ -14,12 +21,19 @@ struct OnboardingProgressBar: View {
                 Circle()
                     .fill(fill(for: index))
                     .frame(width: 8, height: 8)
-                    .scaleEffect(index == current ? 1.25 : 1.0)
-                    .animation(.smooth(duration: 0.2), value: current)
+                    .scaleEffect(pulseScale(for: index))
+                    .animation(reduceMotion ? nil : .smooth(duration: 0.2), value: current)
             }
         }
         .accessibilityElement()
         .accessibilityLabel("Step \(current + 1) of \(total)")
+    }
+
+    /// The active dot pulses 1.25× — but not under Reduce Motion, which
+    /// wants a static indicator rather than a scaling one.
+    private func pulseScale(for index: Int) -> CGFloat {
+        guard !reduceMotion, index == current else { return 1.0 }
+        return 1.25
     }
 
     private func fill(for index: Int) -> Color {

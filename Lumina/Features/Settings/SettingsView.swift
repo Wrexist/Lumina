@@ -1,3 +1,5 @@
+import OSLog
+import SwiftData
 import SwiftUI
 import UIKit
 
@@ -5,17 +7,21 @@ import UIKit
 /// because the nav-bar gear icon was a dead end without it — and the
 /// clarity charter forbids dead ends.
 ///
-/// Every visible row does something. The destinations that haven't been
-/// built yet (data export, account deletion, legal documents) are collapsed
-/// into section footnotes rather than inert "Soon" rows; they ship per
-/// Phase 12 of `ROADMAP.md`.
+/// Every visible row does something. Account deletion and the legal links
+/// ship here; the one destination still pending (full data export) is
+/// collapsed into a section footnote rather than an inert "Soon" row.
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Environment(AppRouter.self) private var router
     @State private var preferences = AppPreferences.shared
     @State private var restoreMessage: String?
     @State private var isRestoringPurchases = false
     @State private var authManager = AuthManager.shared
     @State private var signInPresented = false
+    @State private var deleteAccountConfirmPresented = false
+    @State private var isDeletingAccount = false
+    private let logger = Logger(subsystem: "app.lumina.ios", category: "AccountDeletion")
 
     var body: some View {
         NavigationStack {
@@ -57,7 +63,39 @@ struct SettingsView: View {
             .buttonStyle(.plain)
             .disabled(isRestoringPurchases)
             signInRow
+            deleteAccountRow
         }
+    }
+
+    /// Apple Guideline 5.1.1(v): a real in-app path to erase the account and
+    /// all on-device data. Destructive-styled, gated behind a confirmation
+    /// dialog, and available even when signed out (a local-only user still
+    /// needs their on-device chart, journal, and friends wiped).
+    private var deleteAccountRow: some View {
+        Button(role: .destructive) {
+            deleteAccountConfirmPresented = true
+        } label: {
+            HStack {
+                Text("Delete account")
+                    .font(LuminaTypography.body)
+                    .foregroundStyle(LuminaColors.error)
+                Spacer()
+                if isDeletingAccount {
+                    ProgressView()
+                }
+            }
+            .accessibilityElement(children: .combine)
+        }
+        .buttonStyle(.plain)
+        .disabled(isDeletingAccount)
+        .luminaConfirmation(
+            "Delete your account?",
+            message: "This permanently erases your birth chart, journal entries, saved friends, "
+                + "and your Lumina account. This can't be undone.",
+            confirmTitle: "Delete everything",
+            isPresented: $deleteAccountConfirmPresented,
+            onConfirm: performAccountDeletion
+        )
     }
 
     @ViewBuilder
@@ -137,7 +175,8 @@ struct SettingsView: View {
         } header: {
             Text("Privacy")
         } footer: {
-            sectionFootnote("Data export and account deletion are coming before public launch.")
+            sectionFootnote("Delete your account any time from the Account section above. "
+                + "Full data export is coming before public launch.")
         }
     }
 
@@ -149,17 +188,27 @@ struct SettingsView: View {
                 SettingsRow(title: "Help & FAQ", trailing: nil)
             }
             HStack {
+                Text("Palm reading").font(LuminaTypography.body)
+                Spacer()
+                Text("Coming soon")
+                    .font(LuminaTypography.mono)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            }
+            .accessibilityElement(children: .combine)
+            HStack {
                 Text("Version").font(LuminaTypography.body)
                 Spacer()
                 Text(versionString)
                     .font(LuminaTypography.mono)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
             }
+            sectionFootnote("On-device palm reading is in the works — we're getting fairness "
+                + "across every skin tone right before we ship it. Lumina is for reflection "
+                + "and entertainment, not medical, legal, or financial advice.")
         } header: {
             Text("About")
         } footer: {
-            sectionFootnote("Terms of service, privacy policy, and open-source acknowledgements "
-                + "are coming before public launch.")
+            LuminaLegalLinks()
         }
     }
 
@@ -206,6 +255,67 @@ struct SettingsView: View {
     }
 }
 
+extension SettingsView {
+    /// Runs the full account teardown, then returns the user to onboarding.
+    /// The server delete is best-effort (`try?`): a failed or unprovisioned
+    /// backend must never block the on-device wipe.
+    private func performAccountDeletion() {
+        guard !isDeletingAccount else { return }
+        isDeletingAccount = true
+        Task {
+            try? await AuthManager.shared.deleteAccount()
+            await eraseLocalData()
+            router.resetForSignOut()
+            isDeletingAccount = false
+            dismiss()
+        }
+    }
+
+    /// Wipes every on-device store so nothing of the deleted account survives:
+    /// SwiftData (`JournalEntry` + `Friend`), birth data, the onboarding
+    /// snapshot, the widget App-Group snapshot, progression state (Moments +
+    /// chart discovery), tunable preferences, and the app-lock session; and
+    /// cancels every scheduled notification derived from that data. Keychain
+    /// is handled inside `deleteAccount()`.
+    private func eraseLocalData() async {
+        // Stop future notifications first — a repeating reflect reminder would
+        // otherwise keep firing forever, and transit alerts carry the deleted
+        // chart. (Setting the prefs off below does not itself cancel them.)
+        ReflectReminderScheduler.shared.cancel()
+        await TransitNotificationScheduler.shared.cancelAll()
+
+        // Surface erasure failures rather than swallowing them — this is a
+        // compliance-critical path (Apple 5.1.1(v)), so a partial failure must
+        // be observable, not silently reported as success.
+        do {
+            try modelContext.delete(model: JournalEntry.self)
+            try modelContext.delete(model: Friend.self)
+            try modelContext.save()
+        } catch {
+            logger.error("local data erasure failed: \(error.localizedDescription, privacy: .public)")
+        }
+        UserBirthDataStore.userDefaults.clear()
+        OnboardingStorage.userDefaults.clear()
+        WidgetSharedStore.clear()
+        MomentsStore.shared.clear()
+        ChartDiscovery.shared.clear()
+        // Drop the persisted natal chart + every cached ephemeris read so the
+        // deleted account leaves nothing behind (Apple 5.1.1(v)).
+        await ChartCache.shared.clear()
+        resetPreferences()
+        AppLock.shared.resetSessionUnlocks()
+    }
+
+    /// `AppPreferences` exposes no single reset, so restore each user-tunable
+    /// flag to its default via its public setters.
+    private func resetPreferences() {
+        preferences.lockReflectWithFaceID = false
+        preferences.reduceMotionOverride = false
+        preferences.transitAlertsEnabled = false
+        preferences.reflectReminderEnabled = false
+    }
+}
+
 private struct SettingsRow: View {
     enum Trailing {
         case text(String)
@@ -236,4 +346,6 @@ private struct SettingsRow: View {
 
 #Preview {
     SettingsView()
+        .environment(AppRouter(storage: .inMemory()))
+        .modelContainer(for: [JournalEntry.self, Friend.self], inMemory: true)
 }

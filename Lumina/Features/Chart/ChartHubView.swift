@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 /// Phase-4 chart tab. Astrology mode renders the natal wheel + Big-3 +
@@ -37,6 +38,10 @@ struct ChartHubView: View {
             consumePending(link)
             resolvePendingPlanet()
         }
+        // Birth info edited in Settings — recompute the chart (and the widget)
+        // now instead of waiting for a relaunch. `loadIfNeeded()` no-ops when
+        // the store revision hasn't actually moved. Mirrors TodayHubView.
+        .onReceive(birthDataChanged) { _ in refresh() }
         .sheet(item: $selectedPlanet) { planet in
             if case .ready(let chart) = viewModel.state {
                 PlanetDetailSheet(planet: planet, chart: chart)
@@ -262,6 +267,24 @@ struct ChartHubView: View {
         guard let name = pendingPlanetName, case .ready(let chart) = viewModel.state else { return }
         selectedPlanet = chart.planets.first { $0.planet.caseInsensitiveCompare(name) == .orderedSame }
         pendingPlanetName = nil
+    }
+}
+
+// A plain extension (SwiftLint bans `private extension`) keeps the freshness
+// plumbing out of the view's type body while members stay `private`.
+extension ChartHubView {
+    /// Birth info saved or cleared in Settings (or sign-out). Mapped to `Void`
+    /// off the notification before hopping to the main queue so no non-Sendable
+    /// `Notification` crosses an isolation boundary.
+    private var birthDataChanged: AnyPublisher<Void, Never> {
+        NotificationCenter.default.publisher(for: UserBirthDataStore.didChangeNotification)
+            .map { _ in () }
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+    }
+
+    private func refresh() {
+        Task { await viewModel.loadIfNeeded() }
     }
 }
 

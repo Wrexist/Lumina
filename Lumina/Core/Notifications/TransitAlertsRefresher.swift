@@ -32,7 +32,7 @@ final class TransitAlertsRefresher {
     private static let minimumReplanInterval: TimeInterval = 24 * 60 * 60
 
     private let logger = Logger(subsystem: "app.lumina.ios", category: "Notifications")
-    private let ephemeris = EphemerisService()
+    private let chartCache = ChartCache.shared
     private var refreshTask: Task<Void, Never>?
     private var birthDataObserver: (any NSObjectProtocol)?
 
@@ -83,7 +83,7 @@ final class TransitAlertsRefresher {
             return
         }
         do {
-            let forecast = try await ephemeris.forecast(for: birth)
+            let forecast = try await chartCache.forecast(for: birth)
             guard !Task.isCancelled else { return }
             await TransitNotificationScheduler.shared.reschedule(TransitNotificationPlanner.plan(from: forecast))
             preferences.transitAlertsLastPlannedAt = .now

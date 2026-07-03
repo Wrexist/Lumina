@@ -24,7 +24,7 @@ final class TodayViewModel {
 
     private let logger = Logger(subsystem: "app.lumina.ios", category: "TodayViewModel")
     private let store: UserBirthDataStore
-    private let ephemeris: EphemerisService
+    private let chartCache: ChartCache
 
     private(set) var state: LoadState = .idle
     private(set) var natalChart: NatalChart?
@@ -55,10 +55,10 @@ final class TodayViewModel {
 
     init(
         store: UserBirthDataStore = .userDefaults,
-        ephemeris: EphemerisService = EphemerisService()
+        chartCache: ChartCache = .shared
     ) {
         self.store = store
-        self.ephemeris = ephemeris
+        self.chartCache = chartCache
     }
 
     /// Splits the sorted transits into the headline line and the secondary
@@ -120,8 +120,8 @@ final class TodayViewModel {
     /// list gets its own inline retry state instead — never the "quiet sky"
     /// copy, which would be invented content on a fetch failure.
     private func loadChartAndTransits(for birthData: BirthData) async {
-        async let chartLoad = ephemeris.chart(for: birthData)
-        async let transitsLoad = ephemeris.transits(for: birthData)
+        async let chartLoad = chartCache.chart(for: birthData)
+        async let transitsLoad = chartCache.transits(for: birthData)
         do {
             natalChart = try await chartLoad
             if let result = try? await transitsLoad {
@@ -133,6 +133,10 @@ final class TodayViewModel {
             }
             state = .ready
         } catch {
+            // A cancelled load (e.g. tab switch during the first fetch, which
+            // throws URLError.cancelled) must not paint the full-screen error
+            // card on the landing tab — the reissued `.task` will reload.
+            if Self.isCancellation(error) { return }
             logger.error("today load failed: \(error.localizedDescription)")
             transits = []
             #if DEBUG
@@ -153,10 +157,10 @@ final class TodayViewModel {
     /// The best-effort quartet, assigned in one pass so the cards reveal
     /// together. A failed fetch leaves `nil` and its card doesn't render.
     private func loadSkyContext(for birthData: BirthData) async {
-        async let moonLoad = ephemeris.moonPhase()
-        async let retrogradesLoad = ephemeris.retrogrades()
-        async let progressionsLoad = ephemeris.progressions(for: birthData)
-        async let returnsLoad = ephemeris.returns(for: birthData)
+        async let moonLoad = chartCache.moonPhase()
+        async let retrogradesLoad = chartCache.retrogrades()
+        async let progressionsLoad = chartCache.progressions(for: birthData)
+        async let returnsLoad = chartCache.returns(for: birthData)
         moonPhase = try? await moonLoad
         if let moon = moonPhase {
             // Being here under tonight's real phase grows the "every face
@@ -198,12 +202,20 @@ final class TodayViewModel {
         transitsRetrying = true
         defer { transitsRetrying = false }
         do {
-            transits = try await ephemeris.transits(for: birthData).transits
+            transits = try await chartCache.transits(for: birthData).transits
             transitsUnavailable = false
         } catch {
+            if Self.isCancellation(error) { return }
             logger.error("transit retry failed: \(error.localizedDescription)")
             transitsUnavailable = true
         }
+    }
+
+    /// A cancelled `URLSession` request throws `URLError.cancelled` (not Swift's
+    /// `CancellationError`), so both are checked — a superseded load should be a
+    /// silent no-op, never an error state.
+    nonisolated static func isCancellation(_ error: any Error) -> Bool {
+        Task.isCancelled || error is CancellationError || (error as? URLError)?.code == .cancelled
     }
 
     #if DEBUG

@@ -8,7 +8,6 @@ extension OnboardingScreens {
     /// can still complete onboarding.
     struct ChartReveal: View {
         @Bindable var state: OnboardingState
-        let ephemeris: EphemerisService
 
         @State private var error: LuminaError?
         @State private var inflight = false
@@ -114,7 +113,7 @@ extension OnboardingScreens {
                 return
             }
             do {
-                chart = try await ephemeris.chart(for: birthData)
+                chart = try await ChartCache.shared.chart(for: birthData)
                 state.chartReady = true
                 Haptics.success.play()
             } catch let serviceError as EphemerisService.ServiceError where serviceError == .missingConfiguration {

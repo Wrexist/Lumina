@@ -17,13 +17,18 @@ struct ReflectHubView: View {
     @State private var unlockError: LuminaError?
     @State private var unlocking = false
     @State private var openedEntry: JournalEntry?
-    @State private var ephemeris = EphemerisService()
     @State private var transits: [TransitReading] = []
     @State private var pendingDelete: JournalEntry?
     @State private var premium = PremiumStatus.shared
     @State private var usingSofterPrompt = false
     @AppStorage("luminaReflectPlusBannerDismissed") private var plusBannerDismissed = false
     @ScaledMetric private var lockIconSize: CGFloat = 56
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+
+    /// Effective Reduce Motion — the OS setting or the in-app override.
+    private var reduceMotion: Bool {
+        LuminaMotion.isReduced(system: systemReduceMotion, appOverride: preferences.reduceMotionOverride)
+    }
 
     var body: some View {
         Group {
@@ -82,8 +87,9 @@ struct ReflectHubView: View {
         }
         .task { await loadTransits() }
         .overlay(alignment: .bottom) { undoBar }
-        .animation(.smooth, value: pendingDelete?.id)
+        .animation(reduceMotion ? nil : .smooth, value: pendingDelete?.id)
         .task(id: pendingDelete?.id) { await autoCommitPendingDelete() }
+        .onAppear(perform: backfillReflectionMoments)
         .onDisappear(perform: commitPendingDelete)
     }
 
@@ -91,7 +97,7 @@ struct ReflectHubView: View {
     private var undoBar: some View {
         if pendingDelete != nil {
             LuminaSnackbarView(message: "Entry removed", actionTitle: "Undo", onAction: cancelPendingDelete)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .transition(reduceMotion ? .identity : .move(edge: .bottom).combined(with: .opacity))
         }
     }
 
@@ -131,7 +137,7 @@ struct ReflectHubView: View {
 
     @ViewBuilder
     private var premiumBanner: some View {
-        if entries.count >= 3 && !premium.isPremium && !plusBannerDismissed {
+        if writtenEntryCount() >= 3 && !premium.isPremium && !plusBannerDismissed {
             LuminaCard {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                     HStack {
@@ -156,9 +162,16 @@ struct ReflectHubView: View {
         }
     }
 
+    /// Recent history excludes blank (`wordCount == 0`) entries — merely
+    /// opening a day inserts one, and a page with no writing isn't history.
+    /// Blank entries are kept in the store (never deleted), just not shown.
+    private var recentWrittenEntries: [JournalEntry] {
+        entries.filter { $0.wordCount > 0 && $0.id != pendingDelete?.id }
+    }
+
     @ViewBuilder
     private var history: some View {
-        if entries.isEmpty {
+        if recentWrittenEntries.isEmpty {
             // No empty-state CTA here — the primary CTA above already
             // serves the empty state. Hide the history section to avoid
             // a "no entries" dead-end.
@@ -176,7 +189,7 @@ struct ReflectHubView: View {
                     }
                     .font(LuminaTypography.caption)
                 }
-                ForEach(Array(entries.filter { $0.id != pendingDelete?.id }.prefix(5))) { entry in
+                ForEach(Array(recentWrittenEntries.prefix(5))) { entry in
                     NavigationLink {
                         JournalEntryDetailView(entry: entry)
                     } label: {
@@ -229,7 +242,7 @@ struct ReflectHubView: View {
     private func loadTransits() async {
         guard transits.isEmpty, let birth = UserBirthDataStore.userDefaults.load() else { return }
         do {
-            transits = try await ephemeris.transits(for: birth).transits
+            transits = try await ChartCache.shared.transits(for: birth).transits
         } catch {
             transits = []
         }
@@ -265,9 +278,9 @@ struct ReflectHubView: View {
                 Text(entry.prompt)
                     .font(LuminaTypography.body)
                     .lineLimit(2)
-                Text("\(entry.wordCount) words")
+                Text("^[\(entry.wordCount) word](inflect: true)")
                     .font(LuminaTypography.caption)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
             }
         }
     }
@@ -292,17 +305,17 @@ struct ReflectHubView: View {
         recordReflectionMoments()
         return entry
     }
-
-    private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE · MMM d"
-        return formatter.string(from: date).uppercased()
-    }
 }
 
 // MARK: - Soft delete
 
 extension ReflectHubView {
+    private func formattedDate(_ date: Date) -> String {
+        let weekday = date.formatted(.dateTime.weekday(.wide))
+        let monthDay = date.formatted(.dateTime.month(.abbreviated).day())
+        return "\(weekday) · \(monthDay)".uppercased()
+    }
+
     /// Soft-delete with an undo window; commits any prior pending delete first.
     func softDelete(_ entry: JournalEntry) {
         Haptics.warning.play()
@@ -336,14 +349,31 @@ extension ReflectHubView {
 
 extension ReflectHubView {
     /// Marks reflection Moments after a new entry is created. Thresholds
-    /// count what exists in the journal — never consecutive days (brand:
-    /// celebrate what happened; no streaks, no chains). The fetch count is
-    /// authoritative because `@Query` may not refresh mid-action.
+    /// count only entries with real writing (`wordCount > 0`) — a blank
+    /// entry the user opened but never wrote in earns nothing. Never
+    /// consecutive days (brand: celebrate what happened; no streaks). The
+    /// fetch count is authoritative because `@Query` may not refresh
+    /// mid-action.
     private func recordReflectionMoments() {
-        let count = (try? modelContext.fetchCount(FetchDescriptor<JournalEntry>())) ?? entries.count
-        if MomentsStore.shared.recordReflection(totalCount: max(count, 1)) {
+        if MomentsStore.shared.recordReflection(totalCount: writtenEntryCount()) {
             Haptics.success.play()
         }
+    }
+
+    /// One-time silent reconcile on hub appearance: a user who upgrades (or
+    /// returns after finally writing in a blank entry) with existing pages
+    /// earns the reflection Moments they've already lived — no haptic, since
+    /// this is backfill, not a fresh celebration.
+    private func backfillReflectionMoments() {
+        MomentsStore.shared.recordReflection(totalCount: writtenEntryCount())
+    }
+
+    /// Count of entries that actually contain writing. `wordCount` is a
+    /// stored column, so the `#Predicate` count runs in the store; the array
+    /// filter is only a fallback for a thrown fetch.
+    private func writtenEntryCount() -> Int {
+        let descriptor = FetchDescriptor<JournalEntry>(predicate: #Predicate { $0.wordCount > 0 })
+        return (try? modelContext.fetchCount(descriptor)) ?? entries.filter { $0.wordCount > 0 }.count
     }
 }
 

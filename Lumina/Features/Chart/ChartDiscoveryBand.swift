@@ -37,6 +37,14 @@ struct ChartDiscoveryBand: View {
         exploredCount == keys.count
     }
 
+    /// Whether to show the completion state. Once the `chartExplorer` Moment is
+    /// earned it stays shown even if the placement set later grows (a birth
+    /// time added after a no-time chart adds an 11th dot) — so the band and the
+    /// permanent Moment never contradict each other.
+    private var showsComplete: Bool {
+        isComplete || MomentsStore.shared.isUnlocked(.chartExplorer)
+    }
+
     var body: some View {
         VStack(spacing: LuminaSpacing.sm) {
             dotsRow
@@ -75,21 +83,21 @@ struct ChartDiscoveryBand: View {
 
     @ViewBuilder
     private var caption: some View {
-        if isComplete {
+        if showsComplete {
             Text("You've met your whole chart ✦")
                 .font(LuminaTypography.caption)
-                .foregroundStyle(LuminaColors.mutedGold)
+                .foregroundStyle(LuminaColors.goldInk)
                 .multilineTextAlignment(.center)
         } else {
             Text("You've met \(exploredCount) of \(keys.count) placements — tap any planet to keep exploring.")
                 .font(LuminaTypography.caption)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                 .multilineTextAlignment(.center)
         }
     }
 
     private var accessibilitySummary: String {
-        if isComplete {
+        if showsComplete {
             return "Chart discovery: you've met your whole chart. All \(keys.count) placements explored."
         }
         return "Chart discovery: \(exploredCount) of \(keys.count) placements explored."
