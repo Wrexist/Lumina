@@ -284,7 +284,6 @@ struct FriendDetailView: View {
             Text(value).font(LuminaTypography.body)
         }
     }
-
 }
 
 // MARK: - Birth-info formatting
