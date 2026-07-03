@@ -47,16 +47,19 @@ struct TodayHubView: View {
         .navigationTitle("Today")
         .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.loadIfNeeded() }
-        // Freshness triggers: the calendar day rolling over in a long-lived
-        // process, and birth info edited in Settings. `loadIfNeeded()` no-ops
-        // when neither has actually moved.
+        // Freshness triggers — day rollover in a long-lived process, and birth
+        // info edited in Settings. `loadIfNeeded()` no-ops when neither moved.
         .onReceive(dayChanged) { _ in
             revealDayKey = DailyRevealState.dayKey(for: .now)
             refresh()
         }
         .onReceive(birthDataChanged) { _ in refresh() }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { revealDayKey = DailyRevealState.dayKey(for: .now) }
+            // Resume after midnight must reload, not just re-veil; `loadIfNeeded` no-ops if fresh.
+            if phase == .active {
+                revealDayKey = DailyRevealState.dayKey(for: .now)
+                refresh()
+            }
         }
         .onChange(of: viewModel.skyContextLoading) { _, isLoading in
             skyContextLoadingChanged(isLoading: isLoading)

@@ -104,6 +104,9 @@ struct ForecastView: View {
             // Drop the fast Moon — it aspects everything daily and drowns out signal.
             state = .loaded(result.events.filter { $0.transiting != "Moon" })
         } catch {
+            // A cancelled load (tab switch mid-fetch) must not paint a retry
+            // error — the reissued `.task` reloads if the view returns.
+            if TodayViewModel.isCancellation(error) { return }
             #if DEBUG
             state = .loaded(Self.sampleEvents)
             #else

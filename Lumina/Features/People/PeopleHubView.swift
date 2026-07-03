@@ -97,7 +97,7 @@ struct PeopleHubView: View {
             consumeShare(link)
         }
         .overlay(alignment: .bottom) { undoBar }
-        .animation(.smooth, value: pendingDelete?.id)
+        .animation(reduceMotion ? nil : .smooth, value: pendingDelete?.id)
         .task(id: pendingDelete?.id) { await autoCommitPendingDelete() }
         .onDisappear(perform: commitPendingDelete)
     }

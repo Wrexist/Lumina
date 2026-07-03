@@ -38,7 +38,7 @@ actor ChartCache {
     static let shared = ChartCache()
 
     private let service: any EphemerisProviding
-    private let store: NatalChartStore
+    private let store: any NatalChartStore
 
     // Day-invariant, persisted across launches, keyed by (birthData, houseSystem).
     private var natalCache: [String: NatalChart] = [:]
@@ -56,7 +56,7 @@ actor ChartCache {
 
     init(
         service: any EphemerisProviding = EphemerisService(),
-        store: NatalChartStore = NatalChartDiskStore()
+        store: any NatalChartStore = NatalChartDiskStore()
     ) {
         self.service = service
         self.store = store

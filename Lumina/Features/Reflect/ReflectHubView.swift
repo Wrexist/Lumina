@@ -87,7 +87,7 @@ struct ReflectHubView: View {
         }
         .task { await loadTransits() }
         .overlay(alignment: .bottom) { undoBar }
-        .animation(.smooth, value: pendingDelete?.id)
+        .animation(reduceMotion ? nil : .smooth, value: pendingDelete?.id)
         .task(id: pendingDelete?.id) { await autoCommitPendingDelete() }
         .onAppear(perform: backfillReflectionMoments)
         .onDisappear(perform: commitPendingDelete)

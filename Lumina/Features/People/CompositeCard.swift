@@ -128,6 +128,9 @@ struct CompositeCard: View {
             let result = try await ChartCache.shared.composite(personA: mine, personB: theirs)
             state = .loaded(result)
         } catch {
+            // A cancelled load (card dismissed mid-fetch) must not paint a retry
+            // error — the reissued `.task` reloads if the card returns.
+            if TodayViewModel.isCancellation(error) { return }
             #if DEBUG
             state = .loaded(Self.sample)
             #else

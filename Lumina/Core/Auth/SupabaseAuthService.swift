@@ -93,6 +93,7 @@ actor SupabaseAuthService {
     /// still wipes all on-device data. Once the backend lands, replace the
     /// throw with the edge-function invocation.
     func deleteAccount() async throws {
+        // TODO(lumina): replace the throw with the edge-function invocation once a backend project exists.
         _ = try resolvedClient()
         logger.debug("server-side account delete needs a provisioned backend edge function — not yet available")
         throw ServiceError.missingConfiguration

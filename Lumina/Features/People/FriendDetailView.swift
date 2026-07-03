@@ -235,6 +235,9 @@ struct FriendDetailView: View {
             let result = try await ChartCache.shared.synastry(personA: mine, personB: theirs)
             applyLoadedAspects(result.aspects)
         } catch {
+            // A cancelled load (view dismissed mid-fetch) must not paint a retry
+            // error — the reissued `.task` reloads if the view returns.
+            if TodayViewModel.isCancellation(error) { return }
             #if DEBUG
             applyLoadedAspects(Self.sampleSynastry)
             #else

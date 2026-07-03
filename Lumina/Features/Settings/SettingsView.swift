@@ -1,3 +1,4 @@
+import OSLog
 import SwiftData
 import SwiftUI
 import UIKit
@@ -20,6 +21,7 @@ struct SettingsView: View {
     @State private var signInPresented = false
     @State private var deleteAccountConfirmPresented = false
     @State private var isDeletingAccount = false
+    private let logger = Logger(subsystem: "app.lumina.ios", category: "AccountDeletion")
 
     var body: some View {
         NavigationStack {
@@ -282,9 +284,16 @@ extension SettingsView {
         ReflectReminderScheduler.shared.cancel()
         await TransitNotificationScheduler.shared.cancelAll()
 
-        try? modelContext.delete(model: JournalEntry.self)
-        try? modelContext.delete(model: Friend.self)
-        try? modelContext.save()
+        // Surface erasure failures rather than swallowing them — this is a
+        // compliance-critical path (Apple 5.1.1(v)), so a partial failure must
+        // be observable, not silently reported as success.
+        do {
+            try modelContext.delete(model: JournalEntry.self)
+            try modelContext.delete(model: Friend.self)
+            try modelContext.save()
+        } catch {
+            logger.error("local data erasure failed: \(error.localizedDescription, privacy: .public)")
+        }
         UserBirthDataStore.userDefaults.clear()
         OnboardingStorage.userDefaults.clear()
         WidgetSharedStore.clear()

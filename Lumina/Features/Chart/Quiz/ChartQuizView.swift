@@ -56,7 +56,12 @@ struct ChartQuizView: View {
 
     @ViewBuilder
     private var content: some View {
-        if playedToday || isFinished {
+        // `playedToday` also flips mid-run (the first answer records the day so
+        // an abandoned run still counts), so it can't gate the live quiz — an
+        // in-progress session always has questions loaded. Only a fresh open on
+        // an already-played day (no questions prepared) or a finished run shows
+        // the end state.
+        if isFinished || (playedToday && questions.isEmpty) {
             endState
         } else if let question = currentQuestion {
             questionView(question)

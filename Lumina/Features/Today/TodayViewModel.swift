@@ -214,7 +214,7 @@ final class TodayViewModel {
     /// A cancelled `URLSession` request throws `URLError.cancelled` (not Swift's
     /// `CancellationError`), so both are checked — a superseded load should be a
     /// silent no-op, never an error state.
-    static func isCancellation(_ error: any Error) -> Bool {
+    nonisolated static func isCancellation(_ error: any Error) -> Bool {
         Task.isCancelled || error is CancellationError || (error as? URLError)?.code == .cancelled
     }
 
