@@ -299,17 +299,17 @@ struct ReflectHubView: View {
         recordReflectionMoments()
         return entry
     }
-
-    private func formattedDate(_ date: Date) -> String {
-        let weekday = date.formatted(.dateTime.weekday(.wide))
-        let monthDay = date.formatted(.dateTime.month(.abbreviated).day())
-        return "\(weekday) · \(monthDay)".uppercased()
-    }
 }
 
 // MARK: - Soft delete
 
 extension ReflectHubView {
+    private func formattedDate(_ date: Date) -> String {
+        let weekday = date.formatted(.dateTime.weekday(.wide))
+        let monthDay = date.formatted(.dateTime.month(.abbreviated).day())
+        return "\(weekday) · \(monthDay)".uppercased()
+    }
+
     /// Soft-delete with an undo window; commits any prior pending delete first.
     func softDelete(_ entry: JournalEntry) {
         Haptics.warning.play()

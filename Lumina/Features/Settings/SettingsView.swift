@@ -257,7 +257,7 @@ extension SettingsView {
     /// Runs the full account teardown, then returns the user to onboarding.
     /// The server delete is best-effort (`try?`): a failed or unprovisioned
     /// backend must never block the on-device wipe.
-    fileprivate func performAccountDeletion() {
+    private func performAccountDeletion() {
         guard !isDeletingAccount else { return }
         isDeletingAccount = true
         Task {
@@ -272,7 +272,7 @@ extension SettingsView {
     /// Wipes every on-device store: SwiftData (`JournalEntry` + `Friend`),
     /// birth data, the onboarding snapshot, tunable preferences, and the
     /// app-lock session. Keychain is handled inside `deleteAccount()`.
-    fileprivate func eraseLocalData() {
+    private func eraseLocalData() {
         try? modelContext.delete(model: JournalEntry.self)
         try? modelContext.delete(model: Friend.self)
         try? modelContext.save()
@@ -284,7 +284,7 @@ extension SettingsView {
 
     /// `AppPreferences` exposes no single reset, so restore each user-tunable
     /// flag to its default via its public setters.
-    fileprivate func resetPreferences() {
+    private func resetPreferences() {
         preferences.lockReflectWithFaceID = false
         preferences.reduceMotionOverride = false
         preferences.transitAlertsEnabled = false

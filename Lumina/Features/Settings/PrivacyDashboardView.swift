@@ -67,7 +67,9 @@ struct PrivacyDashboardView: View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 sectionHeader("Your data", systemImage: "tray.and.arrow.down")
-                Text("Delete your account any time from Settings → Account — it erases your chart, journal, and friends for good. Exporting your data is coming soon. Either way, your data lives only on this device, so uninstalling the app also removes everything.")
+                Text("Delete your account any time from Settings → Account — it erases your chart, "
+                    + "journal, and friends for good. Exporting your data is coming soon. Either way, "
+                    + "your data lives only on this device, so uninstalling the app also removes everything.")
                     .font(LuminaTypography.bodyLight)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                 LuminaBadge(title: "Export soon", tone: .neutral)

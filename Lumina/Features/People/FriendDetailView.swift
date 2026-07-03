@@ -285,6 +285,11 @@ struct FriendDetailView: View {
         }
     }
 
+}
+
+// MARK: - Birth-info formatting
+
+extension FriendDetailView {
     // Birth date/time render in the friend's birth-place zone (when known)
     // so the day and wall-clock time never shift on the viewer's device.
     private func dateString(_ date: Date) -> String {
