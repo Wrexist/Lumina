@@ -29,9 +29,12 @@ Items 1–4 are implemented and pushed (branch `claude/app-capabilities-plan-br6
   Settings' "Manage subscription" / "Restore purchases" rows.
 - **§2 Push** — `PushNotificationManager` wraps OneSignal; `AppDelegate` now
   initializes it; `NotificationPermission` routes through it (one prompt,
-  not two); Palm's "notify me" tags a waitlist segment. Best-effort
-  `com.apple.developer.usernotifications.channel` entitlement added for the
-  Broadcast Capability (see the caveat in §2 below — unverified literal key).
+  not two); Palm's "notify me" tags a waitlist segment. The Broadcast
+  Capability entitlement (`com.apple.developer.usernotifications.channel`) was
+  **removed** — it failed the signed TestFlight archive ("not found and could
+  not be included in profile") because the capability isn't enabled on the
+  `app.lumina.ios` App ID, and nothing uses channel/broadcast pushes yet.
+  Re-add it once the App ID capability is enabled and a channel exists.
 - **§3 Sign in with Apple** — `AuthManager` + Keychain session + `SignInView`
   fully work standalone; `SupabaseAuthService` layers the identity-token
   exchange on top best-effort (silently no-ops until Supabase exists).
