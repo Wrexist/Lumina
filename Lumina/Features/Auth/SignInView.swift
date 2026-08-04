@@ -19,7 +19,7 @@ struct SignInView: View {
             VStack(spacing: LuminaSpacing.sm) {
                 Image(systemName: "sparkles")
                     .font(.system(.largeTitle))
-                    .foregroundStyle(LuminaColors.mutedGold)
+                    .foregroundStyle(LuminaColors.goldInk)
                     .accessibilityHidden(true)
                 Text("Sign in to sync")
                     .font(LuminaTypography.heading)

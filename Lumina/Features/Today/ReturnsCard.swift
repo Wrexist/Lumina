@@ -18,7 +18,7 @@ struct ReturnsCard: View {
     var body: some View {
         HStack(alignment: .top, spacing: LuminaSpacing.md) {
             Image(systemName: "sparkles")
-                .foregroundStyle(LuminaColors.mutedGold)
+                .foregroundStyle(LuminaColors.goldInk)
             VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
                 Text("A MAJOR RETURN IS COMING")
                     .font(LuminaTypography.mono)

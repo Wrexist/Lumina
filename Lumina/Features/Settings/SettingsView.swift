@@ -283,17 +283,35 @@ struct SettingsView: View {
 
 extension SettingsView {
     /// Runs the full account teardown, then returns the user to onboarding.
-    /// The server delete is best-effort (`try?`): a failed or unprovisioned
-    /// backend must never block the on-device wipe.
+    ///
+    /// Ordering matters. This used to erase every model *before* tearing down
+    /// the navigation, and `eraseLocalData()` keeps awaiting afterwards
+    /// (`ChartCache.clear()`), so `MainTabsView` — and anything pushed inside
+    /// it, e.g. a `FriendDetailView` reached via the toolbar gear — was still
+    /// mounted and re-rendering against destroyed models. Swap the root out
+    /// first, then erase.
     private func performAccountDeletion() {
         guard !isDeletingAccount else { return }
         isDeletingAccount = true
         Task {
-            try? await AuthManager.shared.deleteAccount()
-            await eraseLocalData()
+            var serverFailure: Error?
+            do {
+                try await AuthManager.shared.deleteAccount()
+            } catch {
+                // Deletion of the server account genuinely failed. Still wipe
+                // locally — the user asked for it — but don't claim success.
+                serverFailure = error
+            }
+
+            // Unmount the tab UI before destroying the models it renders.
             router.resetForSignOut()
-            isDeletingAccount = false
             dismiss()
+            await eraseLocalData()
+            isDeletingAccount = false
+
+            if serverFailure != nil {
+                restoreMessage = "Everything on this device was erased, but we couldn't reach the server to remove your account. Please try again once you're back online."
+            }
         }
     }
 

@@ -179,15 +179,34 @@ final class AuthManager {
     /// `session`: the server step throws-and-is-swallowed, the Keychain
     /// delete is a no-op, and the caller (Settings) still erases all
     /// on-device data.
-    func deleteAccount() async throws {
+    /// Returns `true` when a server-side account was actually deleted, and
+    /// `false` when there was none to delete (local-only user, or no Supabase
+    /// project configured). Rethrows when a server account exists but could
+    /// not be removed.
+    ///
+    /// The local wipe always happens either way — but the caller needs to know
+    /// which case it was so the user can be told the truth. This previously
+    /// swallowed *every* error, including a genuine server-side failure, while
+    /// the UI reported a successful account deletion regardless.
+    @discardableResult
+    func deleteAccount() async throws -> Bool {
+        var deletedServerSide = false
         do {
             try await supabaseAuthService.deleteAccount()
+            deletedServerSide = true
         } catch SupabaseAuthService.ServiceError.missingConfiguration {
-            logger.debug("Supabase not configured — skipping server-side account delete.")
+            // No server account exists — nothing to delete remotely. Not an
+            // error: the local wipe below is the whole deletion.
+            logger.debug("no server-side account to delete — local wipe only")
         } catch {
-            logger.error("Supabase account delete failed (continuing local wipe): \(error.localizedDescription, privacy: .public)")
+            // A real failure. Clear the local session anyway (the user asked
+            // to be signed out and erased) but surface it.
+            logger.error("server-side account delete failed: \(error.localizedDescription, privacy: .public)")
+            clearLocalSession()
+            throw error
         }
         clearLocalSession()
+        return deletedServerSide
     }
 
     private func persist(_ session: AuthSession) throws {

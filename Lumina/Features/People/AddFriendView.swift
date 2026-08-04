@@ -15,6 +15,8 @@ struct AddFriendView: View {
     @State private var search = BirthPlaceSearch()
     @State private var query = ""
     @State private var resolved: BirthPlaceSearch.Resolved?
+    /// Inline message when a tapped suggestion can't be resolved.
+    @State private var resolveError: String?
 
     var body: some View {
         NavigationStack {
@@ -97,6 +99,7 @@ struct AddFriendView: View {
                 helper: resolved == nil
                     ? "Optional — pick a city for an exact chart."
                     : "Using \(resolved?.displayName ?? "")",
+                error: resolveError,
                 textContentType: .addressCityAndState
             )
         }
@@ -167,9 +170,15 @@ struct AddFriendView: View {
         do {
             let result = try await search.resolve(suggestion)
             resolved = result
+            resolveError = nil
             query = result.displayName
             Haptics.success.play()
         } catch {
+            // Was a bare haptic: offline or on a flaky network the user
+            // tapped a city, felt a buzz, and the field simply didn't fill —
+            // no message, and Save stayed disabled with no explanation. The
+            // onboarding equivalent already surfaced this properly.
+            resolveError = LuminaError.from(error).userBody
             Haptics.failure.play()
         }
     }

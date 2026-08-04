@@ -34,12 +34,33 @@ struct LuminaTextField: View {
                         .stroke(borderColor, lineWidth: focused ? 2 : 1)
                 )
                 .luminaCornerRadius(LuminaRadii.sm)
+                // The label and any helper/error text are attached to the
+                // FIELD itself, so VoiceOver announces them while keeping the
+                // text-field trait and direct editing.
+                //
+                // This whole VStack used to carry
+                // `.accessibilityElement(children: .combine)`, which merges
+                // children into one static element and strips the text-field
+                // trait. This is the only text-input component in the app —
+                // it backs the onboarding name and birth-place fields, Add
+                // Friend, Edit Birth Info, feedback and Ask-your-chart — so
+                // VoiceOver users heard "Your name, Empty" as static text and
+                // could not type into it. Onboarding was unfinishable.
+                .accessibilityLabel(title)
+                .accessibilityValue(accessibilityValueText)
+                .accessibilityHint(accessibilityHintText)
 
+            // Decorative once the text above is announced as the field's hint;
+            // leaving it visible to VoiceOver would read the error twice.
             footer
+                .accessibilityHidden(true)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(title)
-        .accessibilityValue(accessibilityValueText)
+    }
+
+    /// Helper text and validation errors, spoken as the field's hint so the
+    /// user hears *why* their input was rejected without leaving the field.
+    private var accessibilityHintText: String {
+        [helper, error].compactMap { $0 }.joined(separator: ". ")
     }
 
     private var accessibilityValueText: String {

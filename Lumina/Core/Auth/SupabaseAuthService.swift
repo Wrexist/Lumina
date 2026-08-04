@@ -23,6 +23,11 @@ import Supabase
 actor SupabaseAuthService {
     enum ServiceError: Error, Equatable {
         case missingConfiguration
+        /// The server was reachable but the operation did not succeed.
+        /// Distinct from `.missingConfiguration` so account deletion can tell
+        /// "there is no server account" apart from "the delete failed" —
+        /// only the second is an error the user must be told about.
+        case requestFailed
     }
 
     private let logger = Logger(subsystem: "app.lumina.ios", category: "SupabaseAuthService")
@@ -83,20 +88,57 @@ actor SupabaseAuthService {
         try await client.auth.signInWithIdToken(credentials: credentials)
     }
 
-    /// Best-effort server-side account deletion for Apple Guideline
-    /// 5.1.1(v). Deleting a Supabase auth user requires the service-role key
-    /// via the admin API — which must never ship in a client — so a real
-    /// deletion has to run through a server-side edge function keyed on the
-    /// caller's session. Neither that function nor a provisioned project
-    /// exists yet, so this throws the same `.missingConfiguration` the
-    /// sign-in exchange does; `AuthManager.deleteAccount()` swallows it and
-    /// still wipes all on-device data. Once the backend lands, replace the
-    /// throw with the edge-function invocation.
+    /// Server-side account deletion for Apple Guideline 5.1.1(v).
+    ///
+    /// Deleting a Supabase auth user needs the service-role key via the admin
+    /// API, which must never ship in a client — so the privileged work runs in
+    /// the `delete-account` edge function (`supabase/functions/delete-account`),
+    /// authenticated with the caller's own access token. That function also
+    /// revokes the Sign in with Apple credential, which Apple requires of any
+    /// app offering SIWA.
+    ///
+    /// This used to unconditionally `throw .missingConfiguration` with a TODO,
+    /// while the Settings confirmation dialog told the user their "Lumina
+    /// account" had been permanently erased. Only local data was ever wiped.
+    ///
+    /// Throws `.missingConfiguration` when no Supabase project is configured —
+    /// which is a truthful signal, not a silent failure: `AuthManager` and
+    /// `SettingsView` surface it so the user is told exactly what was removed.
     func deleteAccount() async throws {
-        // TODO(lumina): replace the throw with the edge-function invocation once a backend project exists.
-        _ = try resolvedClient()
-        logger.debug("server-side account delete needs a provisioned backend edge function — not yet available")
-        throw ServiceError.missingConfiguration
+        let client = try resolvedClient()
+
+        // No live session means there is no server-side account to delete —
+        // sign-in never happened, or it was local-only.
+        guard let session = try? await client.auth.session else {
+            logger.debug("no Supabase session — nothing to delete server-side")
+            throw ServiceError.missingConfiguration
+        }
+
+        let response: FunctionDeleteResponse = try await client.functions.invoke(
+            "delete-account",
+            options: .init(headers: ["Authorization": "Bearer \(session.accessToken)"])
+        )
+
+        guard response.deleted else {
+            logger.error("edge function reported failure deleting the account")
+            throw ServiceError.requestFailed
+        }
+        if response.appleRevocation == "failed" {
+            // Deletion succeeded; only the Apple revocation didn't. Log it so
+            // it can be retried out of band rather than failing the whole
+            // operation and stranding the user with an account they asked to
+            // have removed.
+            logger.error("account deleted but Apple token revocation failed")
+        }
+        try? await client.auth.signOut()
+        logger.info("server-side account deletion complete")
+    }
+
+    /// Shape returned by the `delete-account` edge function.
+    private struct FunctionDeleteResponse: Decodable {
+        let deleted: Bool
+        /// "revoked" | "skipped" | "failed"
+        let appleRevocation: String?
     }
 
     private func resolvedClient() throws -> SupabaseClient {

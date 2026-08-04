@@ -79,9 +79,13 @@ struct AspectLegend: View {
 
     private func color(for type: AspectType) -> Color {
         switch type {
+        // Must track `ChartWheelView.aspectColor` — a legend swatch that
+        // doesn't match the line it explains is worse than no legend. The
+        // hard-aspect swatch used to be `blush`, which rendered as a blank
+        // capsule on parchment.
         case .conjunction: LuminaColors.mutedGold.opacity(0.8)
-        case .sextile, .trine: LuminaColors.celestialBlue.opacity(0.7)
-        case .square, .opposition: LuminaColors.blush
+        case .sextile, .trine: LuminaColors.celestialBlue.opacity(0.6)
+        case .square, .opposition: LuminaColors.error.opacity(0.7)
         }
     }
 

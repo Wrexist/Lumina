@@ -38,8 +38,23 @@ struct OnboardingFlowView: View {
                     .padding(.horizontal, LuminaSpacing.lg)
                     .padding(.top, LuminaSpacing.md)
 
-                contentForCurrentStep
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Six of the eight steps had no ScrollView, and this fixed
+                // frame sits between a top bar and a 56pt button. At
+                // Accessibility XL on an iPhone SE the birth-time step —
+                // heading + "Why we ask" + a 216pt wheel picker + the
+                // "I'm not sure" ghost button — pushed that escape hatch off
+                // screen, making the documented unknown-birth-time path
+                // unreachable. docs/NAVIGATION.md §17 requires no truncation
+                // at AX XL.
+                //
+                // `.basedOnSize` keeps the steps that already fit from
+                // gaining a bouncy scroll they don't need.
+                ScrollView {
+                    contentForCurrentStep
+                        .frame(maxWidth: .infinity)
+                }
+                .scrollBounceBehavior(.basedOnSize)
+                .frame(maxHeight: .infinity)
 
                 bottomBar
                     .padding(.horizontal, LuminaSpacing.lg)

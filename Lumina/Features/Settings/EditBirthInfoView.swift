@@ -19,6 +19,8 @@ struct EditBirthInfoView: View {
     @State private var search = BirthPlaceSearch()
     @State private var query = ""
     @State private var resolved: BirthPlaceSearch.Resolved?
+    /// Inline message when a tapped suggestion can't be resolved.
+    @State private var resolveError: String?
     @State private var hydrated = false
     @State private var manualSheet = false
 
@@ -100,6 +102,7 @@ struct EditBirthInfoView: View {
             helper: resolved == nil
                 ? "Pick a city for an exact chart."
                 : "Using \(resolved?.displayName ?? "")",
+            error: resolveError,
             textContentType: .addressCityAndState
         )
     }
@@ -199,9 +202,15 @@ struct EditBirthInfoView: View {
         do {
             let result = try await search.resolve(suggestion)
             resolved = result
+            resolveError = nil
             query = result.displayName
             Haptics.success.play()
         } catch {
+            // Was a bare haptic: offline or on a flaky network the user
+            // tapped a city, felt a buzz, and the field simply didn't fill —
+            // no message, and Save stayed disabled with no explanation. The
+            // onboarding equivalent already surfaced this properly.
+            resolveError = LuminaError.from(error).userBody
             Haptics.failure.play()
         }
     }
@@ -276,7 +285,7 @@ private struct ManualBirthPlaceSheetEdit: View {
                     if let error {
                         Text(error)
                             .font(LuminaTypography.caption)
-                            .foregroundStyle(LuminaColors.blush)
+                            .foregroundStyle(LuminaColors.error)
                     }
                     LuminaButton(title: "Save", variant: .primary, isEnabled: validated != nil) { save() }
                 }

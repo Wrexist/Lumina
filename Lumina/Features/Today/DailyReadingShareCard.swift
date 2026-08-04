@@ -22,7 +22,7 @@ struct DailyReadingShareCard: View {
                 Text("LUMINA")
                     .font(LuminaTypography.mono)
                     .tracking(6)
-                    .foregroundStyle(LuminaColors.mutedGold)
+                    .foregroundStyle(LuminaColors.goldInk)
                 Text(dateLabel.uppercased())
                     .font(LuminaTypography.mono)
                     .tracking(2)

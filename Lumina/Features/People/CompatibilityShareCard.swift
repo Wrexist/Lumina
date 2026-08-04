@@ -16,7 +16,7 @@ struct CompatibilityShareCard: View {
                 Text("LUMINA")
                     .font(LuminaTypography.mono)
                     .tracking(6)
-                    .foregroundStyle(LuminaColors.mutedGold)
+                    .foregroundStyle(LuminaColors.goldInk)
                 Text("You & \(friendName)")
                     .font(LuminaTypography.display)
                     .foregroundStyle(LuminaColors.inkBlack)

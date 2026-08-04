@@ -20,7 +20,7 @@ struct MoonPhaseCard: View {
                 HStack(spacing: LuminaSpacing.md) {
                     Image(systemName: MoonPhasePresentation.symbol(for: phase.phase))
                         .font(.system(size: glyphSize, weight: .light))
-                        .foregroundStyle(LuminaColors.mutedGold)
+                        .foregroundStyle(LuminaColors.goldInk)
                     VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
                         Text(phase.phase)
                             .font(LuminaTypography.heading)

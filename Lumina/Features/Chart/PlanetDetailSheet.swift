@@ -46,7 +46,7 @@ struct PlanetDetailSheet: View {
         HStack(spacing: LuminaSpacing.md) {
             Text(ChartGlyphs.planetGlyph(planet.planet))
                 .font(.system(size: glyphSize))
-                .foregroundStyle(LuminaColors.mutedGold)
+                .foregroundStyle(LuminaColors.goldInk)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
             VStack(alignment: .leading, spacing: LuminaSpacing.xs) {

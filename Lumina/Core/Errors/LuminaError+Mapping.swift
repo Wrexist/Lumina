@@ -41,7 +41,9 @@ extension LuminaError {
         if let urlError = error as? URLError {
             return mapURL(urlError)
         }
-        return .unknown(underlyingMessage: error.localizedDescription)
+        // Same rule as `mapURL`'s default: a Foundation/NSError description
+        // is developer text, not user copy.
+        return .unknown(underlyingMessage: "Something went wrong. Try again, and tell us if it keeps happening.")
     }
 
     private static func mapAuth(_ error: AuthManager.AuthError) -> LuminaError {
@@ -109,8 +111,27 @@ extension LuminaError {
             return .offline
         case .timedOut:
             return .timeout
+        // These are all common in production and used to fall through to
+        // `error.localizedDescription`, which is rendered verbatim as the
+        // app's own body copy — so users saw Foundation strings like
+        // "A server with the specified hostname could not be found."
+        // docs/NAVIGATION.md §4 says we never show error codes; this is the
+        // same class of leak one layer up.
+        case .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed:
+            return .unknown(underlyingMessage: "We couldn't reach Lumina's sky service. Try again in a moment.")
+        case .secureConnectionFailed, .serverCertificateUntrusted,
+             .serverCertificateHasBadDate, .serverCertificateNotYetValid,
+             .serverCertificateHasUnknownRoot:
+            return .unknown(underlyingMessage: "We couldn't make a secure connection. Check your network and try again.")
+        case .badServerResponse, .cannotParseResponse, .zeroByteResource,
+             .resourceUnavailable:
+            return .unknown(underlyingMessage: "The sky service sent something we couldn't read. Try again in a moment.")
+        case .internationalRoamingOff, .callIsActive:
+            return .offline
         default:
-            return .unknown(underlyingMessage: error.localizedDescription)
+            // Never `error.localizedDescription` — `userBody` renders it
+            // verbatim as the app's own copy. Callers log the raw error.
+            return .unknown(underlyingMessage: "Something went wrong reaching the sky service. Try again in a moment.")
         }
     }
 }

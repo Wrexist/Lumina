@@ -68,7 +68,23 @@ final class BirthPlaceSearch: NSObject {
         }
         // iOS 26 deprecated `placemark`; `location` is the non-optional CLLocation replacement.
         let coordinate = item.location.coordinate
-        let timeZone = item.timeZone ?? TimeZone(identifier: "UTC") ?? .gmt
+        // `MKMapItem.timeZone` is optional and is NOT always populated. This
+        // used to fall back to UTC silently, so a Los Angeles birth could be
+        // computed 8 hours off — wrong Ascendant, wrong houses, and a Moon
+        // that can land in the wrong sign — with nothing to tell the user.
+        // The bad zone was then persisted into `BirthData` and reused for
+        // every chart, share payload and comparison from then on.
+        //
+        // For an app whose whole pitch is "we compute this properly", a
+        // silent 8-hour error is the worst possible failure. Treat an
+        // unresolved zone as an unresolved PLACE: the caller surfaces the
+        // manual sheet, which has a validated time-zone picker.
+        guard let timeZone = item.timeZone else {
+            throw LuminaError.unknown(
+                underlyingMessage: "We couldn't work out the time zone for that place. "
+                    + "Pick it manually so your chart is accurate."
+            )
+        }
         return Resolved(
             displayName: "\(suggestion.title), \(suggestion.subtitle)",
             latitude: coordinate.latitude,

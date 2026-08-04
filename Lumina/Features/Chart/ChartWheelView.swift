@@ -88,7 +88,7 @@ struct ChartWheelView: View {
             let glyph = ChartGlyphs.signGlyph(ChartGlyphs.signOrder[i])
             let text = Text(glyph)
                 .font(.system(size: radius * 0.10))
-                .foregroundColor(LuminaColors.mutedGold)
+                .foregroundColor(LuminaColors.goldInk)
             context.draw(text, at: position)
         }
     }
@@ -152,9 +152,13 @@ struct ChartWheelView: View {
 
     private func aspectColor(_ type: AspectType) -> Color {
         switch type {
-        case .conjunction: LuminaColors.mutedGold.opacity(0.6)
-        case .sextile, .trine: LuminaColors.celestialBlue.opacity(0.45)
-        case .square, .opposition: LuminaColors.blush.opacity(0.65)
+        // `mutedGold` is fine here: these are STROKES, not text.
+        case .conjunction: LuminaColors.mutedGold.opacity(0.8)
+        case .sextile, .trine: LuminaColors.celestialBlue.opacity(0.6)
+        // Was `blush` at 0.65 — roughly 1.2:1 on parchment, so squares and
+        // oppositions simply didn't render. `error` is the muted oxblood that
+        // clears AA on this surface.
+        case .square, .opposition: LuminaColors.error.opacity(0.7)
         }
     }
 
@@ -175,7 +179,7 @@ struct ChartWheelView: View {
             let position = point(longitude: planet.longitude, radius: markerRadius, center: center)
             let marker = Text("℞")
                 .font(.system(size: radius * 0.07, weight: .light))
-                .foregroundColor(LuminaColors.mutedGold)
+                .foregroundColor(LuminaColors.goldInk)
             context.draw(marker, at: position)
         }
     }

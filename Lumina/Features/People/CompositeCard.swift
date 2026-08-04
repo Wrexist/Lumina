@@ -94,7 +94,7 @@ struct CompositeCard: View {
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
                     Text(ChartGlyphs.signGlyph(item.sign))
                         .font(.system(size: glyphSize))
-                        .foregroundStyle(LuminaColors.mutedGold)
+                        .foregroundStyle(LuminaColors.goldInk)
                     Text(item.sign)
                         .font(LuminaTypography.caption)
                         .foregroundStyle(LuminaColors.inkBlack)
