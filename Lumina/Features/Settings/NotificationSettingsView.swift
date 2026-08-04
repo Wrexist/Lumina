@@ -134,7 +134,7 @@ struct NotificationSettingsView: View {
         case .denied:
             return "Lumina can't send pushes until you flip the switch in iOS Settings."
         case .notDetermined:
-            return "Turn on notifications and we'll wake you with tomorrow's reading."
+            return "Turn on notifications for transit alerts and your evening reflection reminder."
         }
     }
 

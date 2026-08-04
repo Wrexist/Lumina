@@ -51,7 +51,7 @@ enum LuminaError: Error, Equatable, Sendable {
     var userBody: String {
         switch self {
         case .offline:
-            return "We can't reach the network right now. Your last reading is saved on this device."
+            return "We can't reach the network right now. Your chart is saved on this device — today's sky needs a connection."
         case .server:
             return "Our chart service hiccupped. Try again in a moment."
         case .timeout:

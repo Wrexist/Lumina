@@ -14,24 +14,35 @@ editorial, honest — **no emojis** (on-brand and avoids looking spammy).
 ## App Name — 30 char limit
 
 ```
-Lumina: Astrology & Palm
+Lumina: Astrology & Charts
 ```
-(24 chars.) Brand + the two head terms. If "Lumina" collides at submission
-(names are globally unique), fallbacks, in order:
+(25 chars.) Brand + the two head terms we actually ship.
+
+**Do not put "Palm" in the name until palm reading is reachable in the
+binary.** The Palm tab is excluded from `LuminaTab.visible` and palm deep
+links clamp to Today, so `PalmHubView` has no entry point at all. Naming the
+app after an unshipped feature is a Guideline 2.3.1 rejection, and the name
+is one of the fields review checks hardest against actual behaviour.
+
+If "Lumina" collides at submission (names are globally unique), fallbacks,
+in order:
 ```
-Lumina — Astrology & Palm
-Lumina: Birth Chart & Palm
-Lumina Astrology & Palmistry
+Lumina — Astrology & Charts
+Lumina: Birth Chart & Transits
+Lumina Astrology & Human Design
 ```
 
 ## Subtitle — 30 char limit
 
 ```
-Real birth charts & palmistry
+Real birth charts & transits
 ```
-(29 chars.) Adds `birth`, `charts`, `palmistry` to the index, and "Real"
+(28 chars.) Adds `birth`, `charts`, `transits` to the index, and "Real"
 carries the brand promise. Apple combines with the name → "astrology birth
-chart", "palm reading", etc.
+chart", "daily transits", etc.
+
+Same rule as the name: no `palmistry` here while the Palm tab is
+unreachable. Swap it back in the release that ships palm capture.
 
 ## Keywords — 100 char limit (comma-separated, NO spaces)
 
@@ -40,8 +51,11 @@ horoscope,zodiac,natal,tarot,moon,transit,compatibility,synastry,human,design,st
 ```
 (94 chars.) Rules applied:
 - **No spaces after commas** — every character is keyword budget.
-- **No word repeated** from the name/subtitle (`astrology`, `palm`, `birth`,
-  `chart`, `real` are already indexed).
+- **No word repeated** from the name/subtitle (`astrology`, `charts`,
+  `birth`, `transits`, `real` are already indexed).
+- **No `palm`/`palmistry` anywhere** while the Palm tab is unreachable —
+  keywords are indexed metadata and fall under the same Guideline 2.3.1
+  accuracy rule as the name.
 - **Split multi-word phrases into tokens** — `human`,`design` and `star`,`sign`
   let Apple form "human design" and "star sign" itself. Same for `natal`(+chart
   from subtitle), `moon`(+phase), etc.
@@ -69,8 +83,6 @@ WHAT MAKES LUMINA DIFFERENT
 
 Real astronomy, not guesses. Your birth chart is computed from a genuine ephemeris — the same planetary math astronomers use — not approximated by an algorithm guessing at the sky. Degrees, houses, aspects: all exact.
 
-Palm reading, built honestly. We're building on-device palm reading — real line detection that never uploads your photo — and won't ship it until it's actually accurate across every skin tone. No stock overlay standing in as a placeholder in the meantime.
-
 Grounded interpretations, never hallucinated. Every reading is tied to your specific placements and today's real transits — the planet, the sign, the house, the exact angle. If a line of text can't be traced back to your chart, we don't write it.
 
 WHAT YOU GET
@@ -81,12 +93,12 @@ WHAT YOU GET
 • Compatibility — real synastry and composite charts for you and the people in your life, with shareable results.
 • Human Design — your bodygraph and defined centers.
 • Reflect — a journal with prompts tied to your current transits, so the questions actually fit the moment.
-• Palm Reading (in progress) — see exactly where we are with it, in the app, right now.
 
 HONEST BY DESIGN
 
-• No fake data. No stock-clipart palmistry. No hallucinated horoscopes.
+• No fake data. No hallucinated horoscopes. No numbers we can't show you the working for.
 • Transparent, Apple-native billing. Monthly and annual only — no predatory weekly traps.
+• A genuinely useful free tier: your birth chart and your daily reading are free, forever. Lumina Plus adds Human Design, compatibility, your forecast, and the widget.
 • Privacy first, including what's still in progress — your palm photo will never leave your device once palm reading ships.
 
 Lumina is for people who love astrology and are tired of apps that treat it like a gimmick. Real charts. Real readings. Finally, a real one.
@@ -129,7 +141,6 @@ The first Lumina. Real charts computed from a genuine ephemeris, and interpretat
 • A daily reading tied to today's real transits
 • Compatibility, Human Design, a transit-aware journal
 • Your Sun, Moon, and Rising on a home-screen widget
-• On-device palm reading, in progress — see where it stands in the Palm tab
 
 Finally, a real one.
 ```
@@ -225,11 +236,16 @@ Tips to maximize installs:
 ## App Review notes (Review Information field)
 
 ```
-Lumina computes astrology charts from a self-hosted ephemeris service. LLM interpretations are grounded in those computed chart facts and generated server-side. No account is required to explore; premium features are gated by a RevenueCat subscription (sandbox-testable). The Palm tab intentionally shows an in-progress state, not a bug — on-device camera-based palm reading (Vision + Core ML; the photo will never leave the device) is still in accuracy testing and is described in the app as coming soon rather than shipped.
+Lumina computes astrology charts from a self-hosted ephemeris service. LLM interpretations are grounded in those computed chart facts and generated server-side. No account is required to explore.
+
+Lumina Plus (auto-renewing, sandbox-testable) unlocks the Human Design bodygraph, synastry and composite compatibility, the transit forecast, and the home-screen widget. The daily reading and the birth chart are free. To reach the purchase: Settings → Lumina Plus → Upgrade, or tap any locked feature (Chart → Human Design, People → any person, Today → What's coming).
+
+Account deletion: Settings → Account → Delete account. It removes the server-side account, revokes the Sign in with Apple credential, and erases all on-device data.
 ```
 
-> Update this note once palm reading ships — remove the "intentionally
-> in-progress" explanation and describe the real camera flow instead.
+> Palm reading is not in this release and is not mentioned anywhere in the
+> metadata. When it ships, add it back to the name, subtitle and keywords in
+> the same release — not before.
 
 Provide a **demo walkthrough** and, if any feature needs auth, a sandbox/demo
 account. Ensure the Support + Privacy URLs resolve, or review will reject.
