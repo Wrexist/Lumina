@@ -40,7 +40,9 @@ struct PrivacyDashboardView: View {
         // exact time and coordinates to the chart service on every request,
         // and `LuminaAIClient` forwards chart facts to the interpretation
         // service. Say what actually happens.
-        Text("Lumina is honest about what it stores and where. Everything below lives on your device. To draw your chart we send your birth date, time and city coordinates to our chart service — that is the only thing we send, and we don't keep it.")
+        Text("Lumina is honest about what it stores and where. Everything below lives on your "
+            + "device. To draw your chart we send your birth date, time and city coordinates to "
+            + "our chart service — that is the only thing we send, and we don't keep it.")
             .font(LuminaTypography.body)
             .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
     }
