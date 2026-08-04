@@ -28,6 +28,10 @@ final class TransitNotificationScheduler {
             content.title = item.title
             content.body = item.body
             content.sound = .default
+            // Route the tap to Today, where this transit is written up.
+            // Without this the notification just foregrounded the app on
+            // whatever tab the user last had open.
+            content.userInfo = [NotificationDeepLink.userInfoKey: NotificationDeepLink.today]
             let trigger = UNCalendarNotificationTrigger(dateMatching: item.fireDateComponents, repeats: false)
             let request = UNNotificationRequest(
                 identifier: Self.idPrefix + item.id,

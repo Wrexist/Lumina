@@ -19,6 +19,7 @@ final class AppPreferences {
         static let reflectReminderEnabled = "luminaReflectReminderEnabled"
         static let reflectReminderHour = "luminaReflectReminderHour"
         static let reflectReminderMinute = "luminaReflectReminderMinute"
+        static let houseSystem = "luminaHouseSystem"
     }
 
     static let shared = AppPreferences()
@@ -37,6 +38,17 @@ final class AppPreferences {
         didSet {
             guard oldValue != reduceMotionOverride else { return }
             defaults.set(reduceMotionOverride, forKey: Keys.reduceMotionOverride)
+        }
+    }
+
+    /// The house system the Chart tab renders. Persisted because it was
+    /// previously plain view-model state held in a `@State` — so the user's
+    /// choice of Whole-sign or Sidereal silently reverted to Placidus on every
+    /// relaunch, and Settings claimed "Placidus" regardless.
+    var houseSystem: HouseSystem {
+        didSet {
+            guard oldValue != houseSystem else { return }
+            defaults.set(houseSystem.rawValue, forKey: Keys.houseSystem)
         }
     }
 
@@ -96,5 +108,7 @@ final class AppPreferences {
         self.reflectReminderEnabled = defaults.bool(forKey: Keys.reflectReminderEnabled)
         self.reflectReminderHour = defaults.object(forKey: Keys.reflectReminderHour) as? Int ?? 21
         self.reflectReminderMinute = defaults.object(forKey: Keys.reflectReminderMinute) as? Int ?? 0
+        self.houseSystem = (defaults.string(forKey: Keys.houseSystem)
+            .flatMap(HouseSystem.init(rawValue:))) ?? .placidus
     }
 }

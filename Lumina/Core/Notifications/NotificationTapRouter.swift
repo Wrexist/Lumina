@@ -10,6 +10,10 @@ enum NotificationDeepLink {
     /// `lumina://reflect` — lands on the Reflect tab (today's prompt).
     static let reflect = "lumina://reflect"
 
+    /// `lumina://today` — lands on Today, where the transit that triggered
+    /// the alert is actually described.
+    static let today = "lumina://today"
+
     /// Extracts the deep-link URL from a notification's userInfo, if any.
     static func url(from userInfo: [AnyHashable: Any]) -> URL? {
         guard let raw = userInfo[userInfoKey] as? String else { return nil }

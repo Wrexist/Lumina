@@ -214,14 +214,6 @@ struct SettingsView: View {
                 SettingsRow(title: "Help & FAQ", trailing: nil)
             }
             HStack {
-                Text("Palm reading").font(LuminaTypography.body)
-                Spacer()
-                Text("Coming soon")
-                    .font(LuminaTypography.mono)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-            }
-            .accessibilityElement(children: .combine)
-            HStack {
                 Text("Version").font(LuminaTypography.body)
                 Spacer()
                 Text(versionString)

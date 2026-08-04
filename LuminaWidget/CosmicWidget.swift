@@ -46,6 +46,12 @@ struct CosmicWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: CosmicProvider()) { entry in
             CosmicWidgetView(entry: entry)
+                // Without this, tapping the widget only cold-launched the app
+                // on whatever tab was last used — losing the one deep-link
+                // affordance this retention feature has. `lumina://chart` is
+                // registered in project.yml's CFBundleURLSchemes and handled
+                // by `LuminaDeepLink`.
+                .widgetURL(URL(string: "lumina://chart"))
         }
         .configurationDisplayName("Cosmic Signature")
         .description("Your Sun, Moon, and Rising — always on your home screen.")

@@ -21,7 +21,7 @@ struct NotificationSettingsView: View {
             VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
                 statusCard
                 primaryAction
-                quietHoursPlaceholder
+                quietHoursNote
                 transitAlertsCard
                 reflectReminderCard
             }
@@ -67,19 +67,21 @@ struct NotificationSettingsView: View {
         }
     }
 
-    private var quietHoursPlaceholder: some View {
+    /// States the fixed quiet window as a plain fact rather than dangling a
+    /// "Soon" badge over a control that doesn't exist. The behaviour is real —
+    /// `TransitNotificationPlanner` already respects it — so this is
+    /// information, not a placeholder.
+    private var quietHoursNote: some View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                HStack {
-                    Text("Quiet hours")
-                        .font(LuminaTypography.body)
-                    Spacer()
-                    LuminaBadge(title: "Soon", tone: .neutral)
-                }
-                Text("Default 9pm–7am. Custom quiet hours are coming soon.")
+                Text("Quiet hours")
+                    .font(LuminaTypography.body)
+                Text("Lumina never sends between 9pm and 7am in your local time.")
                     .font(LuminaTypography.caption)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 

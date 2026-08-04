@@ -16,12 +16,17 @@ enum Haptics {
     case warning
     case failure
 
-    /// Fires the haptic. Falls through silently when the user has Reduce
-    /// Motion / Reduce Haptics on, when the feedback engine isn't available,
-    /// or on platforms without a Taptic engine.
+    /// Fires the haptic. Falls through silently when the OS reports that
+    /// haptics should be suppressed, or on hardware without a Taptic engine.
+    ///
+    /// This used to gate on `isReduceMotionEnabled`. Reduce Motion is a
+    /// vestibular setting about animation, not touch — using it here meant a
+    /// motion-sensitive user lost every tactile confirmation in the app,
+    /// including the reveal-ritual success haptic Today is built around.
+    /// `UIDevice` reports the actual haptic capability, and iOS itself honours
+    /// the system Reduce-Haptics preference when playing feedback.
     @MainActor
     func play() {
-        guard !UIAccessibility.isReduceMotionEnabled else { return }
         switch self {
         case .light:
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
