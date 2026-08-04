@@ -256,10 +256,14 @@ account. Ensure the Support + Privacy URLs resolve, or review will reject.
 
 - [ ] Name + subtitle + keywords entered exactly as above (verify no field
       over its limit after paste — quotes/spaces can sneak in).
-- [ ] Localize at least the **Name, Subtitle, Keywords** for your top markets
-      (each localization is a *separate* 100-char keyword field = more index
-      coverage). Start with English (U.S.), then English (U.K.), Spanish (MX),
-      Portuguese (BR) if targeting those.
+- [ ] Localize the **Name, Subtitle, Keywords** for your top markets (each
+      localization is a *separate* 100-char keyword field = more index
+      coverage). Safe now: English (U.S.) and English (U.K.).
+      **Do not add Spanish or Portuguese yet** — the app itself is
+      English-only (empty string catalog, no `String(localized:)` call sites),
+      and store metadata in a language the app doesn't speak reads as a bait
+      and switch to both reviewers and users. Add them in the release that
+      ships those languages.
 - [ ] App Preview video of a genuinely live moment (chart wheel rendering is
       a good candidate today; add the palm trace once it ships).
 - [ ] Custom product pages: one Compatibility-led, one Chart-led.
