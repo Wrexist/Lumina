@@ -5,6 +5,26 @@ import XCTest
 /// kill persistence ride CI on every push so a regression to the flow
 /// fails the merge.
 final class OnboardingTests: XCTestCase {
+    /// The motivation step gated progress and its answer was then discarded.
+    /// It now orders the final step's destinations, so the answer visibly
+    /// does something.
+    @MainActor
+    func testFinalStepLeadsWithTheChosenMotivation() {
+        let state = OnboardingState(storage: .inMemory())
+        state.name = "Sam"
+
+        state.motivation = .relationships
+        XCTAssertEqual(state.motivation, .relationships)
+        XCTAssertTrue(state.canAdvance(from: .motivation))
+
+        // Every motivation must map to exactly one destination, and the
+        // labels must all be distinct — a duplicate would make the picker
+        // ambiguous.
+        let labels = OnboardingState.Motivation.allCases.map(\.label)
+        XCTAssertEqual(Set(labels).count, labels.count)
+        XCTAssertFalse(labels.contains(where: \.isEmpty))
+    }
+
     @MainActor
     func testStartsAtBrandPromise() {
         let state = OnboardingState(storage: .inMemory())

@@ -123,7 +123,7 @@ struct OnboardingFlowView: View {
         case .chartReveal:
             OnboardingScreens.ChartReveal(state: state)
         case .whatNext:
-            OnboardingScreens.WhatNext { handleFinalTap($0) }
+            OnboardingScreens.WhatNext(motivation: state.motivation) { handleFinalTap($0) }
         }
     }
 
