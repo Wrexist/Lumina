@@ -66,8 +66,10 @@ struct HelpView: View {
                   + "weighted by how exact each contact is, with the relationship planets counting for more. "
                   + "If we haven't computed those aspects yet, we show no score rather than a guess."),
         .init(id: "data-storage", topic: .privacy, title: "Where does my data live?",
-              body: "Your friends and Reflect entries live on this device only. Your birth date, time and "
-                  + "city coordinates are sent to our chart service to draw your chart, and nothing else is. "
+              body: "Your Reflect entries never leave this device, and neither do your friends' names. "
+                  + "Your birth date, time and city coordinates are sent to our chart service to draw "
+                  + "your chart; a friend's birth date and time are sent when we score your "
+                  + "compatibility. Nothing is stored there, and nothing else is ever sent. "
                   + "Open Settings → Privacy → Privacy dashboard to see exactly what's where."),
         .init(id: "subscription", topic: .billing, title: "How do I cancel my subscription?",
               body: "Settings → Account → Manage subscription opens Apple's native subscription management screen. We never bury cancel — that's a brand pillar."),

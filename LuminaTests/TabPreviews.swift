@@ -49,11 +49,13 @@ enum TabPreviews {
             }
             LuminaCard {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                    HStack {
-                        Text("Your reading").font(LuminaTypography.heading)
-                        Spacer()
-                        LuminaBadge(title: "Audio soon", tone: .neutral)
-                    }
+                    // No "Audio soon" badge: `TodayHubView.readingCard`
+                    // doesn't have one, and this render exists so a developer
+                    // with no Mac can see what actually ships. A preview that
+                    // advertises an unbuilt feature is the same defect as the
+                    // app doing it, one layer removed — and harder to catch,
+                    // because the screenshot is what everyone trusts.
+                    Text("Your reading").font(LuminaTypography.heading)
                     Text(reading)
                         .font(LuminaTypography.body)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
@@ -64,6 +66,8 @@ enum TabPreviews {
             retrogradeCard()
             chapterCard()
             bulletSection(title: "WHAT'S HAPPENING", lines: secondary)
+            // Ships at the bottom of the real Today tab (Guideline 1.1).
+            EntertainmentDisclaimer()
         }
         .padding(LuminaSpacing.lg)
     }

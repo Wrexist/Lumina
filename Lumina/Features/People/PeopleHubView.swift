@@ -176,7 +176,10 @@ struct PeopleHubView: View {
                     Text("Privacy")
                         .font(LuminaTypography.heading)
                 }
-                Text("Friends live on this device only. We don't sync names, birthdays, or photos to a server unless you explicitly turn on friend discovery, which is currently off.")
+                Text("Names and notes stay on this device — we never send them anywhere. "
+                    + "To score compatibility we do send both birth dates and times to our "
+                    + "chart service, because that's what the maths needs; it isn't stored "
+                    + "there, and locations are never sent.")
                     .font(LuminaTypography.bodyLight)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
             }
