@@ -120,6 +120,9 @@ extension LuminaDataExport {
         )
     }
 
+    /// `@MainActor` like `make`: `AppPreferences` is main-actor isolated, and
+    /// extracting this helper dropped the isolation the caller had.
+    @MainActor
     private static func settings(_ preferences: AppPreferences) -> [String: String] {
         [
             "houseSystem": preferences.houseSystem.rawValue,
