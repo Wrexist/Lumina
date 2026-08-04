@@ -74,6 +74,13 @@ extension LuminaError {
             return .missingConfiguration(key: "RevenueCatAPIKey")
         case .noOfferingsAvailable:
             return .unknown(underlyingMessage: "Subscription plans aren't available right now. Try again shortly.")
+        case .planUnavailable(let plan):
+            // The paywall offered a plan the current offering doesn't sell.
+            // Say so rather than silently charging for a different one — the
+            // old code substituted the annual package for whatever was
+            // selected, so the user paid a price they were never shown.
+            let period = plan == .monthly ? "monthly" : "annual"
+            return .unknown(underlyingMessage: "The \(period) plan isn't available right now. Try the other option, or check back shortly.")
         }
     }
 

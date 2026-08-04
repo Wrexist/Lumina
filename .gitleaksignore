@@ -1,0 +1,17 @@
+# gitleaks fingerprint allowlist.
+#
+# Each line exempts ONE finding at ONE commit — the narrowest possible
+# exemption. Unlike a path or regex allowlist, this cannot hide a future leak
+# in the same file, so prefer adding a fingerprint here over widening
+# .gitleaks.toml.
+#
+# Format: <commit>:<path>:<rule-id>:<line>
+
+# False positive. Commit b0ee092 added the delete-account edge function with
+# the PEM armour markers spelled out as regex literals:
+#   .replace(/-----BEGIN PRIVATE KEY-----/, "")
+# The `private-key` rule matches the marker text. There is no key material —
+# the function reads the key from an environment secret at runtime. The
+# working tree was fixed in b6e88ee to strip the armour with a generic
+# pattern, but the full-history scan still sees the original commit.
+b0ee09282aaa17e83917b1abcadef84fb0140273:supabase/functions/delete-account/index.ts:private-key:54
