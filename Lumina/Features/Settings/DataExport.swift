@@ -27,6 +27,16 @@ struct LuminaDataExport: Encodable, Sendable {
         let wordCount: Int
         let createdAt: Date
         let updatedAt: Date
+
+        init(_ entry: JournalEntry) {
+            id = entry.id
+            date = entry.date
+            prompt = entry.prompt
+            body = entry.body
+            wordCount = entry.wordCount
+            createdAt = entry.createdAt
+            updatedAt = entry.updatedAt
+        }
     }
 
     struct Person: Encodable, Sendable {
@@ -40,6 +50,19 @@ struct LuminaDataExport: Encodable, Sendable {
         let birthTimeZoneIdentifier: String?
         let compatibilityScore: Int?
         let addedAt: Date
+
+        init(_ friend: Friend) {
+            id = friend.id
+            name = friend.name
+            birthDate = friend.birthDate
+            birthTime = friend.birthTime
+            birthPlaceName = friend.birthPlaceName
+            birthLatitude = friend.birthLatitude
+            birthLongitude = friend.birthLongitude
+            birthTimeZoneIdentifier = friend.birthTimeZoneIdentifier
+            compatibilityScore = friend.compatibilityScore
+            addedAt = friend.createdAt
+        }
     }
 
     struct Milestone: Encodable, Sendable {
@@ -87,47 +110,24 @@ extension LuminaDataExport {
             exportedAt: now,
             displayName: preferences.displayName.isEmpty ? nil : preferences.displayName,
             birthData: UserBirthDataStore.userDefaults.load(),
-            journalEntries: journalEntries
-                .sorted { $0.date < $1.date }
-                .map {
-                    Journal(
-                        id: $0.id,
-                        date: $0.date,
-                        prompt: $0.prompt,
-                        body: $0.body,
-                        wordCount: $0.wordCount,
-                        createdAt: $0.createdAt,
-                        updatedAt: $0.updatedAt
-                    )
-                },
-            people: friends
-                .sorted { $0.createdAt < $1.createdAt }
-                .map {
-                    Person(
-                        id: $0.id,
-                        name: $0.name,
-                        birthDate: $0.birthDate,
-                        birthTime: $0.birthTime,
-                        birthPlaceName: $0.birthPlaceName,
-                        birthLatitude: $0.birthLatitude,
-                        birthLongitude: $0.birthLongitude,
-                        birthTimeZoneIdentifier: $0.birthTimeZoneIdentifier,
-                        compatibilityScore: $0.compatibilityScore,
-                        addedAt: $0.createdAt
-                    )
-                },
+            journalEntries: journalEntries.sorted { $0.date < $1.date }.map(Journal.init(_:)),
+            people: friends.sorted { $0.createdAt < $1.createdAt }.map(Person.init(_:)),
             milestones: MomentsStore.shared.unlocked.map {
                 Milestone(name: $0.moment.title, unlockedAt: $0.date)
             },
             exploredPlacements: ChartDiscovery.shared.explored.sorted(),
-            preferences: [
-                "houseSystem": preferences.houseSystem.rawValue,
-                "lockReflectWithFaceID": String(preferences.lockReflectWithFaceID),
-                "reduceMotionOverride": String(preferences.reduceMotionOverride),
-                "transitAlertsEnabled": String(preferences.transitAlertsEnabled),
-                "reflectReminderEnabled": String(preferences.reflectReminderEnabled),
-            ]
+            preferences: settings(preferences)
         )
+    }
+
+    private static func settings(_ preferences: AppPreferences) -> [String: String] {
+        [
+            "houseSystem": preferences.houseSystem.rawValue,
+            "lockReflectWithFaceID": String(preferences.lockReflectWithFaceID),
+            "reduceMotionOverride": String(preferences.reduceMotionOverride),
+            "transitAlertsEnabled": String(preferences.transitAlertsEnabled),
+            "reflectReminderEnabled": String(preferences.reflectReminderEnabled),
+        ]
     }
 
     func encoded() throws -> Data {

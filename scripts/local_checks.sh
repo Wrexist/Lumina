@@ -62,9 +62,9 @@ PY
 if [ -n "$FILELEN" ]; then echo "$FILELEN"; FAILED=1; else note "ok"; fi
 
 echo "== Swift function body length (function_body_length: 40) =="
-# Approximation: from a `func`/`init` signature line whose braces balance out
-# at some later line, count the non-comment, non-blank lines between. Indent
-# is used to find the closing brace, which matches how the code is formatted.
+# Approximation: find a `func`/`init` signature, walk forward to the line that
+# opens its body (signatures often wrap across several lines), then count the
+# non-comment, non-blank lines to the closing brace at the same indent.
 FUNCLEN="$(python3 - <<'PY'
 import pathlib, re
 limit = 40
@@ -74,13 +74,25 @@ for root in ("Lumina", "LuminaWidget", "LuminaTests"):
         lines = path.read_text().splitlines()
         for i, line in enumerate(lines):
             m = sig.match(line)
-            if not m or not line.rstrip().endswith("{"):
+            if not m:
                 continue
             indent = m.group(1)
+            # Walk to the line that opens the body: a wrapped signature ends on
+            # a `) -> Type {` line several lines down. Give up quickly so a
+            # protocol requirement (no body) isn't mistaken for one.
+            opening = None
+            for k in range(i, min(i + 12, len(lines))):
+                if lines[k].rstrip().endswith("{"):
+                    opening = k
+                    break
+                if lines[k].rstrip().endswith(("}", ";")):
+                    break
+            if opening is None:
+                continue
             close = indent + "}"
-            for j in range(i + 1, len(lines)):
+            for j in range(opening + 1, len(lines)):
                 if lines[j] == close:
-                    body = lines[i + 1:j]
+                    body = lines[opening + 1:j]
                     count = sum(
                         1 for b in body
                         if b.strip() and not b.strip().startswith(("//", "///", "*", "/*"))
@@ -91,6 +103,16 @@ for root in ("Lumina", "LuminaWidget", "LuminaTests"):
 PY
 )"
 if [ -n "$FUNCLEN" ]; then echo "$FUNCLEN"; FAILED=1; else note "ok"; fi
+
+echo "== Swift: String(decoding:as:) (optional_data_string_conversion) =="
+DATASTR="$(grep -rn 'String(decoding:' --include='*.swift' Lumina LuminaWidget LuminaTests 2>/dev/null || true)"
+if [ -n "$DATASTR" ]; then
+  echo "$DATASTR"
+  note "use String(bytes:encoding:) instead"
+  FAILED=1
+else
+  note "ok"
+fi
 
 echo "== YAML syntax =="
 for f in .github/workflows/*.yml project.yml; do

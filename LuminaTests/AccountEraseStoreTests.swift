@@ -59,7 +59,7 @@ final class AccountEraseStoreTests: XCTestCase {
         XCTAssertFalse((json["notIncluded"] as? [String] ?? []).isEmpty)
 
         // Nothing resembling a credential may appear anywhere in the archive.
-        let raw = String(decoding: try export.encoded(), as: UTF8.self).lowercased()
+        let raw = try XCTUnwrap(String(bytes: try export.encoded(), encoding: .utf8)).lowercased()
         for forbidden in ["x-lumina-secret", "sk-ant-", "appl_", "bearer ", "authtoken"] {
             XCTAssertFalse(raw.contains(forbidden), "export leaked \(forbidden)")
         }
