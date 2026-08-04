@@ -115,6 +115,7 @@ cd backend && npm install && npm run dev
 - [`LAUNCH-READINESS.md`](./LAUNCH-READINESS.md) — the pre-launch audit this came from
 - [`docs/NAVIGATION.md`](./docs/NAVIGATION.md) — IA + UX clarity charter
 - [`docs/APP-STORE-LISTING.md`](./docs/APP-STORE-LISTING.md) — store copy and review notes
+- [`docs/ASSET-BRIEF.md`](./docs/ASSET-BRIEF.md) — generation prompts and specs for the image assets
 
 ---
 
