@@ -286,7 +286,9 @@ extension SettingsView {
         guard !isDeletingAccount else { return }
         isDeletingAccount = true
         Task {
-            var serverFailure: Error?
+            // `(any Error)?`, not `Error?` — the target builds with warnings
+            // as errors, and a bare protocol-as-type is a Swift 6 diagnostic.
+            var serverFailure: (any Error)?
             do {
                 try await AuthManager.shared.deleteAccount()
             } catch {

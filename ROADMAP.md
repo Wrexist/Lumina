@@ -12,7 +12,7 @@
 
 | Pillar | Promise |
 |---|---|
-| **Real, not fake** | Real Swiss Eph math. Real on-device CV palm analysis. No hallucinated planet positions, no purchased clipart palms. |
+| **Real, not fake** | Real ephemeris math (`astronomy-engine`, self-hosted). Real on-device CV palm analysis when it ships. No hallucinated planet positions, no purchased clipart palms. |
 | **Clear, never confusing** | Every screen answers three questions in <2 seconds: *Where am I? What is this telling me? What's the next thing I can do?* |
 | **Honest billing** | Monthly + annual only. One soft rescue, then hard stop. No web funnel. No fleeceware framing. |
 | **Premium, not mystic** | Wellness-editorial, not purple-gradient mysticism. Anti-Duolingo (no streaks, no confetti). |
