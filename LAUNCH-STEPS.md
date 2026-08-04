@@ -210,7 +210,8 @@ things** — they're the ones a simulator can't tell you:
 3. Settings → Lumina Plus → the paywall shows **real prices in your currency**.
 4. Buy the monthly plan with a sandbox account. Human Design and Compatibility
    unlock. Then Settings → Restore purchases and confirm it still says Active.
-5. Add the widget to your home screen. It shows your Sun, Moon and Rising.
+5. Add the widget to your home screen. It shows your Sun, Moon and Rising —
+   it's a Plus feature, so do this *after* step 4, not before.
 
 If step 3 shows "Subscription pricing isn't available", go back to Step 5 — the
 offering isn't published.
@@ -249,11 +250,24 @@ Three things that need your own decision, not a paste:
   `docs/support.html` and `docs/privacy.html` to a real address (a Gmail is fine)
   before submitting. **An unmonitored support address is a rejection.**
 - **Privacy nutrition label** — the questionnaire in ASC → App Privacy. Answer it
-  from `Lumina/Resources/PrivacyInfo.xcprivacy`, which is the truth about what the
-  app collects. In short: birth data and journal entries stay on the device;
-  computed chart facts (signs and aspects, never your birth date, time or
-  coordinates) go to the interpretation service. Declare **no tracking** and **no
-  data linked to identity** unless you later add analytics.
+  from `Lumina/Resources/PrivacyInfo.xcprivacy` and the in-app privacy dashboard,
+  which are the truth about what the app does. Accurately:
+  - Journal entries, saved people, and your name stay on the device. They are
+    never sent anywhere.
+  - Drawing a chart **does** send your birth date, exact time, and city-level
+    coordinates to the chart service on every request. It isn't stored there,
+    but it *is* transmitted, so it must be declared as collected — most likely
+    under "Sensitive Info" / "Other Data", **not linked to identity** and **not
+    used for tracking**.
+  - The interpretation call sends only signs and aspect types — never the birth
+    date, time, or coordinates.
+  - Declare **no tracking** and **no advertising identifier**. There is no
+    analytics SDK in the app.
+
+  If you'd rather not declare transmitted birth data at all, that's a product
+  change (compute charts on-device), not a questionnaire answer. Don't answer
+  "no data collected" — it's the single most common cause of a post-approval
+  metadata rejection.
 - **Export compliance** — the app uses only standard HTTPS. Answer "Yes" to using
   encryption, then "Yes" to the exemption for standard encryption.
 
