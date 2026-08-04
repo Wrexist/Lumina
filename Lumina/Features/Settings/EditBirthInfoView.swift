@@ -229,23 +229,21 @@ struct EditBirthInfoView: View {
             timeZoneIdentifier: resolved.timeZoneIdentifier
         )
         UserBirthDataStore.userDefaults.save(birthData)
-        refreshFriendScores(with: birthData)
+        clearCachedFriendScores()
         Haptics.success.play()
         dismiss()
     }
 
     /// Cached `Friend.compatibilityScore` values were computed against the
-    /// old birth data; recompute them so People doesn't show stale scores
-    /// forever. Synastry-backed scores refresh on the next friend-detail
-    /// fetch and overwrite these heuristics.
-    private func refreshFriendScores(with birthData: BirthData) {
+    /// user's OLD birth data, so they are wrong the moment it changes.
+    /// Clear them — they are re-derived from real synastry cross-aspects the
+    /// next time each friend's detail screen loads. This used to recompute a
+    /// Sun-sign heuristic instead, which replaced a stale fabricated number
+    /// with a fresh fabricated one.
+    private func clearCachedFriendScores() {
         guard let friends = try? modelContext.fetch(FetchDescriptor<Friend>()) else { return }
-        let userCalendar = BirthMoment.calendar(birthData.timeZoneIdentifier)
         for friend in friends {
-            friend.compatibilityScore = CompatibilityScorer.score(
-                birthData.birthDate, calendar: userCalendar,
-                friend.birthDate, calendar: BirthMoment.calendar(friend.birthTimeZoneIdentifier)
-            )
+            friend.compatibilityScore = nil
         }
         modelContext.saveOrLog(category: "Settings")
     }

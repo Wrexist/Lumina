@@ -18,7 +18,12 @@ struct LuminaApp: App {
         WindowGroup {
             RootView()
         }
-        .modelContainer(for: [JournalEntry.self, Friend.self])
+        // Explicit container with a versioned schema + migration plan. The
+        // `.modelContainer(for:)` convenience traps when the store can't be
+        // opened; `LuminaModelContainer` degrades to an in-memory store
+        // instead, so a bad store costs the user their local data rather
+        // than the whole app. See `LuminaSchema.swift`.
+        .modelContainer(LuminaModelContainer.shared)
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .background:

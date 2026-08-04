@@ -7,6 +7,9 @@ struct MainTabsView: View {
     @Bindable var router: AppRouter
     @State private var settingsPresented = false
     @State private var helpPresented = false
+    @Bindable private var paywallPresenter = PaywallPresenter.shared
+    @State private var purchaseInFlight = false
+    @State private var purchaseError: LuminaError?
 
     var body: some View {
         TabView(selection: $router.selectedTab) {
@@ -26,9 +29,40 @@ struct MainTabsView: View {
         .sheet(isPresented: $helpPresented) {
             NavigationStack { HelpView() }
         }
+        // The single global paywall host. Any locked surface anywhere in the
+        // app calls `PaywallPresenter.shared.present(for:)` and it comes up
+        // here — so the purchase is reachable from everywhere, not just the
+        // one-shot during onboarding.
+        .fullScreenCover(isPresented: $paywallPresenter.isPresented) {
+            PaywallOfferView(
+                variant: .initial,
+                triggeringFeature: paywallPresenter.pendingFeature,
+                purchaseInFlight: purchaseInFlight,
+                purchaseError: purchaseError,
+                onStartTrial: handleUpgrade,
+                onContinueFree: { paywallPresenter.dismiss() }
+            )
+        }
         .task { consumeGlobal(router.pendingPresentation) }
         .onChange(of: router.pendingPresentation) { _, link in
             consumeGlobal(link)
+        }
+    }
+
+    /// Runs an upgrade started from anywhere in the app. Mirrors the
+    /// onboarding path: keep the cover up until the purchase resolves, and
+    /// surface real failures rather than silently dropping the user back.
+    private func handleUpgrade(_ plan: IAPManager.PremiumPlan) {
+        purchaseInFlight = true
+        purchaseError = nil
+        Task {
+            defer { purchaseInFlight = false }
+            do {
+                _ = try await IAPManager.shared.purchase(plan: plan)
+                paywallPresenter.dismiss()
+            } catch {
+                purchaseError = LuminaError.from(error)
+            }
         }
     }
 

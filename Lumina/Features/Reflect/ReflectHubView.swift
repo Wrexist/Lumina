@@ -142,7 +142,11 @@ struct ReflectHubView: View {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                     HStack {
                         LuminaBadge(title: "Plus", tone: .premium)
-                        Text("Pattern detection at 30 entries")
+                        // No longer advertises "pattern detection at 30
+                        // entries" — that detector was never built, and the
+                        // paywall was selling it. Reflect itself is entirely
+                        // free; this points at what Plus really adds.
+                        Text("Go deeper with Lumina Plus")
                             .font(LuminaTypography.body)
                         Spacer()
                         Button {
@@ -154,9 +158,13 @@ struct ReflectHubView: View {
                         }
                         .accessibilityLabel("Dismiss Plus banner")
                     }
-                    Text("Once you've reflected for a month, Lumina Plus surfaces the emotional patterns connecting your entries. Free includes everything else.")
+                    Text("Reflect is free, and stays free. Plus adds your Human Design bodygraph, compatibility for everyone you add, your transit forecast, and the home-screen widget.")
                         .font(LuminaTypography.bodyLight)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                    LuminaButton(title: "See what's included", variant: .secondary) {
+                        PaywallPresenter.shared.present()
+                    }
                 }
             }
         }

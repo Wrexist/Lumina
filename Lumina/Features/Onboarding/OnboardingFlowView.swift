@@ -14,6 +14,12 @@ struct OnboardingFlowView: View {
     @State private var paywall = PaywallTracker.shared
     @State private var paywallPresented = false
     @State private var paywallVariant: PaywallOfferView.Variant = .initial
+    /// True while a purchase is resolving, so the paywall can show progress
+    /// instead of vanishing and leaving a dead screen behind it.
+    @State private var purchaseInFlight = false
+    /// Set when a purchase genuinely fails, so the user is told rather than
+    /// dropped into the free app believing they subscribed.
+    @State private var purchaseError: LuminaError?
     @Environment(\.scenePhase) private var scenePhase
     @State private var pendingDestination: LuminaDeepLink?
     /// One-time completion guard: the trial purchase runs in a `Task`, so a
@@ -43,6 +49,8 @@ struct OnboardingFlowView: View {
         .fullScreenCover(isPresented: $paywallPresented) {
             PaywallOfferView(
                 variant: paywallVariant,
+                purchaseInFlight: purchaseInFlight,
+                purchaseError: purchaseError,
                 onStartTrial: handleStartTrial,
                 onContinueFree: handleContinueFree
             )
@@ -135,18 +143,36 @@ struct OnboardingFlowView: View {
         }
     }
 
-    private func handleStartTrial() {
+    private func handleStartTrial(_ plan: IAPManager.PremiumPlan) {
         paywall.recordInitialOfferSeen()
         if paywallVariant == .rescue {
             paywall.recordRescueShown()
         }
-        paywallPresented = false
-        // Never trap the user behind a stuck paywall — success, failure, and
-        // user-cancellation all land on the same "continue free" completion,
-        // matching `handleContinueFree`'s philosophy below.
+        // Keep the cover up while the purchase resolves. Dismissing first
+        // meant the paywall vanished instantly, a beat of dead onboarding
+        // screen went by, and *then* Apple's payment sheet appeared from
+        // nowhere — and because the result was discarded with `try?`, a
+        // failed purchase was indistinguishable from a successful one. A
+        // user whose RevenueCat offering wasn't provisioned tapped the
+        // primary CTA, got a silent no-op, and landed in the app believing
+        // they had subscribed.
+        purchaseInFlight = true
+        purchaseError = nil
         Task {
-            _ = try? await IAPManager.shared.purchaseCurrentOffering()
-            persistAndComplete()
+            defer { purchaseInFlight = false }
+            do {
+                _ = try await IAPManager.shared.purchase(plan: plan)
+                // Success *and* user-cancellation both continue into the app —
+                // we never trap someone behind a paywall. The entitlement
+                // itself is what gates features, so there's nothing to check
+                // here beyond having surfaced any real error.
+                paywallPresented = false
+                persistAndComplete()
+            } catch {
+                // Real failure (not configured, no offering, StoreKit error).
+                // Tell the user rather than pretending it worked.
+                purchaseError = LuminaError.from(error)
+            }
         }
     }
 

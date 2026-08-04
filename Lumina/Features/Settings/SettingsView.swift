@@ -18,6 +18,7 @@ struct SettingsView: View {
     @State private var restoreMessage: String?
     @State private var isRestoringPurchases = false
     @State private var authManager = AuthManager.shared
+    @State private var premium = PremiumStatus.shared
     @State private var signInPresented = false
     @State private var deleteAccountConfirmPresented = false
     @State private var isDeletingAccount = false
@@ -26,6 +27,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                plusSection
                 accountSection
                 yourInfoSection
                 preferencesSection
@@ -50,6 +52,30 @@ struct SettingsView: View {
     }
 
     // MARK: - Sections
+
+    /// A persistent, always-reachable upgrade surface.
+    ///
+    /// The paywall used to be presented from exactly one place — a one-shot
+    /// during onboarding gated on `hasSeenInitialOffer` — so a user who
+    /// tapped "Continue free" once could never buy the subscription again.
+    /// That is also the classic "we were unable to locate the in-app
+    /// purchase" App Review rejection, because a reviewer who skips the
+    /// onboarding offer has no way to reach it.
+    private var plusSection: some View {
+        Section("Lumina Plus") {
+            if premium.isPremium {
+                SettingsRow(title: "Status", trailing: .text("Active"))
+                    .accessibilityLabel("Lumina Plus is active")
+            } else {
+                Button {
+                    PaywallPresenter.shared.present()
+                } label: {
+                    SettingsRow(title: "Upgrade to Lumina Plus", trailing: nil)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
 
     private var accountSection: some View {
         Section("Account") {
@@ -140,17 +166,17 @@ struct SettingsView: View {
 
     private var preferencesSection: some View {
         Section("Preferences") {
-            // Read-only info until house-system selection ships — styled
-            // like the Version row (mono, dimmed) so it doesn't read as a
-            // tappable destination.
-            HStack {
-                Text("House system").font(LuminaTypography.body)
-                Spacer()
-                Text("Placidus")
-                    .font(LuminaTypography.mono)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            // House-system selection lives in the Chart tab (Placidus /
+            // Whole-sign / Sidereal). This used to be a static read-only
+            // "Placidus" row, which contradicted that control and told users
+            // their chart was Placidus even when it wasn't.
+            Button {
+                _ = router.handle(deepLink: .chart(planet: nil))
+                dismiss()
+            } label: {
+                SettingsRow(title: "House system", trailing: .text("Choose in Chart"))
             }
-            .accessibilityElement(children: .combine)
+            .buttonStyle(.plain)
             NavigationLink {
                 NotificationSettingsView()
             } label: {

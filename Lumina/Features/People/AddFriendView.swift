@@ -190,12 +190,10 @@ struct AddFriendView: View {
             birthTimeZoneIdentifier: resolved?.timeZoneIdentifier,
             source: .manual
         )
-        if let userBirth = UserBirthDataStore.userDefaults.load() {
-            friend.compatibilityScore = CompatibilityScorer.score(
-                userBirth.birthDate, calendar: BirthMoment.calendar(userBirth.timeZoneIdentifier),
-                friend.birthDate, calendar: BirthMoment.calendar(friend.birthTimeZoneIdentifier)
-            )
-        }
+        // Deliberately NOT seeded with a Sun-sign heuristic. The score is
+        // only ever written from real synastry cross-aspects (see
+        // `FriendDetailView.applyLoadedAspects`), so People shows no number
+        // until one exists rather than a hash-derived placeholder.
         modelContext.insert(friend)
         modelContext.saveOrLog(category: "People")
         // First person ever added earns the "Your first companion" moment.

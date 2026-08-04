@@ -29,8 +29,15 @@ struct FriendDetailView: View {
                 scoreCard
                 shareSection
                 birthInfoCard
-                synastrySection
-                CompositeCard(friend: friend)
+                // Synastry + composite are the Plus half of compatibility.
+                // The free tier still gets the person, their birth info and
+                // the share card; the two-chart interpretation is what Plus
+                // buys. One gate wraps both so they can't drift apart.
+                VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
+                    synastrySection
+                    CompositeCard(friend: friend)
+                }
+                .premiumGated(.compatibility)
             }
             .padding(LuminaSpacing.lg)
         }
@@ -40,6 +47,9 @@ struct FriendDetailView: View {
         .toolbar { trailingToolbar }
         .task {
             loadScore()
+            // Don't spend a network round trip fetching cross-aspects the
+            // user can't see — the section is gated.
+            guard PremiumGate.isUnlocked(.compatibility) else { return }
             await loadSynastry()
         }
         .luminaConfirmation(
@@ -197,18 +207,21 @@ struct FriendDetailView: View {
     /// saving during view evaluation triggers "modifying state during view
     /// update"). Uses the cached score when present, otherwise computes once.
     private func loadScore() {
-        if let cached = friend.compatibilityScore {
-            score = cached
-            return
-        }
-        guard let userBirth = UserBirthDataStore.userDefaults.load() else { return }
-        let computed = CompatibilityScorer.score(
-            userBirth.birthDate, calendar: BirthMoment.calendar(userBirth.timeZoneIdentifier),
-            friend.birthDate, calendar: BirthMoment.calendar(friend.birthTimeZoneIdentifier)
-        )
-        friend.compatibilityScore = computed
-        modelContext.saveOrLog(category: "People")
-        score = computed
+        // Only ever show a score derived from real cross-aspects. The cached
+        // value is used when present because it was written by
+        // `applyGroundedScore` below.
+        //
+        // This used to fall back to `CompatibilityScorer.score(_:calendar:…)`
+        // — a Sun-sign element/modality heuristic plus a deliberate
+        // hash-derived ±5 jitter — and render the result as a 56pt "72/100"
+        // with no disclosure. The Sun sign came from a hardcoded date table
+        // rather than the ephemeris, so cusp births were misclassified too.
+        // That is precisely what README's competitive analysis accuses other
+        // apps of doing, and the property above already promised we never
+        // render a fabricated number. Now we don't: no aspects, no score.
+        // `applyLoadedAspects` is the only writer — it stores the
+        // synastry-derived score once the real aspects land.
+        score = friend.compatibilityScore
     }
 
     /// Fetches the real chart-to-chart aspects from the backend. Best-effort:
@@ -271,9 +284,19 @@ struct FriendDetailView: View {
     #endif
 
     private func handleRemove() {
-        modelContext.delete(friend)
-        modelContext.saveOrLog(category: "People")
+        // Same ordering hazard as `JournalEntryDetailView.handleDelete()`:
+        // `dismiss()` is async, so deleting first leaves this view rendering
+        // an invalidated model (`friend.name`, `.birthDate`,
+        // `.birthTimeZoneIdentifier`, `.compatibilityScore`) for the duration
+        // of the pop animation. `PeopleHubView` already dodges this with a
+        // 4-second soft delete; the detail screen bypassed it.
+        let doomed = friend
+        let context = modelContext
         dismiss()
+        Task { @MainActor in
+            context.delete(doomed)
+            context.saveOrLog(category: "People")
+        }
     }
 
     private func row(_ key: String, value: String) -> some View {

@@ -43,13 +43,13 @@ final class OnboardingState {
     // going back from the reveal and changing a value recomputes instead
     // of showing the old chart.
     var birthDate: Date? {
-        didSet { if oldValue != birthDate { chartReady = false } }
+        didSet { if oldValue != birthDate { invalidateChart() } }
     }
     var birthTime: Date? {
-        didSet { if oldValue != birthTime { chartReady = false } }
+        didSet { if oldValue != birthTime { invalidateChart() } }
     }
     var birthTimeUnknown: Bool {
-        didSet { if oldValue != birthTimeUnknown { chartReady = false } }
+        didSet { if oldValue != birthTimeUnknown { invalidateChart() } }
     }
     var birthPlaceName: String
     var birthLatitude: Double?
@@ -59,6 +59,18 @@ final class OnboardingState {
     /// `true` once the chart has been computed and we can advance to the
     /// final "what's next" step.
     var chartReady = false
+
+    /// `true` when the user chose to continue without waiting for the chart
+    /// (offline, backend down, or they simply tapped "Not now").
+    ///
+    /// Onboarding used to be a hard dead-end here: the reveal step gated
+    /// advancing on `chartReady`, "Not now" only cleared the error, and
+    /// nothing re-triggered the computation — so a user with no connection
+    /// could not finish onboarding at all, and one who tapped "Not now" sat
+    /// on an endless spinner with a disabled Continue button. The chart is
+    /// recomputed on demand by Today and Chart anyway, so deferring costs
+    /// nothing but the reveal animation.
+    var chartDeferred = false
 
     /// Inline error surfaced by the current step (e.g. couldn't resolve a
     /// city). Cleared when the user changes the field.
@@ -114,7 +126,7 @@ final class OnboardingState {
         case .birthDate: birthDate.map { $0 <= .now } ?? false
         case .birthTime: birthTimeUnknown || birthTime != nil
         case .birthPlace: birthPlaceResolved
-        case .chartReveal: chartReady
+        case .chartReveal: chartReady || chartDeferred
         case .whatNext: true
         }
     }
@@ -173,9 +185,18 @@ final class OnboardingState {
         birthLatitude = latitude
         birthLongitude = longitude
         birthTimeZoneIdentifier = timeZoneIdentifier
-        chartReady = false
+        invalidateChart()
         stepError = nil
         persist()
+    }
+
+    /// Drops any previously computed chart *and* any "continue without it"
+    /// deferral. Both must clear together: if only `chartReady` reset, a user
+    /// who tapped "Not now" and then went back to fix their birth place would
+    /// keep advancing on the stale deferral instead of recomputing.
+    private func invalidateChart() {
+        chartReady = false
+        chartDeferred = false
     }
 
     /// Clears coordinate state when the user starts typing a new place.

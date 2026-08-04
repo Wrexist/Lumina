@@ -199,17 +199,18 @@ struct ChartHubView: View {
             definedCentersSummary(activation)
             LuminaCard {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                    HStack {
-                        LuminaBadge(title: "Soon", tone: .neutral)
-                        Text("Type, Profile, and Authority")
-                            .font(LuminaTypography.body)
-                    }
+                    Text("Type, Profile and Authority")
+                        .font(LuminaTypography.body)
                     Text(BodygraphView.designSideMissingNote)
                         .font(LuminaTypography.bodyLight)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                 }
             }
         }
+        // Human Design is a Plus feature (README tier table). The paywall
+        // names it, so it has to actually be gated — otherwise a subscriber
+        // gets nothing they didn't already have.
+        .premiumGated(.humanDesign)
     }
 
     private func definedCentersSummary(_ activation: HumanDesignActivation) -> some View {

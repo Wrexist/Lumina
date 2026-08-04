@@ -123,7 +123,14 @@ final class TodayViewModel {
         async let chartLoad = chartCache.chart(for: birthData)
         async let transitsLoad = chartCache.transits(for: birthData)
         do {
-            natalChart = try await chartLoad
+            let loadedChart = try await chartLoad
+            natalChart = loadedChart
+            // Publish here as well as from the Chart tab. `WidgetPublisher`
+            // previously had a single call site in `BirthChartViewModel`, so a
+            // user who only ever opened Today saw "Open Lumina to reveal your
+            // chart" on their home screen forever — for a feature the paywall
+            // sells.
+            WidgetPublisher.publish(from: loadedChart)
             if let result = try? await transitsLoad {
                 transits = result.transits
                 transitsUnavailable = false
@@ -136,7 +143,20 @@ final class TodayViewModel {
             // A cancelled load (e.g. tab switch during the first fetch, which
             // throws URLError.cancelled) must not paint the full-screen error
             // card on the landing tab — the reissued `.task` will reload.
-            if Self.isCancellation(error) { return }
+            //
+            // But it must NOT leave `state == .loading` either. `loadIfNeeded`
+            // short-circuits on `.loading`, and `refresh()`, the day-rollover
+            // publisher and the scenePhase handler all route through it — so
+            // returning while still `.loading` wedged Today on the skeleton
+            // permanently, with no retry button, until the user force-quit.
+            // Repro: cold launch, then switch tabs before the first fetch
+            // lands. Reset to `.idle` so the reissued `.task` can actually
+            // reload.
+            if Self.isCancellation(error) {
+                state = .idle
+                skyContextLoading = false
+                return
+            }
             logger.error("today load failed: \(error.localizedDescription)")
             transits = []
             #if DEBUG
