@@ -20,10 +20,11 @@ struct ReturnsCard: View {
             Image(systemName: "sparkles")
                 .foregroundStyle(LuminaColors.goldInk)
             VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
-                Text("A MAJOR RETURN IS COMING")
-                    .font(LuminaTypography.mono)
-                    .tracking(1.4)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                GlossaryLink(term: "Saturn return") {
+                    Text("A MAJOR RETURN IS COMING")
+                }
+                .font(LuminaTypography.mono)
+                .tracking(1.4)
                 ForEach(imminent) { event in
                     Text(ReturnPhrasing.line(for: event, formatter: Self.monthFormatter))
                         .font(LuminaTypography.body)

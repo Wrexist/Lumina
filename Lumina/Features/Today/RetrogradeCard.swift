@@ -21,6 +21,12 @@ struct RetrogradeCard: View {
                 Image(systemName: "arrow.uturn.backward")
                     .foregroundStyle(LuminaColors.celestialBlue)
                 VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
+                    // docs/NAVIGATION.md §1.4: no jargon without an inline
+                    // glossary. "Retrograde" is the single most-asked-about
+                    // word in this category and the app defined it nowhere.
+                    GlossaryLink("Retrograde")
+                        .font(LuminaTypography.mono)
+                        .tracking(1.4)
                     Text(RetrogradePhrasing.summary(for: result))
                         .font(LuminaTypography.body)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
