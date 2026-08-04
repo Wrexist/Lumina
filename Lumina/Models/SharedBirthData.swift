@@ -93,32 +93,43 @@ struct SharedBirthData: Codable, Sendable, Hashable {
             )
         }
         timeZoneIdentifier = rawZone
+        let day = try Self.decodeBirthDay(from: container, timeZoneIdentifier: rawZone)
+        birthYear = day.year
+        birthMonth = day.month
+        birthDay = day.day
+    }
+
+    /// The birth day, from either the current component encoding or the
+    /// legacy ISO-8601 instant. Year is bounded to the same 1800–2200 window
+    /// the backend enforces, so a payload that decodes here is one the service
+    /// will actually accept.
+    private static func decodeBirthDay(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        timeZoneIdentifier: String
+    ) throws -> (year: Int, month: Int, day: Int) {
         if let year = try container.decodeIfPresent(Int.self, forKey: .birthYear) {
-            // Same bounds the backend enforces on `birthDate`, so a payload
-            // that decodes here is one the service will actually accept.
-            birthYear = try Self.validate(
-                year, in: 1800 ... 2200, forKey: .birthYear, in: container, what: "birth year"
+            return (
+                try validate(year, in: 1800 ... 2200, forKey: .birthYear, in: container, what: "birth year"),
+                try validate(
+                    try container.decode(Int.self, forKey: .birthMonth),
+                    in: 1 ... 12, forKey: .birthMonth, in: container, what: "birth month"
+                ),
+                try validate(
+                    try container.decode(Int.self, forKey: .birthDay),
+                    in: 1 ... 31, forKey: .birthDay, in: container, what: "birth day"
+                )
             )
-            birthMonth = try Self.validate(
-                try container.decode(Int.self, forKey: .birthMonth),
-                in: 1 ... 12, forKey: .birthMonth, in: container, what: "birth month"
-            )
-            birthDay = try Self.validate(
-                try container.decode(Int.self, forKey: .birthDay),
-                in: 1 ... 31, forKey: .birthDay, in: container, what: "birth day"
-            )
-        } else {
-            // Legacy payload (pre component encoding): an ISO-8601 instant.
-            // Best effort — read its day in the shared time zone.
-            let legacy = try container.decode(Date.self, forKey: .birthDate)
-            let parts = BirthMoment.calendar(timeZoneIdentifier)
-                .dateComponents([.year, .month, .day], from: legacy)
-            birthYear = try Self.validate(
-                parts.year ?? 0, in: 1800 ... 2200, forKey: .birthDate, in: container, what: "birth year"
-            )
-            birthMonth = parts.month ?? 1
-            birthDay = parts.day ?? 1
         }
+        // Legacy payload (pre component encoding): an ISO-8601 instant.
+        // Best effort — read its day in the shared time zone.
+        let legacy = try container.decode(Date.self, forKey: .birthDate)
+        let parts = BirthMoment.calendar(timeZoneIdentifier)
+            .dateComponents([.year, .month, .day], from: legacy)
+        return (
+            try validate(parts.year ?? 0, in: 1800 ... 2200, forKey: .birthDate, in: container, what: "birth year"),
+            parts.month ?? 1,
+            parts.day ?? 1
+        )
     }
 
     func encode(to encoder: any Encoder) throws {

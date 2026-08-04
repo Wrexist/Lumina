@@ -47,6 +47,51 @@ PY
 )"
 if [ -n "$BIG" ]; then echo "$BIG"; FAILED=1; else note "ok"; fi
 
+echo "== Swift file length (file_length: 400) =="
+# SwiftLint counts every line in the file, comments and blanks included.
+FILELEN="$(python3 - <<'PY'
+import pathlib
+limit = 400
+for root in ("Lumina", "LuminaWidget", "LuminaTests"):
+    for path in pathlib.Path(root).rglob("*.swift"):
+        count = len(path.read_text().splitlines())
+        if count > limit:
+            print(f"{path}:{count} — file length {count} (limit {limit})")
+PY
+)"
+if [ -n "$FILELEN" ]; then echo "$FILELEN"; FAILED=1; else note "ok"; fi
+
+echo "== Swift function body length (function_body_length: 40) =="
+# Approximation: from a `func`/`init` signature line whose braces balance out
+# at some later line, count the non-comment, non-blank lines between. Indent
+# is used to find the closing brace, which matches how the code is formatted.
+FUNCLEN="$(python3 - <<'PY'
+import pathlib, re
+limit = 40
+sig = re.compile(r'^(\s*)(?:@\w+\s+)*(?:public |private |fileprivate |internal |static |final |nonisolated |override |convenience |required )*(?:func \w+|init[?!]?\s*\()')
+for root in ("Lumina", "LuminaWidget", "LuminaTests"):
+    for path in pathlib.Path(root).rglob("*.swift"):
+        lines = path.read_text().splitlines()
+        for i, line in enumerate(lines):
+            m = sig.match(line)
+            if not m or not line.rstrip().endswith("{"):
+                continue
+            indent = m.group(1)
+            close = indent + "}"
+            for j in range(i + 1, len(lines)):
+                if lines[j] == close:
+                    body = lines[i + 1:j]
+                    count = sum(
+                        1 for b in body
+                        if b.strip() and not b.strip().startswith(("//", "///", "*", "/*"))
+                    )
+                    if count > limit:
+                        print(f"{path}:{i + 1} — function body ~{count} lines (limit {limit})")
+                    break
+PY
+)"
+if [ -n "$FUNCLEN" ]; then echo "$FUNCLEN"; FAILED=1; else note "ok"; fi
+
 echo "== YAML syntax =="
 for f in .github/workflows/*.yml project.yml; do
   if ! python3 -c "import yaml,sys; yaml.safe_load(open('$f'))" 2>/dev/null; then

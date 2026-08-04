@@ -312,17 +312,7 @@ extension TodayHubView {
     }
 
     private var noRetrogradesCard: some View {
-        LuminaCard {
-            VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
-                Text("RETROGRADES")
-                    .font(LuminaTypography.mono)
-                    .tracking(1.4)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-                Text("No retrogrades right now — all planets are direct.")
-                    .font(LuminaTypography.body)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-            }
-        }
+        NoRetrogradesCard()
     }
     /// Moments has no tab of its own — this NavigationLink is its persistent
     /// home in the main flow (it was previously buried in Settings).
@@ -390,8 +380,10 @@ extension TodayHubView {
         Task { await viewModel.retry() }
     }
 
+    /// The empty state's whole job is to get birth info entered, so it opens
+    /// the form — not the Settings root with the row left to find.
     private func openSettings() {
-        router.handle(deepLink: .settings)
+        router.openSettings(.birthInfo)
     }
 }
 

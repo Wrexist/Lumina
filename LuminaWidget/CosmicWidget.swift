@@ -59,15 +59,15 @@ struct CosmicWidget: Widget {
     }
 }
 
-/// A premium midnight card. Colours are declared with `Color(red:green:blue:)`
-/// because `LuminaColors` (and its `Color(hex:)` helper) live in the app
-/// target, not this extension — the values mirror the brand palette.
+/// A premium midnight card. `LuminaColors` is compiled into this extension
+/// too (see `project.yml`), so the widget renders the same palette the app
+/// does rather than a hand-copied approximation of it.
 struct CosmicWidgetView: View {
     let entry: CosmicEntry
 
-    private var midnight: Color { Color(red: 0.043, green: 0.078, blue: 0.216) }
-    private var parchment: Color { Color(red: 0.961, green: 0.941, blue: 0.902) }
-    private var gold: Color { Color(red: 0.788, green: 0.663, blue: 0.431) }
+    private var midnight: Color { LuminaColors.midnight }
+    private var parchment: Color { LuminaColors.parchment }
+    private var gold: Color { LuminaColors.mutedGold }
 
     var body: some View {
         VStack(alignment: .leading, spacing: WidgetMetric.stackSpacing) {

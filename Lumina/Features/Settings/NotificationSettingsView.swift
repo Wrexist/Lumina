@@ -13,6 +13,10 @@ struct NotificationSettingsView: View {
     @State private var preferences = AppPreferences.shared
     @State private var alertsError: String?
     @State private var alertsTask: Task<Void, Never>?
+    /// Turning transit alerts on fetches a forecast with a 10 s timeout. With
+    /// no indicator the switch just sat there, and — if the fetch failed —
+    /// flipped itself back seconds later with no explanation of the gap.
+    @State private var alertsApplying = false
     @State private var reflectError: String?
     @State private var reflectTask: Task<Void, Never>?
 
@@ -98,6 +102,16 @@ struct NotificationSettingsView: View {
                     }
                 }
                 .tint(LuminaColors.celestialBlue)
+                .disabled(alertsApplying)
+                if alertsApplying {
+                    HStack(spacing: LuminaSpacing.xs) {
+                        ProgressView()
+                        Text("Working out your next transits…")
+                            .font(LuminaTypography.caption)
+                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+                    }
+                    .accessibilityElement(children: .combine)
+                }
                 if let alertsError {
                     Text(alertsError)
                         .font(LuminaTypography.caption)
@@ -160,6 +174,8 @@ struct NotificationSettingsView: View {
     /// a plain reason rather than silently doing nothing.
     private func applyTransitAlerts(enabled: Bool) async {
         alertsError = nil
+        alertsApplying = true
+        defer { alertsApplying = false }
         guard enabled else {
             if !Task.isCancelled {
                 await TransitNotificationScheduler.shared.cancelAll()

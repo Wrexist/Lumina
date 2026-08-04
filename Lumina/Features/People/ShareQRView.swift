@@ -16,9 +16,14 @@ import UIKit
 /// coordinates in the QR. See docs/AUDIT-2026-06-03.md R2 / `SharedBirthData`.
 struct ShareQRView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppRouter.self) private var router
     @State private var qrImage: UIImage?
     @State private var shareURL: URL?
     @State private var error: LuminaError?
+    /// Distinct from `error`: there is nothing wrong, the user simply hasn't
+    /// entered their birth info yet. Rendering that as a failure told them
+    /// "App is mid-setup", which blames the app for the user's next step.
+    @State private var needsBirthInfo = false
 
     var body: some View {
         NavigationStack {
@@ -68,6 +73,13 @@ struct ShareQRView: View {
                 )
                 .frame(maxWidth: 320)
                 .accessibilityLabel("Lumina share QR code")
+        } else if needsBirthInfo {
+            LuminaEmptyState(
+                systemImage: "person.crop.circle.badge.plus",
+                title: "Add your birth info first",
+                body: "Your share code is built from your birth date and city, so we need those before there's anything to share.",
+                primaryCTA: LuminaEmptyState.CTA(title: "Add birth info", action: openBirthInfo)
+            )
         } else if let error {
             LuminaErrorState(error: error, onRetry: handleRetry, onCancel: handleCancel)
         } else {
@@ -123,13 +135,19 @@ struct ShareQRView: View {
         generate()
     }
 
+    private func openBirthInfo() {
+        dismiss()
+        router.openSettings(.birthInfo)
+    }
+
     private func handleCancel() {
         dismiss()
     }
 
     private func generate() {
+        needsBirthInfo = false
         guard let birthData = UserBirthDataStore.userDefaults.load() else {
-            error = .missingConfiguration(key: "BirthData")
+            needsBirthInfo = true
             return
         }
         do {

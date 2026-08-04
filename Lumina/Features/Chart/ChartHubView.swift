@@ -105,8 +105,8 @@ struct ChartHubView: View {
         LuminaEmptyState(
             systemImage: "circle.dotted",
             title: "Add your birth info",
-            body: "We need a date, time, and place to compute your chart. Open Settings → Your info to add them.",
-            primaryCTA: LuminaEmptyState.CTA(title: "Open Settings", action: handleOpenSettings)
+            body: "We need a date, time, and place to compute your chart.",
+            primaryCTA: LuminaEmptyState.CTA(title: "Add birth info", action: handleOpenSettings)
         )
     }
 
@@ -255,7 +255,7 @@ struct ChartHubView: View {
     }
 
     private func handleOpenSettings() {
-        router.handle(deepLink: .settings)
+        router.openSettings(.birthInfo)
     }
 
     /// Consumes a pending chart deep link. We only react to chart-tab links so

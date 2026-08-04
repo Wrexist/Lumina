@@ -5,6 +5,12 @@
 included:
   - Lumina
   - LuminaTests
+  # The widget extension was outside the lint scope entirely, which is how it
+  # accumulated three hand-copied `Color(red:green:blue:)` brand colours. It
+  # ships in the same binary; it gets the same rules. (`no_raw_rgb_colors`
+  # below now catches that specific case — the palette-token rules only ever
+  # covered `Color(hex:)`.)
+  - LuminaWidget
 
 excluded:
   - Lumina/Resources
@@ -167,6 +173,15 @@ custom_rules:
     name: "No Hex Color Literals"
     message: "Use LuminaColors.* instead of hex literals. Add new colors to Design/Tokens/LuminaColors.swift."
     regex: 'Color\(hex:\s*"#[0-9A-Fa-f]+'
+    severity: error
+    excluded: ".*/Design/Tokens/LuminaColors\\.swift"
+
+  no_raw_rgb_colors:
+    name: "No Raw RGB Colors"
+    message: "Use LuminaColors.* instead of Color(red:green:blue:). The widget shipped three hand-copied brand colours this way."
+    # Lookbehind so `UIColor(red:` — legitimately used for runtime SceneKit
+    # materials, which take no SwiftUI `Color` — isn't caught by it.
+    regex: '(?<![A-Za-z])Color\(\s*red:'
     severity: error
     excluded: ".*/Design/Tokens/LuminaColors\\.swift"
 

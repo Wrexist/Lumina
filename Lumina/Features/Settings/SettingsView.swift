@@ -22,10 +22,11 @@ struct SettingsView: View {
     @State private var signInPresented = false
     @State private var deleteAccountConfirmPresented = false
     @State private var isDeletingAccount = false
+    @State private var settingsPath = NavigationPath()
     private let logger = Logger(subsystem: "app.lumina.ios", category: "AccountDeletion")
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $settingsPath) {
             List {
                 plusSection
                 accountSection
@@ -48,7 +49,24 @@ struct SettingsView: View {
             .sheet(isPresented: $signInPresented) {
                 SignInView { _ in signInPresented = false }
             }
+            .navigationDestination(for: AppRouter.SettingsDestination.self) { destination in
+                switch destination {
+                case .birthInfo: EditBirthInfoView()
+                }
+            }
+            // A caller that asked for a specific destination (e.g. the
+            // "Add birth info" CTA) lands on it rather than on the root.
+            .task { consumePendingDestination() }
+            .onChange(of: router.pendingSettingsDestination) { _, _ in
+                consumePendingDestination()
+            }
         }
+    }
+
+    private func consumePendingDestination() {
+        guard let destination = router.pendingSettingsDestination else { return }
+        router.pendingSettingsDestination = nil
+        settingsPath.append(destination)
     }
 
     // MARK: - Sections
@@ -151,9 +169,7 @@ struct SettingsView: View {
 
     private var yourInfoSection: some View {
         Section("Your info") {
-            NavigationLink {
-                EditBirthInfoView()
-            } label: {
+            NavigationLink(value: AppRouter.SettingsDestination.birthInfo) {
                 SettingsRow(title: "Birth date, time, and place", trailing: nil)
             }
             NavigationLink {
@@ -212,6 +228,11 @@ struct SettingsView: View {
                 HelpView()
             } label: {
                 SettingsRow(title: "Help & FAQ", trailing: nil)
+            }
+            NavigationLink {
+                AcknowledgementsView()
+            } label: {
+                SettingsRow(title: "Acknowledgements", trailing: nil)
             }
             HStack {
                 Text("Version").font(LuminaTypography.body)
@@ -351,34 +372,6 @@ extension SettingsView {
         preferences.reduceMotionOverride = false
         preferences.transitAlertsEnabled = false
         preferences.reflectReminderEnabled = false
-    }
-}
-
-private struct SettingsRow: View {
-    enum Trailing {
-        case text(String)
-    }
-
-    let title: String
-    var trailing: Trailing?
-
-    var body: some View {
-        HStack {
-            Text(title).font(LuminaTypography.body)
-            Spacer()
-            switch trailing {
-            case .text(let value):
-                Text(value)
-                    .font(LuminaTypography.body)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-            case nil:
-                EmptyView()
-            }
-            // No manual chevron: NavigationLink rows get the system disclosure
-            // indicator automatically, so plain rows correctly show none
-            // rather than a misleading affordance.
-        }
-        .accessibilityElement(children: .combine)
     }
 }
 
