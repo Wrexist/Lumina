@@ -43,6 +43,14 @@ jobs:
               - 'LuminaTests/**'
               - 'LuminaWidget/**'
               - 'ios/**'
+              # The wire contract. Renaming a field in a route or changing a
+              # schema breaks the Swift decoders, but the iOS job used to be
+              # skipped for any backend-only change — so a contract break
+              # merged green. Only the contract surface is listed here, not
+              # all of backend/**, so pure lib/service work still skips the
+              # 45-minute macOS runner.
+              - 'backend/src/routes/**'
+              - 'backend/src/types.ts'
               - 'project.yml'
               - 'project.xcconfig'
               - '.swiftlint.yml'

@@ -1,0 +1,150 @@
+name: backend-deploy
+
+# Deploys the ephemeris service to Fly.io.
+#
+# Before this existed, deployment was three hand-typed `fly` commands
+# (backend/README.md) and nothing in CI ever ran them — so the service the
+# iOS app depends on for every chart, transit and reading had never been
+# deployed, and there was no repeatable way to do it.
+#
+# Runs on a push to main that touches backend/, and on demand. The pre-deploy
+# gate re-runs typecheck + tests + a real boot of the production entrypoint,
+# so a broken build cannot reach production even if it slipped through PR CI.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-deploy.yml"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why this manual deploy is happening (shows in the run log)"
+        required: false
+        default: "manual deploy"
+
+concurrency:
+  group: backend-deploy
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify before deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+
+      # Same guard as ci.yml: the production entrypoint runs under
+      # --experimental-strip-types, which rejects TypeScript syntax that
+      # vitest and tsc both accept. Boot it for real before shipping.
+      - name: Boot production entrypoint and probe /health
+        env:
+          LUMINA_API_SECRET: ci-smoke-secret-not-a-real-credential
+          PORT: "3099"
+          HOST: "127.0.0.1"
+        run: |
+          npm start &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:3099/health" >/dev/null 2>&1; then
+              echo "health OK after ${i}s"
+              exit 0
+            fi
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+              echo "::error::server exited during boot — refusing to deploy"
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "::error::/health never became ready within 30s — refusing to deploy"
+          exit 1
+
+  deploy:
+    name: Deploy to Fly.io
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      # Fails with a clear message rather than a confusing flyctl auth error.
+      - name: Check FLY_API_TOKEN is configured
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          if [ -z "${FLY_API_TOKEN}" ]; then
+            echo "::error::FLY_API_TOKEN secret is not set. Create it with 'fly tokens create deploy -a lumina-ephemeris' and add it under Settings → Secrets → Actions."
+            exit 1
+          fi
+
+      # The app is useless without these — a deploy that succeeds while
+      # LUMINA_API_SECRET is unset would return 401 for every request.
+      - name: Verify required Fly secrets are set
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          SECRETS="$(flyctl secrets list --app lumina-ephemeris --json || echo '[]')"
+          for required in LUMINA_API_SECRET; do
+            if ! echo "$SECRETS" | grep -q "\"$required\""; then
+              echo "::error::Fly secret $required is not set. Run: fly secrets set $required=\$(openssl rand -hex 32) --app lumina-ephemeris"
+              exit 1
+            fi
+          done
+          echo "required Fly secrets present"
+          if ! echo "$SECRETS" | grep -q '"ANTHROPIC_API_KEY"'; then
+            echo "::warning::ANTHROPIC_API_KEY is not set — /interpret will return 503 and 'Ask your chart' stays unavailable. This is a valid state; the rest of the service runs normally."
+          fi
+
+      - name: Deploy
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl deploy --remote-only --wait-timeout 600
+
+      # Deploying is not the same as working. Confirm the live service answers
+      # /health before the run goes green.
+      - name: Smoke-test the deployed service
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 20); do
+            CODE="$(curl -s -o /tmp/health.json -w '%{http_code}' https://lumina-ephemeris.fly.dev/health || echo 000)"
+            if [ "$CODE" = "200" ]; then
+              echo "live /health OK:"
+              cat /tmp/health.json
+              exit 0
+            fi
+            echo "attempt $i: HTTP $CODE — retrying"
+            sleep 5
+          done
+          echo "::error::deployed service did not return a healthy /health"
+          exit 1

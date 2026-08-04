@@ -232,8 +232,17 @@ export function tropicalAngles(
   const jd = julianDay(utcInstant);
   const obliquity = meanObliquity(jd);
   const ramc = rightAscensionOfMidheaven(jd, longitude);
+  // Unlike `placidusHouses`, this path had no high-latitude guard, so at
+  // |lat| approaching 90° the ascendant degenerated silently (it returns a
+  // flat 180° at the poles). Latitude validates to [-90, 90] at the schema,
+  // so this is reachable. Clamp to the same threshold the Placidus path uses
+  // — the angles stay well-defined and consistent between the two.
+  const safeLatitude = Math.max(
+    -HIGH_LATITUDE_THRESHOLD,
+    Math.min(HIGH_LATITUDE_THRESHOLD, latitude),
+  );
   return {
-    ascendant: ascendant({ ramc, latitude, obliquity }),
+    ascendant: ascendant({ ramc, latitude: safeLatitude, obliquity }),
     midheaven: midheaven(ramc, obliquity),
   };
 }

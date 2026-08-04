@@ -98,11 +98,17 @@ const DAY_MS = 86_400_000;
 /**
  * Pure-JS ephemeris implementation backed by `astronomy-engine`.
  *
- * Coordinates: geocentric J2000 ecliptic, computed via
- * `Ecliptic(GeoVector(body, t, aberration=true))`. Drift between J2000
- * and tropical-of-date is < 0.5° for births in the last 30 years —
- * within astrological tolerance for v0 and documented for the eventual
- * swap to Swiss Ephemeris precision.
+ * Coordinates: geocentric TRUE ECLIPTIC OF DATE, computed via
+ * `Ecliptic(GeoVector(body, t, aberration=true))` — the same tropical frame
+ * the Ascendant and house cusps are computed in, so planets and angles are
+ * frame-consistent and planet-in-house assignment is correct.
+ *
+ * This comment previously claimed J2000 coordinates with "< 0.5° drift".
+ * That was wrong, and dangerously so: it invited a "fix" that would have
+ * added a precession correction on top of an already-of-date longitude and
+ * shifted every chart. Verified empirically — the Sun reads exactly 0.0000°
+ * at the March equinox for 1800, 1900, 1950, 1970, 1990, 2026 and 2050,
+ * which is only true of an of-date frame. `test/frame.test.ts` locks this in.
  *
  * TODO(lumina): swap to a swisseph-backed implementation once the
  * Swiss Ephemeris Pro license is procured. The `EphemerisService`
@@ -121,7 +127,14 @@ export class AstronomyEngineEphemeris implements EphemerisService {
     const aspects = computeAspects(planets);
     return {
       calculatedAt: new Date().toISOString(),
-      houseSystem,
+      // Report the system actually used, not the one requested. Above
+      // |lat| 66.5° Placidus is undefined and `placidusHouses` silently falls
+      // back to whole-sign; reporting the request meant a Tromsø or Fairbanks
+      // user saw "Placidus" over whole-sign cusps with no explanation. These
+      // two can no longer disagree.
+      // `houses` is null when birth time is unknown — nothing was computed,
+      // so echo back what was asked for.
+      houseSystem: houses?.system ?? houseSystem,
       planets,
       aspects,
       houses,
