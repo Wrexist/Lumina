@@ -4,6 +4,14 @@ import Foundation
 /// in `backend/src/types.ts` 1:1.
 struct NatalChart: Codable, Hashable, Sendable {
     struct PlanetPosition: Codable, Hashable, Sendable {
+        /// Declared explicitly rather than synthesised. The static validation
+        /// helper below names `CodingKeys` in its signature, and a synthesised
+        /// nested `CodingKeys` isn't in scope there yet — the name resolved
+        /// outward to `NatalChart.CodingKeys` and failed to compile.
+        enum CodingKeys: String, CodingKey {
+            case planet, longitude, latitude, isRetrograde
+        }
+
         let planet: String
         let longitude: Double
         let latitude: Double

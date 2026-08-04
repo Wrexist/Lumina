@@ -265,11 +265,22 @@ extension NotificationSettingsView {
     private var reflectTimeBinding: Binding<Date> {
         Binding(
             get: {
-                Calendar.current.date(
-                    bySettingHour: preferences.reflectReminderHour,
-                    minute: preferences.reflectReminderMinute,
-                    second: 0,
-                    of: .now
+                // `date(bySettingHour:...of:)` returns nil when that wall-clock
+                // time doesn't exist on the given day — the spring-forward gap
+                // — and the old `?? .now` fallback silently rewrote the user's
+                // chosen reminder to whatever o'clock it happened to be, so the
+                // picker jumped on its own once a year. `nextDate` resolves the
+                // gap forward instead of discarding the setting. The picker
+                // reads only hour and minute, so which day it lands on is
+                // irrelevant.
+                let wanted = DateComponents(
+                    hour: preferences.reflectReminderHour,
+                    minute: preferences.reflectReminderMinute
+                )
+                return Calendar.current.nextDate(
+                    after: .now,
+                    matching: wanted,
+                    matchingPolicy: .nextTime
                 ) ?? .now
             },
             set: { newDate in
