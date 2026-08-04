@@ -156,14 +156,18 @@ shows "Subscription pricing isn't available right now" and sells nothing.
    must match exactly — it's what the app checks.
 7. **Products** → import both products from App Store Connect. Attach both to the
    `lumina_plus` entitlement.
-8. **Offerings** → create the **`default`** offering. Add both products as packages:
-   the monthly one as `$rc_monthly`, the annual as `$rc_annual`.
+8. **Offerings** → create an offering and **mark it Current**. Add both products
+   as packages: the monthly one as `$rc_monthly`, the annual as `$rc_annual`.
+   Those two package identifiers are what the app looks up — the *product* IDs
+   in step 2 can be anything you like, but these cannot.
 9. **API keys** → copy the **public** iOS key (starts `appl_`) into the
    `REVENUECAT_API_KEY_IOS` GitHub secret from Step 3.
 
-**Verify before moving on:** the offering must show both packages, and the
-entitlement must show both products. The paywall renders exactly what this offering
-contains — one missing package means one plan silently disappears from the app.
+**Verify before moving on:** the offering must be the **Current** one and show
+both packages, and the entitlement must show both products. The app reads
+`offerings.current` and asks it for `$rc_monthly` and `$rc_annual` — a
+non-current offering means the paywall shows no prices at all, and a missing
+package means that plan silently disappears from the picker.
 
 ---
 
