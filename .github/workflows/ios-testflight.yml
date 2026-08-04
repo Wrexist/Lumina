@@ -45,8 +45,8 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Install xcodegen, xcbeautify
-        run: brew install xcodegen xcbeautify
+      - name: Install xcodegen, swiftlint, xcbeautify
+        run: brew install xcodegen swiftlint xcbeautify
 
       - name: Inject env -> secrets/Config.xcconfig
         run: bash scripts/inject_env.sh
@@ -86,6 +86,25 @@ jobs:
 
       - name: Generate Xcode project
         run: xcodegen generate
+
+      # This workflow uploads a build to real testers, and it ran no checks at
+      # all — a lint error or a failing test could ship to TestFlight while
+      # `ci` sat red on the same commit. Lint and the full test suite run here
+      # before anything is archived, so the distribution path is at least as
+      # strict as the verification one.
+      - name: Lint (strict)
+        run: swiftlint lint --strict
+
+      - name: Test (simulator)
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -scheme "$SCHEME" \
+            -destination "platform=iOS Simulator,name=iPhone 16 Pro" \
+            -skipPackagePluginValidation \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify
 
       # The ASC API key (.p8) authenticates automatic cloud signing — Xcode
       # creates/downloads the distribution certificate + App Store profiles on

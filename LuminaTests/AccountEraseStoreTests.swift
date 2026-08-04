@@ -11,6 +11,21 @@ final class AccountEraseStoreTests: XCTestCase {
         return try XCTUnwrap(UserDefaults(suiteName: suite))
     }
 
+    /// Onboarding gated its Continue button on a name and then discarded it.
+    /// Now that it's kept, it has to survive a relaunch and disappear with the
+    /// account — it's personal data the user handed over, not a toggle.
+    func testDisplayNamePersistsAcrossRelaunchAndClearsOnReset() throws {
+        let defaults = try makeDefaults()
+        let preferences = AppPreferences(defaults: defaults)
+        XCTAssertEqual(preferences.displayName, "", "no name until one is given")
+
+        preferences.displayName = "Sam"
+        XCTAssertEqual(AppPreferences(defaults: defaults).displayName, "Sam", "must survive a relaunch")
+
+        preferences.displayName = ""
+        XCTAssertEqual(AppPreferences(defaults: defaults).displayName, "")
+    }
+
     func testChartDiscoveryClearEmptiesProgress() throws {
         let defaults = try makeDefaults()
         let discovery = ChartDiscovery(defaults: defaults)

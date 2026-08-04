@@ -11,7 +11,6 @@ import SwiftUI
 struct TodayHubView: View {
     @State private var viewModel = TodayViewModel()
     @Environment(AppRouter.self) private var router
-    @ScaledMetric private var iconSize: CGFloat = 28
     @State private var showingWhy = false
 
     // Daily reveal — the reading starts veiled on the first visit of each
@@ -38,7 +37,7 @@ struct TodayHubView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
-                CelestialHeroCard(date: .now)
+                CelestialHeroCard(date: .now, subtitle: heroSubtitle)
                 content
             }
             .padding(LuminaSpacing.lg)
@@ -290,25 +289,18 @@ struct TodayHubView: View {
 // A plain extension (SwiftLint bans `private extension`) so the view's
 // type body stays inside the length limit; members stay `private`.
 extension TodayHubView {
-    private func quickAction(_ title: String, systemImage: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            quickActionTile(title, systemImage: systemImage)
-        }
-        .buttonStyle(.plain)
+    /// Uses the name onboarding collected, falling back to the impersonal
+    /// line when it wasn't given (or was erased with the account).
+    private var heroSubtitle: String {
+        let name = preferences.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? "Your sky today" : "\(name)'s sky today"
     }
 
-    /// The tile face shared by the tab-jump quick actions and the Moments
-    /// NavigationLink, so both keep the row's rhythm.
-    private func quickActionTile(_ title: String, systemImage: String) -> some View {
-        LuminaCard(padding: LuminaSpacing.md) {
-            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                Image(systemName: systemImage)
-                    .font(.system(size: iconSize, weight: .light))
-                    .foregroundStyle(LuminaColors.celestialBlue)
-                Text(title).font(LuminaTypography.body)
-            }
-            .frame(width: 140, alignment: .leading)
+    private func quickAction(_ title: String, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            QuickActionTile(title: title, systemImage: systemImage)
         }
+        .buttonStyle(.plain)
     }
 
     private var noRetrogradesCard: some View {
@@ -320,7 +312,7 @@ extension TodayHubView {
         NavigationLink {
             MomentsView()
         } label: {
-            quickActionTile("Moments", systemImage: "sparkles")
+            QuickActionTile(title: "Moments", systemImage: "sparkles")
         }
         .buttonStyle(.plain)
     }

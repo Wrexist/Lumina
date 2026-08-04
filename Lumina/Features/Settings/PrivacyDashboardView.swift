@@ -51,6 +51,7 @@ struct PrivacyDashboardView: View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 sectionHeader("On this device", systemImage: "iphone")
+                row("Your name", value: displayNameValue)
                 row("Your birth chart", value: hasBirthData ? "Yes" : "Not set")
                 row("Reflect entries", value: "\(writtenEntryCount)")
                 row("Friends", value: "\(friends.count)")
@@ -100,6 +101,14 @@ struct PrivacyDashboardView: View {
                 .foregroundStyle(LuminaColors.celestialBlue)
             Text(title).font(LuminaTypography.heading)
         }
+    }
+
+    /// Shown, not printed: the dashboard's promise is that it lists what is
+    /// stored, and the name onboarding collects is now kept.
+    private var displayNameValue: String {
+        AppPreferences.shared.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? "Not set"
+            : "Saved on this device"
     }
 
     private func row(_ key: String, value: String) -> some View {

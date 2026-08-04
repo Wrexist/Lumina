@@ -18,6 +18,11 @@ secrets/*
 # ── Xcode ──
 # XcodeGen output — regenerate via `xcodegen generate`
 Lumina.xcodeproj/
+# XcodeGen also writes these from the `entitlements:` blocks in project.yml.
+# They were untracked but not ignored, so `git status` showed a dirty tree
+# after every `xcodegen generate` and they could be committed by accident.
+Lumina/Lumina.entitlements
+LuminaWidget/LuminaWidget.entitlements
 Lumina/Resources/Info.plist
 # Build artifacts
 build/
@@ -82,10 +87,14 @@ dist/
 *.egg
 
 # ── ML / Core ML ──
-# Large model weights — store in Git LFS or a bucket
+# Large model weights — store in Git LFS or a bucket. No model exists yet;
+# `Lumina/Core/PalmCV/Models/` holds only a .gitkeep.
 *.mlmodel
 *.mlpackage
-!Core/PalmCV/Models/.gitkeep   # keep the directory
+# The negation used to name `Core/PalmCV/Models/.gitkeep`, a path that does
+# not exist (the real one is under `Lumina/`) — and it never mattered anyway,
+# since .gitkeep matches neither pattern above.
+!Lumina/Core/PalmCV/Models/.gitkeep
 
 # ── CI / Coverage ──
 *.xcresult

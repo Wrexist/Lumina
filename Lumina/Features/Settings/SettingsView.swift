@@ -368,6 +368,9 @@ extension SettingsView {
     /// `AppPreferences` exposes no single reset, so restore each user-tunable
     /// flag to its default via its public setters.
     private func resetPreferences() {
+        // The name is personal data the user gave us, so it goes with the
+        // account (Apple 5.1.1(v)) — not just the toggles.
+        preferences.displayName = ""
         preferences.lockReflectWithFaceID = false
         preferences.reduceMotionOverride = false
         preferences.transitAlertsEnabled = false

@@ -91,7 +91,11 @@ final class OnboardingState {
         )
     }
 
-    private var trimmedName: String {
+    /// Internal rather than private: `OnboardingFlowView.persistAndComplete`
+    /// saves it to `AppPreferences.displayName`, so the name the user gave
+    /// survives onboarding instead of being discarded with the resume
+    /// snapshot.
+    var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 

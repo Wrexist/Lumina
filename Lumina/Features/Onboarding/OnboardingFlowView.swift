@@ -223,6 +223,10 @@ struct OnboardingFlowView: View {
         if let birthData = state.makeBirthData() {
             UserBirthDataStore.userDefaults.save(birthData)
         }
+        // Keep the name the user gave us. Onboarding gated Continue on it and
+        // then dropped it here, so we asked for something personal and did
+        // nothing with it.
+        AppPreferences.shared.displayName = state.trimmedName
         // Privacy: the resume-on-kill snapshot (name + full birth data) has
         // served its purpose now that the data lives in `UserBirthDataStore`.
         // Drop it so the Privacy dashboard's "Onboarding state: Cleared" is
