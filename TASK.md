@@ -6,8 +6,9 @@
 > See `ROADMAP.md` for the full 16-phase plan and `docs/NAVIGATION.md` for IA & UX rules.
 >
 > **This file is a history log.** For what is *currently* outstanding before
-> launch, read `LAUNCH-READINESS.md` — it supersedes the per-phase backlogs
-> below, several of which describe features that were later cut or replaced.
+> launch, read **`LAUNCH-STEPS.md`** (the runbook) and `LAUNCH-READINESS.md`
+> (the audit behind it). Those supersede the per-phase backlogs below, several
+> of which describe features that were later cut or replaced.
 
 ---
 
@@ -59,8 +60,45 @@ then worked top-down. Landed:
 - [x] **`scripts/local_checks.sh`** — the lint/config checks that don't need a
       Mac, so a five-minute CI round trip isn't the first place a 240-column
       line gets caught.
+- [x] **Untrusted input hardened** — a share payload arrives from a QR code or
+      a URL anyone can craft and nothing validated it: month 77 of year 99999
+      at latitude 1000 decoded happily. Every field is now range-checked at
+      decode against the same bounds the backend enforces, unknown time zones
+      rejected, free-text capped, and the base64 size-limited.
+- [x] **`ChartCache` correctness** — `encodeKey` returned `""` on failure, a
+      colliding sentinel, so one person's transits could be served for
+      another's birth data. Concurrent `/chart` callers now share one fetch
+      (Today and Chart both ask on cold launch).
+- [x] **Disclosure** — the entertainment disclaimer sat only in a Settings
+      footnote; it's now on the daily reading, the onboarding reveal and the
+      Q&A. Free-text answers carry an AI-generated note and a report
+      affordance, which the ASC age-rating questionnaire now asks about.
+- [x] **Data export** — Settings → Privacy → Export my data. The screen had
+      promised it and nothing implemented it; portability is also a GDPR
+      Art. 20 obligation.
+- [x] **The name onboarding asks for is kept** — it gated the Continue button
+      and was then discarded. It now greets the user, appears in the privacy
+      dashboard, and is erased with the account.
+- [x] **Navigation dead ends closed** — `SignInView` had no visible way out;
+      "Add birth info" landed on the Settings root rather than the form;
+      "Share my chart" blamed the app ("App is mid-setup") for missing birth
+      info.
+- [x] **The widget renders the real palette** — it re-declared three brand
+      colours as raw RGB because `LuminaColors` lived only in the app target,
+      and `LuminaWidget/` was outside SwiftLint's scope entirely. Both fixed,
+      plus a `no_raw_rgb_colors` rule for the form the palette rules never
+      covered.
+- [x] **`ios-testflight.yml` runs lint and tests** — the workflow that uploads
+      to real testers ran neither, so a red `ci` wouldn't have stopped a
+      release.
+- [x] Starfield perf (per-star constants hoisted out of the draw loop, frozen
+      when not `.active`), journal-calendar accessibility, retrograde probe
+      consistency, `/moon` + `/retrogrades` caching, `/returns` early exit,
+      open-source acknowledgements, glossary wiring, DST-safe reminder picker,
+      `LuminaAIClient` test coverage.
 - [ ] Remaining P2/P3 polish is itemised in `LAUNCH-READINESS.md`; the
-      out-of-repo work is the owner-action table at the end of that file.
+      out-of-repo work is **`LAUNCH-STEPS.md`**, which is the runbook version
+      of that file's owner-action table.
 
 ---
 
