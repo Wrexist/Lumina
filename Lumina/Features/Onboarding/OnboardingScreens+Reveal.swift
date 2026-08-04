@@ -87,6 +87,10 @@ extension OnboardingScreens {
                         .foregroundStyle(LuminaColors.celestialBlue)
                     ChartShareButton(chart: chart)
                 }
+                // Said once, up front, at the first reading anyone sees —
+                // rather than only in a Settings footnote.
+                EntertainmentDisclaimer()
+                    .multilineTextAlignment(.center)
                 Spacer()
             }
         }

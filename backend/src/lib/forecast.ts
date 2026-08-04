@@ -53,6 +53,39 @@ export function findCrossings(
   return crossings;
 }
 
+/**
+ * The first crossing only, stopping the scan as soon as it's found.
+ *
+ * `findCrossings` always walks the entire window. `/returns` searches a
+ * Saturn period plus a margin — 11,159 days at a 48-hour step, so ~5,580
+ * `astronomy-engine` evaluations — and then used `crossings[0]` and discarded
+ * the rest. A return that falls early in the window now costs proportionally
+ * little instead of always costing the full scan.
+ */
+export function findFirstCrossing(
+  longitudeAt: (t: number) => number,
+  targetLon: number,
+  startMs: number,
+  days: number,
+  stepHours = 12,
+): number | null {
+  const stepMs = stepHours * 3_600_000;
+  const endMs = startMs + days * 86_400_000;
+
+  let prevDelta = signedDelta(longitudeAt(startMs), targetLon);
+  for (let t = startMs + stepMs; t <= endMs; t += stepMs) {
+    const delta = signedDelta(longitudeAt(t), targetLon);
+    if (delta === 0) return t;
+    if (prevDelta !== 0
+      && Math.sign(delta) !== Math.sign(prevDelta)
+      && Math.abs(delta - prevDelta) < HALF_CIRCLE) {
+      return bisect(longitudeAt, targetLon, t - stepMs, t);
+    }
+    prevDelta = delta;
+  }
+  return null;
+}
+
 function bisect(
   longitudeAt: (t: number) => number,
   targetLon: number,

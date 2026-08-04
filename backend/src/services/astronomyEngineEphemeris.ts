@@ -7,7 +7,7 @@ import { noonLocalAsUTC } from "../lib/timezone.ts";
 import { computeTransits } from "../lib/transits.ts";
 import { computeSynastry } from "../lib/synastry.ts";
 import { computeComposite } from "../lib/composite.ts";
-import { findCrossings } from "../lib/forecast.ts";
+import { findCrossings, findFirstCrossing } from "../lib/forecast.ts";
 import { progressedInstant } from "../lib/progressions.ts";
 import { angularVelocity, findNextStation } from "../lib/retrogrades.ts";
 import type {
@@ -73,7 +73,14 @@ const PLANETS: readonly PlanetSpec[] = [
   { body: Body.Pluto, name: "Pluto" },
 ];
 
-const RETROGRADE_PROBE_MS = 60 * 60 * 1000; // one hour earlier
+// ±6 hours, centred on the instant — the same window `lib/retrogrades.ts`
+// uses to root-find stations. This was a *backward-only one-hour* probe, which
+// disagreed with `/retrogrades` in two ways: it measured motion over
+// [t-1h, t] rather than around t, and an hour of Mercury's apparent motion
+// near a station is small enough that the sample is dominated by noise. So
+// `/chart` and `/transits` could report a planet direct while `/retrogrades`
+// reported it retrograde, for the same moment, on the same screen.
+const RETROGRADE_PROBE_MS = 6 * 60 * 60 * 1000;
 
 // A synodic month is ~29.53 days; 40 days guarantees the next new and full.
 const MOON_SEARCH_DAYS = 40;
@@ -254,15 +261,14 @@ export class AstronomyEngineEphemeris implements EphemerisService {
     for (const { spec, periodDays } of RETURN_BODIES) {
       const natalLongitude = positionAt(spec, birthInstant).longitude;
       const longitudeAt = (time: number): number => geocentricEclipticLongitude(spec.body, new Date(time));
-      const crossings = findCrossings(
+      const exactAtMs = findFirstCrossing(
         longitudeAt,
         natalLongitude,
         from.getTime(),
         periodDays + RETURN_MARGIN_DAYS,
         RETURN_STEP_HOURS,
       );
-      const exactAtMs = crossings[0];
-      if (exactAtMs === undefined) continue;
+      if (exactAtMs === null) continue;
       // Which return this is: how many full periods since birth (≥ 1).
       const returnNumber = Math.max(1, Math.round((exactAtMs - birthInstant.getTime()) / (periodDays * DAY_MS)));
       events.push({
@@ -375,13 +381,15 @@ function positionAt(spec: PlanetSpec, instant: Date): PlanetPosition {
   const ecl = Ecliptic(vec);
 
   const earlier = new Date(instant.getTime() - RETROGRADE_PROBE_MS);
+  const later = new Date(instant.getTime() + RETROGRADE_PROBE_MS);
   const lonEarlier = geocentricEclipticLongitude(spec.body, earlier);
+  const lonLater = geocentricEclipticLongitude(spec.body, later);
 
   return {
     planet: spec.name,
     longitude: normalizeLongitude(ecl.elon),
     latitude: ecl.elat,
-    isRetrograde: signedLongitudeDelta(ecl.elon, lonEarlier) < 0,
+    isRetrograde: signedLongitudeDelta(lonLater, lonEarlier) < 0,
   };
 }
 

@@ -67,7 +67,7 @@ struct EditBirthInfoView: View {
                     body: "Your birth date sets every planet's exact position at the moment you were born."
                 )
             }
-            DatePicker("Birth date", selection: $birthDate, in: ...Date.now, displayedComponents: .date)
+            DatePicker("Birth date", selection: $birthDate, in: BirthData.selectableBirthDates, displayedComponents: .date)
                 .datePickerStyle(.compact)
                 .labelsHidden()
         }

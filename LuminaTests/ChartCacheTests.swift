@@ -98,6 +98,48 @@ final class ChartCacheTests: XCTestCase {
         XCTAssertTrue(store.read().isEmpty)
     }
 
+    /// Today and Chart both ask for the natal chart on cold launch. Before the
+    /// in-flight map they each issued a `/chart` request — two round trips for
+    /// one answer, and a lost disk write because both read the store before
+    /// either wrote.
+    func testConcurrentColdLaunchReadsShareOneFetch() async throws {
+        let store = NatalChartDiskStore(defaults: try makeDefaults())
+        let fake = FakeEphemeris(chart: BirthChartViewModel.sampleChart(), transits: makeTransits())
+        await fake.setChartDelay(nanoseconds: 50_000_000)
+        let cache = ChartCache(service: fake, store: store)
+        let birth = makeBirth()
+
+        async let first = cache.chart(for: birth)
+        async let second = cache.chart(for: birth)
+        let (a, b) = try await (first, second)
+
+        XCTAssertEqual(a, b)
+        let calls = await fake.chartCalls
+        XCTAssertEqual(calls, 1, "simultaneous callers must share one network fetch")
+    }
+
+    /// A failed fetch must leave nothing behind — including no in-flight entry
+    /// that a later caller would await forever.
+    func testFailedFetchIsNotCachedAndDoesNotWedgeLaterReads() async throws {
+        let store = NatalChartDiskStore(defaults: try makeDefaults())
+        let fake = FakeEphemeris(chart: BirthChartViewModel.sampleChart(), transits: makeTransits())
+        await fake.failNextChart()
+        let cache = ChartCache(service: fake, store: store)
+        let birth = makeBirth()
+
+        do {
+            _ = try await cache.chart(for: birth)
+            XCTFail("expected the first fetch to fail")
+        } catch {
+            // Expected.
+        }
+
+        let recovered = try await cache.chart(for: birth)
+        XCTAssertEqual(recovered, BirthChartViewModel.sampleChart())
+        let calls = await fake.chartCalls
+        XCTAssertEqual(calls, 2, "the retry must reach the service, not a cached failure")
+    }
+
     func testDiskStoreRoundTripsAndClears() throws {
         let store = NatalChartDiskStore(defaults: try makeDefaults())
         let entry = PersistedNatalChart(
@@ -123,14 +165,32 @@ private actor FakeEphemeris: EphemerisProviding {
     private(set) var transitCalls = 0
     private let cannedChart: NatalChart
     private let cannedTransits: TransitsResult
+    private var chartDelayNanoseconds: UInt64 = 0
+    private var shouldFailNextChart = false
 
     init(chart: NatalChart, transits: TransitsResult) {
         self.cannedChart = chart
         self.cannedTransits = transits
     }
 
+    /// Widens the window in which a second caller can arrive mid-fetch.
+    func setChartDelay(nanoseconds: UInt64) {
+        chartDelayNanoseconds = nanoseconds
+    }
+
+    func failNextChart() {
+        shouldFailNextChart = true
+    }
+
     func chart(for birthData: BirthData, houseSystem: HouseSystem?) async throws -> NatalChart {
         chartCalls += 1
+        if chartDelayNanoseconds > 0 {
+            try await Task.sleep(nanoseconds: chartDelayNanoseconds)
+        }
+        if shouldFailNextChart {
+            shouldFailNextChart = false
+            throw TestError.unimplemented
+        }
         return cannedChart
     }
 

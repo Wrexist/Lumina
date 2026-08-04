@@ -113,6 +113,9 @@ struct TodayHubView: View {
             if let progressions = viewModel.progressions, !viewModel.chapterIsTimely {
                 ProgressedChapterCard(result: progressions)
             }
+            // Guideline 1.1/2.3: the disclaimer belongs where the reading is,
+            // not only in a Settings → About footnote nobody scrolls to.
+            EntertainmentDisclaimer()
         }
     }
 

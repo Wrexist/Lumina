@@ -221,8 +221,8 @@ struct SettingsView: View {
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
             }
             sectionFootnote("On-device palm reading is in the works — we're getting fairness "
-                + "across every skin tone right before we ship it. Lumina is for reflection "
-                + "and entertainment, not medical, legal, or financial advice.")
+                + "across every skin tone right before we ship it. "
+                + LuminaDisclosure.entertainment)
         } header: {
             Text("About")
         } footer: {

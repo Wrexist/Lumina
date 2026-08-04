@@ -63,7 +63,7 @@ struct AddFriendView: View {
                 .font(LuminaTypography.caption)
                 .tracking(1.2)
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-            DatePicker("Birth date", selection: $birthDate, in: ...Date.now, displayedComponents: .date)
+            DatePicker("Birth date", selection: $birthDate, in: BirthData.selectableBirthDates, displayedComponents: .date)
                 .datePickerStyle(.compact)
                 .labelsHidden()
         }

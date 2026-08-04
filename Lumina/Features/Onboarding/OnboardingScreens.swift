@@ -144,7 +144,7 @@ enum OnboardingScreens {
                         get: { date ?? defaultDate },
                         set: { date = $0 }
                     ),
-                    in: ...Date.now,
+                    in: BirthData.selectableBirthDates,
                     displayedComponents: .date
                 )
                 .datePickerStyle(.wheel)
