@@ -9,8 +9,44 @@ import SwiftUI
 /// at the left (9 o'clock) per Western convention. Without houses, 0° Aries
 /// is anchored at the left.
 struct ChartWheelView: View {
+    /// The wheel's colours, named by role.
+    ///
+    /// The wheel is the app's signature object and the one place the brand's
+    /// midnight belongs at full strength — a chart drawn in ink on parchment
+    /// reads as a diagram, the same disc on midnight reads as the sky. Naming
+    /// the roles keeps that a single decision: every stroke below asks the
+    /// palette what colour it is, so the ground can change without hunting
+    /// through twenty `inkBlack.opacity(…)` literals.
+    struct Palette: Sendable {
+        let disc: Color
+        let ringStrong: Color
+        let ringSoft: Color
+        let divider: Color
+        let signGlyph: Color
+        let houseCusp: Color
+        let houseCuspAngular: Color
+        let houseNumeral: Color
+        let planetGlyph: Color
+        let retrogradeMark: Color
+
+        /// The default: a deep midnight disc with gold glyphs.
+        static let midnight = Palette(
+            disc: LuminaColors.midnight,
+            ringStrong: LuminaColors.parchment.opacity(0.45),
+            ringSoft: LuminaColors.parchment.opacity(0.22),
+            divider: LuminaColors.parchment.opacity(0.16),
+            signGlyph: LuminaColors.mutedGold,
+            houseCusp: LuminaColors.parchment.opacity(0.14),
+            houseCuspAngular: LuminaColors.parchment.opacity(0.5),
+            houseNumeral: LuminaColors.parchment.opacity(0.45),
+            planetGlyph: LuminaColors.parchment,
+            retrogradeMark: LuminaColors.mutedGold.opacity(0.85)
+        )
+    }
+
     let chart: NatalChart
     var onTapPlanet: ((NatalChart.PlanetPosition) -> Void)?
+    var palette: Palette = .midnight
 
     var body: some View {
         GeometryReader { proxy in
@@ -19,6 +55,10 @@ struct ChartWheelView: View {
             let radius = size / 2
 
             ZStack {
+                Circle()
+                    .fill(palette.disc)
+                    .frame(width: radius * 2, height: radius * 2)
+                    .position(center)
                 Canvas { context, _ in
                     drawZodiacRing(in: context, center: center, radius: radius)
                     drawHouses(in: context, center: center, radius: radius)
@@ -60,12 +100,12 @@ struct ChartWheelView: View {
         // Outer + inner rings
         context.stroke(
             Path { path in path.addArc(center: center, radius: outer, startAngle: .zero, endAngle: .degrees(360), clockwise: false) },
-            with: .color(LuminaColors.inkBlack.opacity(0.6)),
+            with: .color(palette.ringStrong),
             lineWidth: 1
         )
         context.stroke(
             Path { path in path.addArc(center: center, radius: inner, startAngle: .zero, endAngle: .degrees(360), clockwise: false) },
-            with: .color(LuminaColors.inkBlack.opacity(0.4)),
+            with: .color(palette.ringSoft),
             lineWidth: 1
         )
 
@@ -76,7 +116,7 @@ struct ChartWheelView: View {
             let p2 = point(longitude: cuspLongitude, radius: outer, center: center)
             context.stroke(
                 Path { path in path.move(to: p1); path.addLine(to: p2) },
-                with: .color(LuminaColors.inkBlack.opacity(0.35)),
+                with: .color(palette.divider),
                 lineWidth: 1
             )
         }
@@ -88,7 +128,7 @@ struct ChartWheelView: View {
             let glyph = ChartGlyphs.signGlyph(ChartGlyphs.signOrder[i])
             let text = Text(glyph)
                 .font(.system(size: radius * 0.10))
-                .foregroundColor(LuminaColors.goldInk)
+                .foregroundColor(palette.signGlyph)
             context.draw(text, at: position)
         }
     }
@@ -103,7 +143,7 @@ struct ChartWheelView: View {
         // Inner house ring
         context.stroke(
             Path { path in path.addArc(center: center, radius: inner, startAngle: .zero, endAngle: .degrees(360), clockwise: false) },
-            with: .color(LuminaColors.inkBlack.opacity(0.25)),
+            with: .color(palette.ringSoft),
             lineWidth: 1
         )
 
@@ -114,7 +154,7 @@ struct ChartWheelView: View {
             let p2 = point(longitude: cusp, radius: outer, center: center)
             context.stroke(
                 Path { path in path.move(to: p1); path.addLine(to: p2) },
-                with: .color(LuminaColors.inkBlack.opacity(isAngular ? 0.6 : 0.2)),
+                with: .color(isAngular ? palette.houseCuspAngular : palette.houseCusp),
                 lineWidth: isAngular ? 1.5 : 0.8
             )
 
@@ -124,7 +164,7 @@ struct ChartWheelView: View {
             let labelPos = point(longitude: mid, radius: inner * 0.92, center: center)
             let numeralText = Text("\(index + 1)")
                 .font(.system(size: radius * 0.06, weight: .light, design: .monospaced))
-                .foregroundColor(LuminaColors.inkBlack.opacity(0.55))
+                .foregroundColor(palette.houseNumeral)
             context.draw(numeralText, at: labelPos)
         }
     }
@@ -150,15 +190,20 @@ struct ChartWheelView: View {
         }
     }
 
+    /// Aspect strokes, tuned for the midnight disc.
+    ///
+    /// These were picked for parchment and do not survive the move: measured
+    /// measured against `midnight`, `celestialBlue` lands at 2.6:1 and the
+    /// oxblood `error` at 2.4:1 — both effectively invisible, the same class
+    /// of bug as the old `blush` squares that never rendered at all.
+    /// `aspectHarmonious` (8.7:1) and `aspectTense` (6.1:1) are picked for
+    /// this surface, and carry no opacity because the disc gives them room.
     private func aspectColor(_ type: AspectType) -> Color {
         switch type {
-        // `mutedGold` is fine here: these are STROKES, not text.
-        case .conjunction: LuminaColors.mutedGold.opacity(0.8)
-        case .sextile, .trine: LuminaColors.celestialBlue.opacity(0.6)
-        // Was `blush` at 0.65 — roughly 1.2:1 on parchment, so squares and
-        // oppositions simply didn't render. `error` is the muted oxblood that
-        // clears AA on this surface.
-        case .square, .opposition: LuminaColors.error.opacity(0.7)
+        // Strokes, not text — `mutedGold` needs no darkened variant.
+        case .conjunction: LuminaColors.mutedGold.opacity(0.9)
+        case .sextile, .trine: LuminaColors.aspectHarmonious
+        case .square, .opposition: LuminaColors.aspectTense
         }
     }
 
@@ -179,7 +224,7 @@ struct ChartWheelView: View {
             let position = point(longitude: planet.longitude, radius: markerRadius, center: center)
             let marker = Text("℞")
                 .font(.system(size: radius * 0.07, weight: .light))
-                .foregroundColor(LuminaColors.goldInk)
+                .foregroundColor(palette.retrogradeMark)
             context.draw(marker, at: position)
         }
     }
@@ -212,7 +257,7 @@ struct ChartWheelView: View {
                 } label: {
                     Text(ChartGlyphs.planetGlyph(planet.planet))
                         .font(.system(size: radius * 0.13))
-                        .foregroundStyle(LuminaColors.inkBlack)
+                        .foregroundStyle(palette.planetGlyph)
                         .frame(width: 44, height: 44)
                         .contentShape(Circle())
                 }

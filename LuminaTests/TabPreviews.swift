@@ -16,7 +16,11 @@ enum TabPreviews {
         components.year = 2026
         components.month = 6
         components.day = 2
-        return Calendar(identifier: .gregorian).date(from: components) ?? Date(timeIntervalSince1970: 0)
+        // 18:00 — puts the greeting in the "Good evening" band deterministically.
+        components.hour = 18
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
+        return calendar.date(from: components) ?? Date(timeIntervalSince1970: 0)
     }()
 
     static func chart(_ chart: NatalChart) -> some View {
@@ -36,7 +40,14 @@ enum TabPreviews {
             // The real immersive Today hero (static frame — no gyroscope in
             // the ImageRenderer screenshot harness) so the render reflects
             // what ships in `TodayHubView`.
-            CelestialHeroCard(date: Self.sampleDate, showsMotion: false)
+            // Same greeting the shipped hero shows. Pinned to `sampleDate`
+            // (18:00) so the render is deterministic rather than changing
+            // with whatever hour CI happens to run at.
+            CelestialHeroCard(
+                date: Self.sampleDate,
+                subtitle: DailyGreeting.text(for: Self.sampleDate, name: "Sam"),
+                showsMotion: false
+            )
             BigThreeBand(chart: chart)
             LuminaCard {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {

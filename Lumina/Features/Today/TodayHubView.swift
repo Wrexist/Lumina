@@ -292,8 +292,7 @@ extension TodayHubView {
     /// Uses the name onboarding collected, falling back to the impersonal
     /// line when it wasn't given (or was erased with the account).
     private var heroSubtitle: String {
-        let name = preferences.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return name.isEmpty ? "Your sky today" : "\(name)'s sky today"
+        DailyGreeting.text(for: .now, name: preferences.displayName)
     }
 
     private func quickAction(_ title: String, systemImage: String, action: @escaping () -> Void) -> some View {

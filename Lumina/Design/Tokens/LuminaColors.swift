@@ -19,6 +19,20 @@ enum LuminaColors {
     /// and for `parchment` text on an `error` fill.
     static let error = color(hex: "#9B2C2C")
 
+    // MARK: - Chart wheel strokes
+    //
+    // The wheel draws on `midnight`, where the palette's parchment-tuned
+    // accents wash out: `celestialBlue` measures ~1.6:1 there and `error`
+    // ~1.9:1. These two are picked for that surface specifically — see
+    // `ChartWheelView.aspectColor`.
+
+    /// Sextiles and trines. A lifted celestial blue — 8.7:1 on `midnight`,
+    /// against 2.6:1 for the parchment-tuned `celestialBlue` it replaces.
+    static let aspectHarmonious = color(hex: "#8FB8E8")
+    /// Squares and oppositions. A warm coral, 6.1:1 on `midnight`, against
+    /// 2.4:1 for `error`.
+    static let aspectTense = color(hex: "#E0777A")
+
     private static func color(hex: String) -> Color {
         let trimmed = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
         var rgb: UInt64 = 0
