@@ -19,8 +19,8 @@
 | **Active branch** | `claude/pre-launch-audit-checklist-7dwc53` |
 | **Last updated** | 2026-08-04 |
 | **Dev environment** | **No local macOS** — CI on `macos-15` / latest-stable Xcode is the only iOS build/test loop |
-| **Blockers** | Owner actions only — see the table at the end of `LAUNCH-READINESS.md` (backend deploy, RevenueCat products, ASC metadata, domain + AASA hosting) |
-| **Spec docs** | `LAUNCH-READINESS.md` (what's left before launch) · `docs/NAVIGATION.md` (IA + UX clarity charter — read before any view PR) · `ROADMAP.md` (long-range plan) |
+| **Blockers** | Owner actions only — `LAUNCH-STEPS.md` is the runbook (rotate the leaked key, deploy the backend, configure RevenueCat, ASC metadata) |
+| **Spec docs** | `LAUNCH-STEPS.md` (what's left, step by step) · `LAUNCH-READINESS.md` (the audit behind it) · `docs/NAVIGATION.md` (IA + UX clarity charter — read before any view PR) · `ROADMAP.md` (long-range plan) |
 
 **No-Mac workflow.** There is no macOS machine and no local `xcodebuild`, so
 every iOS verification happens through GitHub Actions:

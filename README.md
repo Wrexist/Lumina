@@ -111,7 +111,8 @@ cd backend && npm install && npm run dev
 - [`DEV.md`](./DEV.md) — session handoff context (read this first)
 - [`TASK.md`](./TASK.md) — Current sprint tasks & status
 - [`LEARNINGS.md`](./LEARNINGS.md) — Accumulated knowledge, gotchas, decisions
-- [`LAUNCH-READINESS.md`](./LAUNCH-READINESS.md) — pre-launch punch list and open owner actions
+- [`LAUNCH-STEPS.md`](./LAUNCH-STEPS.md) — **what's left to launch**, step by step
+- [`LAUNCH-READINESS.md`](./LAUNCH-READINESS.md) — the pre-launch audit this came from
 - [`docs/NAVIGATION.md`](./docs/NAVIGATION.md) — IA + UX clarity charter
 - [`docs/APP-STORE-LISTING.md`](./docs/APP-STORE-LISTING.md) — store copy and review notes
 

@@ -130,7 +130,7 @@ Pull-down on Today reveals `LuminaSearch`: surface natal placements, glossary te
 | 11 | Notifications + Engagement | promoted from backlog | 26 | 4 dev-days |
 | 12 | **Settings, Account, Privacy Dashboard** *(new)* | net new | 27 | 5 dev-days |
 | 13 | **Search, Glossary, Help Center** *(new)* | net new | 28 | 5 dev-days |
-| 14 | Accessibility, Localization (EN+ES), Performance | from v1 Phase 10 expanded | 29–30 | 9 dev-days |
+| 14 | Accessibility, Performance (localization deferred past 1.0 — see Phase 14) | from v1 Phase 10 expanded | 29–30 | 9 dev-days |
 | 15 | Beta, Compliance, App Store 1.0.0 | from v1 Phase 10 | 31–34 | 14 dev-days |
 | 16 | Post-Launch v2 (analytics, IAP ladder, Vedic, Watch, social, etc.) | from v1 Phase 11 | month 9–18 | 24+ wk |
 
@@ -673,10 +673,10 @@ WHAT'S NOT
 - `[CARRY]` Instruments Allocations — peak memory < 150MB during palm CV on iPhone 13
 - `[CARRY]` Instruments Energy Log — all background work stops on app background
 - `[CARRY]` Scroll perf — 500+ item `LazyVStack` at 60fps
-- `[NEW]` Localization — EN + ES at launch, structure for FR / PT-BR / DE in v1.1. Use String Catalogs (`.xcstrings`).
+- `[NEW]` Localization — **not at 1.0.** The app ships English-only: `Localizable.xcstrings` is an empty catalog, there are no `String(localized:)` call sites, and the heavy `"…" + "…"` string concatenation in body copy wouldn't extract even if there were. Doing this properly means rewriting every user-facing string first. Target ES for 1.1, then FR / PT-BR / DE. Do not list Spanish in App Store metadata until it exists.
 - `[NEW]` RTL support audit — Arabic in v1.2, but visual layout must not assume LTR (chart wheel is symmetrical, but text alignment isn't)
 - `[NEW]` Voice Control test pass — every primary action has a unique callable name
-- `[NEW]` Crash reporting via Sentry or Apple's Diagnostics — anonymized
+- `[DONE]` Crash reporting — MetricKit (`Core/Diagnostics/CrashReporter.swift`), no vendor account and no added privacy-manifest burden. A hosted service can layer on later without changing call sites.
 - `[NEW]` Memory leak test — Instruments Leaks; strict zero-leak gate before TestFlight
 - `[NEW]` Battery test — 30 minutes active use must not cost > 8% battery on iPhone 13
 

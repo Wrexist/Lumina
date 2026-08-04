@@ -28,6 +28,35 @@ CI checkmark is measuring the wrong things. Realistic estimate: **P0+P1 is 3–5
 
 ---
 
+## Status — 2026-08-04, end of the remediation pass
+
+**Every P0 and P1 in this document has been fixed in the repo, along with most of P2/P3.**
+The unchecked boxes below are kept as the record of what was found; the fixes are in the
+branch history, each commit naming the specific defect. What is left is not code:
+
+| Left to do | Where |
+|---|---|
+| Everything in **Owner action items** near the end of this file | outside the repo |
+| Localization (English-only at 1.0 — deliberately, see `ROADMAP.md` Phase 14) | deferred |
+| Palm reading | deferred; absent from the binary *and* from all metadata |
+| Cloud backup/restore, data export, contacts import, Human Design design-side chart | roadmap |
+| Content depth (reading/prompt/quiz variety) | roadmap |
+
+Two things worth carrying forward from doing this work:
+
+1. **CI was measuring the wrong things, and that was the root cause of several P0s.** The
+   backend crashed on boot under its production entrypoint while `tsc` and `vitest` both
+   passed; the injected backend URL truncated at `//` and nothing checked; gitleaks had no
+   rule for the key that actually leaked. Each is now gated by something that would have
+   caught it: CI boots the real entrypoint and probes `/health`, `inject_env.sh`
+   round-trip-verifies every value it writes, `.gitleaks.toml` has an explicit Anthropic
+   rule, and `ios-testflight.yml` — which uploads to real testers — no longer skips lint
+   and tests.
+2. **Verify before fixing.** Three findings were retracted as false positives (see
+   *Corrections*), and "fixing" the first would have shifted every chart in the app.
+
+---
+
 ## P0 — Ship-stoppers (nothing else matters until these are done)
 
 ### Security
@@ -559,6 +588,10 @@ their factual claims are wrong. The code comments, `LEARNINGS.md`, `TASK.md`'s b
 ---
 
 ## Owner action items (outside the repo)
+
+> **Follow `LAUNCH-STEPS.md` instead of this table.** It's the same list, in
+> dependency order, with the exact commands, field names and values — written to be
+> worked through top to bottom. This table stays as the audit's summary.
 
 | # | Item | Current state |
 |---|---|---|
