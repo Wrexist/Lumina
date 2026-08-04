@@ -32,7 +32,7 @@ struct SettingsView: View {
                 accountSection
                 yourInfoSection
                 preferencesSection
-                privacySection
+                SettingsPrivacySection()
                 aboutSection
             }
             .listStyle(.insetGrouped)
@@ -204,21 +204,6 @@ struct SettingsView: View {
             Toggle(isOn: $preferences.reduceMotionOverride) {
                 Text("Reduce motion").font(LuminaTypography.body)
             }
-        }
-    }
-
-    private var privacySection: some View {
-        Section {
-            NavigationLink {
-                PrivacyDashboardView()
-            } label: {
-                SettingsRow(title: "Privacy dashboard", trailing: nil)
-            }
-        } header: {
-            Text("Privacy")
-        } footer: {
-            sectionFootnote("Delete your account any time from the Account section above. "
-                + "Full data export is coming before public launch.")
         }
     }
 

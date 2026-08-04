@@ -77,9 +77,11 @@ struct PrivacyDashboardView: View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 sectionHeader("Your data", systemImage: "tray.and.arrow.down")
-                Text("Delete your account any time from Settings → Account — it erases your chart, "
-                    + "journal, and friends for good, on this device and on our servers. "
-                    + "Uninstalling the app also removes everything stored here.")
+                Text("Take it with you: Settings → Privacy → Export my data writes everything "
+                    + "listed above to a JSON file you choose where to save. Delete your account "
+                    + "any time from Settings → Account — it erases your chart, journal, and "
+                    + "friends for good, on this device and on our servers. Uninstalling the app "
+                    + "also removes everything stored here.")
                     .font(LuminaTypography.bodyLight)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
             }

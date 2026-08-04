@@ -26,6 +26,45 @@ final class AccountEraseStoreTests: XCTestCase {
         XCTAssertEqual(AppPreferences(defaults: defaults).displayName, "")
     }
 
+    /// Export is the mirror image of deletion: the same set of stores, read
+    /// instead of cleared. It has to include the personal fields (GDPR
+    /// Art. 20 portability) and must not include anything we tell the user we
+    /// don't keep.
+    func testDataExportCarriesThePersonalFieldsAndNothingSecret() throws {
+        let entry = JournalEntry(
+            date: Date(timeIntervalSince1970: 1_000_000),
+            prompt: "What are you avoiding?",
+            body: "Writing this down.",
+            transitKey: "sun-square-saturn"
+        )
+        let friend = Friend(
+            name: "Alex",
+            birthDate: Date(timeIntervalSince1970: 500_000),
+            source: .manual
+        )
+
+        let export = LuminaDataExport.make(journalEntries: [entry], friends: [friend])
+        let json = try XCTUnwrap(
+            try JSONSerialization.jsonObject(with: try export.encoded()) as? [String: Any]
+        )
+
+        XCTAssertEqual(json["formatVersion"] as? Int, 1)
+        let entries = try XCTUnwrap(json["journalEntries"] as? [[String: Any]])
+        XCTAssertEqual(entries.count, 1)
+        XCTAssertEqual(entries.first?["body"] as? String, "Writing this down.")
+        XCTAssertEqual(entries.first?["prompt"] as? String, "What are you avoiding?")
+        let people = try XCTUnwrap(json["people"] as? [[String: Any]])
+        XCTAssertEqual(people.first?["name"] as? String, "Alex")
+        // The file states its own limits, so the recipient knows what's absent.
+        XCTAssertFalse((json["notIncluded"] as? [String] ?? []).isEmpty)
+
+        // Nothing resembling a credential may appear anywhere in the archive.
+        let raw = String(decoding: try export.encoded(), as: UTF8.self).lowercased()
+        for forbidden in ["x-lumina-secret", "sk-ant-", "appl_", "bearer ", "authtoken"] {
+            XCTAssertFalse(raw.contains(forbidden), "export leaked \(forbidden)")
+        }
+    }
+
     func testChartDiscoveryClearEmptiesProgress() throws {
         let defaults = try makeDefaults()
         let discovery = ChartDiscovery(defaults: defaults)

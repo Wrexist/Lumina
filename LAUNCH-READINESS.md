@@ -424,7 +424,7 @@ Two things worth carrying forward from doing this work:
   `UserDefaults` + local SwiftData; uninstall destroys everything, and Sign in with Apple
   changes nothing observable (`AuthManager.swift:114-124`). For a journaling product this is
   the single biggest missing expectation.
-- [ ] No data export (also P1-36's dependency, and EU-required).
+- [x] ~~No data export.~~ `LuminaDataExport` + Settings → Privacy → Export my data. Plain JSON through `.fileExporter`, reading the same store set the account eraser clears, so the two can't drift. States its own limits in the file.
 - [ ] Content depth: the daily reading is 3 invitations × 10 planet domains × 2 closings
   (`DailyReading.swift:49-53,72-91`) and varies by nothing but which planet is contacted;
   journal prompts are 3 × 10 + 18 static; the "daily quiz" has exactly 4 generators

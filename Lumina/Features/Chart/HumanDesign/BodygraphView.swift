@@ -11,9 +11,13 @@ import SwiftUI
 /// doesn't yet expose. The "see what's missing" footer makes that
 /// transparent.
 struct BodygraphView: View {
-    static let designSideMissingNote = "Type, Profile, and Authority need your design-side chart "
-        + "(calculated about 88 days before birth), which is coming soon. For now this shows your "
-        + "personality-side activations."
+    /// Describes what this bodygraph *is*, rather than promising what it
+    /// isn't yet. "Coming soon" on a shipped screen is the shape of copy
+    /// Guideline 2.1 singles out, and an unkept date is worse than a plain
+    /// statement of scope.
+    static let designSideMissingNote = "This is your personality-side bodygraph — the placements "
+        + "at the moment you were born. Type, Profile, and Authority are read from a second, "
+        + "design-side chart cast about 88 days earlier, which Lumina doesn't compute."
 
     let activation: HumanDesignActivation
     var onTapCenter: ((HumanDesignCenter) -> Void)?
