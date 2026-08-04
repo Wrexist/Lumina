@@ -4,10 +4,67 @@
 > Format: `[STATUS] Task description — notes`
 > Statuses: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 > See `ROADMAP.md` for the full 16-phase plan and `docs/NAVIGATION.md` for IA & UX rules.
+>
+> **This file is a history log.** For what is *currently* outstanding before
+> launch, read `LAUNCH-READINESS.md` — it supersedes the per-phase backlogs
+> below, several of which describe features that were later cut or replaced.
 
 ---
 
-## 📌 Latest — Full app review: critical fixes + tab declutter (2026-07-02, branch `claude/app-review-improvements-8w40x9`)
+## 📌 Latest — Pre-launch audit + remediation (2026-08-04, branch `claude/pre-launch-audit-checklist-7dwc53`)
+
+Parallel audits over security, iOS correctness, backend, App Store compliance,
+UX and documentation, compiled into `LAUNCH-READINESS.md` (17 P0s, ~40 P1s),
+then worked top-down. Landed:
+
+- [x] **Backend booted at all** — the production entrypoint runs under
+      `node --experimental-strip-types`, which rejects TypeScript parameter
+      properties. `AnthropicError` used one, so `npm start` crashed on import
+      while `tsc` and `vitest` both passed. CI now boots the production
+      entrypoint and probes `/health` every run.
+- [x] **Auth before rate limiting** — unauthenticated requests were consuming
+      the per-IP budget, so an unauthenticated flood could lock out real
+      users. Keys on `fly-client-ip` with `trustProxy` on.
+- [x] **xcconfig truncation** — `//` is an xcconfig line comment *anywhere* on
+      the line, so every injected URL silently truncated to `https:`. Every
+      value is now escaped with the `$()` idiom and round-trip-verified;
+      `inject_env.sh` fails the build rather than shipping a binary that
+      can't reach its backend.
+- [x] **Secret scanning that actually scans** — rewrote `.gitleaks.toml` with
+      an explicit Anthropic rule (gitleaks ships none), removed the
+      `.env.example` path allowlist, and narrowed the historical-leak
+      exemption to a single commit fingerprint in `.gitleaksignore`.
+- [x] **Crash reporting** — `CrashReporter` (MetricKit) subscribed first in
+      `AppDelegate`. The app previously had none of any kind.
+- [x] **SwiftData migration plan** — `LuminaSchema.swift` (`VersionedSchema` +
+      `SchemaMigrationPlan`) with an in-memory fallback so a corrupt store
+      degrades instead of crashing at launch.
+- [x] **The subscription sells something** — `PremiumFeature` in
+      `PremiumGate.swift` is the single source of truth for the free/paid
+      split; gates and the paywall's feature list both read it.
+- [x] **Paywall honesty** — the rescue variant showed a fake "30% off /
+      $41.99" and then charged the real annual price. Removed; the plan
+      picker reads live offerings and a missing plan is surfaced rather than
+      silently substituted.
+- [x] **Account deletion** — `supabase/functions/delete-account` performs the
+      service-role delete and revokes the Sign in with Apple credential
+      (Guideline 5.1.1(v)).
+- [x] **Documentation honesty** — `README.md`, `DEV.md` and `ROADMAP.md`
+      claimed Swiss Ephemeris, RAG/pgvector, ElevenLabs narration, a Supabase
+      backend, and hardcoded prices. None of that is in the binary; all
+      corrected. Deleted the superseded `lumina-roadmap.html`.
+- [x] **Dead config removed** — `ELEVENLABS_*` were passed to both workflows
+      and listed in `.env.example` for a feature that doesn't exist and a
+      script that never wrote them.
+- [x] **`scripts/local_checks.sh`** — the lint/config checks that don't need a
+      Mac, so a five-minute CI round trip isn't the first place a 240-column
+      line gets caught.
+- [ ] Remaining P2/P3 polish is itemised in `LAUNCH-READINESS.md`; the
+      out-of-repo work is the owner-action table at the end of that file.
+
+---
+
+## 📌 Full app review: critical fixes + tab declutter (2026-07-02, branch `claude/app-review-improvements-8w40x9`)
 
 Four parallel review passes over the whole app, then fixes:
 
@@ -60,10 +117,13 @@ Release / store (this commit):
 
 ---
 
-## 🔥 Active Sprint — Phase 1: Navigation Shell + Design System v2
+## 🗄️ Historical — Phase 1: Navigation Shell + Design System v2
 
-> Branch: `claude/roadmap-navigation-improvements-yqxV2`
-> Goal: ship the empty 5-tab shell, design-system v2 components, and routing primitives so every feature phase can plug in without reinventing navigation.
+> **Closed.** Kept for the record. The shell, routing primitives and
+> design-system v2 components all shipped; the `[~]`/`[ ]` marks below were
+> never updated as later sprints finished the work. Do not treat unchecked
+> boxes in this section as open work — check the code, or
+> `LAUNCH-READINESS.md`, first.
 
 ### Routing & app state
 - [~] `AppRouter.swift` — `@Observable` root state machine — initial scaffold landed on this branch; persistence via `@AppStorage` still pending
@@ -486,12 +546,26 @@ Continued top-down through `docs/EXCELLENCE-PLAN.md`. All CI-verified green; bac
 
 ## 🚧 Blockers
 
-| Blocker | Impact | Owner |
+> The authoritative list is the **owner action items** table at the end of
+> `LAUNCH-READINESS.md`. This table is the short version, corrected — several
+> long-standing entries here were never actually blocking anything.
+
+| Blocker | Impact | Status |
 |---|---|---|
-| PP Editorial New font license — confirm purchase | Type system locked to fallback | — |
-| Swiss Ephemeris Pro license (CHF 1,550) | Cannot swap from astronomy-engine | — |
-| ElevenLabs voice ID — record brand voice session | Phase 5 audio blocked | — |
-| Custom palm U-Net Core ML model — train on PolyU/CASIA | Phase 6 blocked | — |
-| Supabase project credentials | Auth + RAG corpus blocked | — |
-| Apple Developer enrollment + signing artifacts | TestFlight + App Store launch blocked | — |
-| Legal review of fortune-telling framing copy | App Review risk | — |
+| Backend not deployed | Every chart, transit and reading fails in a shipped build | 🔴 Blocks launch — `fly deploy` + secrets |
+| RevenueCat products + offering not configured | The paywall has nothing to sell | 🔴 Blocks launch |
+| App Store Connect metadata + privacy nutrition label | Cannot submit | 🔴 Blocks launch |
+| Real support mailbox | Support URL must resolve to a mailbox that is read | 🔴 Blocks launch |
+| `lumina.app` domain + AASA hosting | Universal links fall back to `lumina://`; app still works | 🟡 Not blocking |
+| Legal review of fortune-telling framing | App Review risk | 🟡 Unowned |
+| Palm Core ML model | Palm reading stays out of this release — and out of all metadata | 🟢 By design |
+
+**Retired blockers.** Apple Developer signing is **done** — TestFlight run
+`28671527126` (2026-07-03) archived, signed, exported and uploaded
+successfully. The PP Editorial New font licence and the Swiss Ephemeris Pro
+licence (CHF 1,550) are **not blockers and should not be bought before
+launch**: system fonts and `astronomy-engine` are both clean, working
+substitutions with zero legal exposure. The ElevenLabs voice session blocks
+nothing, because audio narration is a roadmap item with no shipping surface.
+Supabase credentials are optional — Sign in with Apple works standalone
+against the Keychain and the identity-token exchange no-ops without them.

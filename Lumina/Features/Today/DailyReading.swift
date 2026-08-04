@@ -3,7 +3,7 @@ import Foundation
 /// A grounded daily reading composed from the day's real transits — the Today
 /// tab's core content. Deterministic (no language model), so nothing is
 /// invented: it names the actual contacts and what they invite, framed for
-/// today. The narrated *audio* version (ElevenLabs) layers on later; the words
+/// today. Audio narration is a roadmap item with no vendor chosen; the words
 /// are real now.
 enum DailyReading {
     /// A 1–3 sentence *standalone* reading from `transits` (tightest first,

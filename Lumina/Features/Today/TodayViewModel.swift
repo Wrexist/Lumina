@@ -8,9 +8,9 @@ import OSLog
 /// progressions, returns) in one coordinated fan-out on a single
 /// `EphemerisService` — never invented copy.
 ///
-/// Real RAG-backed reading body + ElevenLabs audio land with Phase 3/5 of
-/// `ROADMAP.md`. The transit lines here are the deterministic, honest
-/// stand-in until then.
+/// A retrieval-grounded reading body and audio narration are roadmap items,
+/// not shipped code. The transit lines here are deterministic and honest —
+/// they say only what the computed sky supports.
 @MainActor
 @Observable
 final class TodayViewModel {

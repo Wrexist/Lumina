@@ -30,8 +30,6 @@ jobs:
       # App-runtime keys injected into secrets/Config.xcconfig so the shipped
       # binary has working services. Mirrors ci.yml — minus ANTHROPIC_API_KEY,
       # which by design never ships in the IPA (LLM calls are server-side).
-      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-      ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
       REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
       ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

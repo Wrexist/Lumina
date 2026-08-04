@@ -158,8 +158,9 @@ jobs:
     env:
       # ANTHROPIC_API_KEY is intentionally absent — the app never embeds it;
       # LLM interpretation is server-side (backend `/interpret`).
-      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-      ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+      # ELEVENLABS_* were here too, for audio narration that isn't
+      # implemented; `inject_env.sh` never wrote them, so they only widened
+      # the set of secrets exposed to a build that couldn't use them.
       REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
       ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

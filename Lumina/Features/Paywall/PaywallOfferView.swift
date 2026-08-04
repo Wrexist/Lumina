@@ -151,13 +151,8 @@ struct PaywallOfferView: View {
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
-    /// Guideline 3.1.2 requires the title, the length, and the price per
-    /// period to be visible before purchase.
     private func planTitle(_ offer: IAPManager.PlanOffer) -> String {
-        switch offer.plan {
-        case .monthly: "\(offer.localizedPrice) / month"
-        case .annual: "\(offer.localizedPrice) / year"
-        }
+        PaywallCopy.planTitle(offer)
     }
 
     // MARK: Features
@@ -208,14 +203,7 @@ struct PaywallOfferView: View {
     }
 
     private var primaryCTATitle: String {
-        guard let offer = offers.first(where: { $0.plan == selectedPlan }) else {
-            return "Continue"
-        }
-        // Never promise a trial the product doesn't actually carry.
-        if let intro = offer.introductoryOffer {
-            return "Start your \(intro)"
-        }
-        return "Subscribe — \(offer.localizedPrice)"
+        PaywallCopy.primaryCTATitle(for: selectedPlan, in: offers)
     }
 
     /// Required by Guideline 3.1.1, and genuinely needed here: the paywall is
@@ -251,8 +239,7 @@ struct PaywallOfferView: View {
     }
 
     private var trustCopy: String {
-        let base = "Cancel anytime in Settings. Your subscription renews automatically until you cancel."
-        return variant == .rescue ? "This is the last time we'll bring it up. " + base : base
+        PaywallCopy.trustCopy(for: variant)
     }
 
     // MARK: - Behaviour
