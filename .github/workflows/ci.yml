@@ -79,6 +79,37 @@ jobs:
       - name: Test
         run: npm test
 
+      # Guards the class of bug that shipped a backend which could not boot:
+      # `interpret.ts` used a TypeScript parameter property, which vitest
+      # (esbuild) and `tsc --noEmit` both accept but which the production
+      # entrypoint — `node --experimental-strip-types` — rejects outright.
+      # Nothing in CI executed the real entrypoint, so every Fly deploy would
+      # have crash-looped. Boot it for real and hit /health.
+      - name: Boot production entrypoint and probe /health
+        env:
+          LUMINA_API_SECRET: ci-smoke-secret-not-a-real-credential
+          PORT: "3099"
+          HOST: "127.0.0.1"
+        run: |
+          npm start &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:3099/health" >/dev/null 2>&1; then
+              echo "health OK after ${i}s"
+              curl -fsS "http://127.0.0.1:3099/health"
+              exit 0
+            fi
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+              echo "::error::server exited during boot — production entrypoint is broken"
+              wait "$SERVER_PID" || true
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "::error::/health never became ready within 30s"
+          exit 1
+
   secrets:
     name: Secret scan — gitleaks
     runs-on: ubuntu-latest
@@ -97,8 +128,17 @@ jobs:
 
       # Scan the working tree (--no-git) so the gate is about what's *in* the
       # source now; the .gitleaks.toml allowlist keeps templates from tripping it.
-      - name: Scan for secrets
+      - name: Scan for secrets (working tree)
         run: gitleaks detect --no-git --redact --verbose --config .gitleaks.toml --source .
+
+      # A working-tree-only scan cannot see a key that was committed and later
+      # deleted — it stays in history forever, still exfiltratable from any
+      # clone. This pass covers that. Needs full history, hence fetch-depth 0.
+      - name: Fetch full history
+        run: git fetch --prune --unshallow || true
+
+      - name: Scan for secrets (full history)
+        run: gitleaks detect --redact --verbose --config .gitleaks.toml --source .
 
   ios:
     name: iOS — generate · build · lint · test

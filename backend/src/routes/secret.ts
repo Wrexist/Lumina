@@ -2,7 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 
 /** Constant-time comparison so the shared secret can't be guessed via timing. */
-function secretsMatch(provided: string, expected: string): boolean {
+export function secretsMatch(provided: string, expected: string): boolean {
   const a = Buffer.from(provided, "utf8");
   const b = Buffer.from(expected, "utf8");
   if (a.length !== b.length) return false;

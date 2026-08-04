@@ -1,22 +1,75 @@
 # Lumina gitleaks configuration.
-# Enforces CLAUDE.md critical rule #1: no API keys in source. The CI `secrets`
-# job runs `gitleaks detect` against the working tree; this config extends the
-# default ruleset and allowlists template files and obvious placeholders so the
-# gate stays meaningful (real keys fail) without false-positiving on examples.
+# Enforces DEV.md critical rule #1: no API keys in source. The CI `secrets`
+# job runs `gitleaks detect` against the working tree AND the full history;
+# this config extends the default ruleset and allowlists documented
+# placeholders so the gate stays meaningful (real keys fail) without
+# false-positiving on templates.
 
 title = "Lumina"
 
 [extend]
 useDefault = true
 
+# The default ruleset (gitleaks 8.18.x) has NO Anthropic rule, and
+# `generic-api-key` does not match the `sk-ant-` shape — so a live Anthropic
+# key sat on `main` in backend/.env for a month while this job reported
+# "no leaks found", exit 0. These rules close that hole.
+[[rules]]
+id = "anthropic-api-key"
+description = "Anthropic API key"
+regex = '''sk-ant-(api|admin)[0-9]{2}-[A-Za-z0-9_\-]{32,}'''
+keywords = ["sk-ant-"]
+
+[[rules]]
+id = "anthropic-oauth-token"
+description = "Anthropic OAuth / environment key"
+regex = '''sk-ant-(oat|ort)[0-9]{2}-[A-Za-z0-9_\-]{32,}'''
+keywords = ["sk-ant-"]
+
+[[rules]]
+id = "elevenlabs-api-key"
+description = "ElevenLabs API key"
+regex = '''\bsk_[a-f0-9]{48}\b'''
+keywords = ["sk_"]
+
+[[rules]]
+id = "revenuecat-sdk-key"
+description = "RevenueCat SDK key"
+regex = '''\bappl_[A-Za-z0-9]{32,}\b'''
+keywords = ["appl_"]
+
 [allowlist]
-description = "Template/example files and documented placeholders"
+description = "Documented placeholders only"
+# KNOWN HISTORICAL LEAK — commit 2e0a0af ("Update and rename .env.example to
+# .env", 2026-07-01) committed a live Anthropic key in backend/.env, and it
+# is an ancestor of main. The file is untracked as of this commit and the
+# gate above now detects the key shape, so NEW leaks fail CI immediately.
+#
+# This entry exists only so the full-history pass doesn't pin CI red on a
+# commit that cannot be rewritten without a force-push to main. It is NOT a
+# fix. Two owner actions remain, in this order:
+#   1. Revoke the key at console.anthropic.com (this is the real fix — it
+#      makes every copy in every clone worthless).
+#   2. Purge the blob from history (git-filter-repo / BFG), force-push, then
+#      DELETE this allowlist entry.
+commits = [
+  "2e0a0afacc1d828d79cd85e6042ad27aeaccffdd",
+]
+# NOTE: `.env.example` is deliberately NOT path-allowlisted. It is the file
+# people copy and edit, so a real key pasted there must still fail the gate.
+# The placeholder regexes below are what keep the template itself clean.
+#
+# `backend/.env` is likewise NOT allowlisted. Path allowlists apply to the
+# history scan too, so exempting it would recreate exactly the hole that let
+# commit 2e0a0af through. A CI checkout has no `.env`, so the gate is clean
+# there; running the scan locally with a real `.env` on disk will flag it,
+# which is intended — that file genuinely does hold a live key.
 paths = [
-  '''\.env\.example$''',
   '''\.gitleaks\.toml$''',
 ]
 regexes = [
   '''YOUR_KEY_HERE''',
   '''sk-ant-\.\.\.''',
+  '''sk-ant-api03-xxx''',
   '''\$\([A-Z_]+\)''',
 ]
