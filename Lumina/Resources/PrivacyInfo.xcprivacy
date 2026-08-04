@@ -8,6 +8,44 @@
 	<array/>
 	<key>NSPrivacyCollectedDataTypes</key>
 	<array>
+		<!--
+		  Precise birth coordinates. `BirthData` carries full-precision
+		  latitude/longitude (plus exact date and time) and EphemerisService
+		  POSTs it to the chart service on every request. Coordinates plus a
+		  timestamp are strongly re-identifying, so this must be declared —
+		  the manifest previously listed only Name, Email, Purchase History
+		  and Device ID, which understated what actually leaves the device.
+		  NOTE: this is the birth place the user types in, not a device
+		  location reading — the app never requests location permission.
+		-->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePreciseLocation</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<!--
+		  Birth date and time. Sensitive in combination with the above, and
+		  transmitted for every chart, transit and synastry computation.
+		-->
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeSensitiveInfo</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeName</string>
@@ -76,7 +114,14 @@
 			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
+				<!-- CA92.1: app-private UserDefaults (AppPreferences, stores). -->
 				<string>CA92.1</string>
+				<!-- 1C8F.1: App Group UserDefaults. Required because
+				     WidgetSharedStore writes UserDefaults(suiteName:
+				     "group.app.lumina.ios") so the widget extension can read
+				     the snapshot. Declaring only CA92.1 triggers ITMS-91053
+				     on upload. -->
+				<string>1C8F.1</string>
 			</array>
 		</dict>
 	</array>

@@ -51,24 +51,18 @@ packages:
   OneSignal:
     url: https://github.com/OneSignal/OneSignal-XCFramework
     from: 5.0.0
-  Lottie:
-    url: https://github.com/airbnb/lottie-ios
-    from: 4.0.0
 
 targets:
   Lumina:
     type: application
     platform: iOS
     sources:
+      # Sweeping the directory already picks up Resources/ — including
+      # PrivacyInfo.xcprivacy, Glossary.json and Localizable.xcstrings — and
+      # classifies them into the resources build phase. There used to be a
+      # `resources:` block here as well; that is not a valid XcodeGen target
+      # key, so it (and its `optional: true` markers) was silently ignored.
       - path: Lumina
-    resources:
-      - path: Lumina/Resources/Fonts
-        optional: true
-      - path: Lumina/Resources/Glossary.json
-        optional: true
-      - path: Lumina/Resources/Localizable.xcstrings
-        optional: true
-      - path: Lumina/Resources/PrivacyInfo.xcprivacy
     info:
       path: Lumina/Resources/Info.plist
       properties:
@@ -95,11 +89,17 @@ targets:
         UIUserInterfaceStyle: Light
         ITSAppUsesNonExemptEncryption: false
         NSFaceIDUsageDescription: "Lumina uses Face ID to keep your reflections private on this device."
+        # Required for the "Save Image" action in the share sheet — the chart,
+        # daily-reading, compatibility and QR share cards all offer it, and
+        # the add-only Photos path throws an uncaught exception without a
+        # usage string.
+        NSPhotoLibraryAddUsageDescription: "Lumina asks for permission only when you choose to save a chart or reading card to your photos."
         # NOTE: the Anthropic key is intentionally NOT embedded in the app —
         # LLM interpretation runs server-side via the backend. Shipping the key
         # in Info.plist would make it extractable from the IPA.
-        LuminaElevenLabsAPIKey: $(ELEVENLABS_API_KEY)
-        LuminaElevenLabsVoiceID: $(ELEVENLABS_VOICE_ID)
+        # ElevenLabs keys removed: audio narration isn't implemented and no
+        # Swift file read them, so they were an extractable private key
+        # shipped in the IPA for nothing. Re-add when the audio player lands.
         LuminaRevenueCatAPIKeyIOS: $(REVENUECAT_API_KEY_IOS)
         LuminaOneSignalAppID: $(ONESIGNAL_APP_ID)
         LuminaSupabaseURL: $(SUPABASE_URL)
@@ -162,8 +162,6 @@ targets:
         product: Supabase
       - package: OneSignal
         product: OneSignalFramework
-      - package: Lottie
-        product: Lottie
       - target: LuminaWidget
         embed: true
     preBuildScripts:
@@ -182,6 +180,11 @@ targets:
       # The snapshot store is the one file shared with the app target (pure
       # Foundation, compiled into both) — the widget reads what the app writes.
       - path: Lumina/Core/Widget/WidgetSharedStore.swift
+      # An app extension is its own bundle and needs its own privacy
+      # manifest. Without one, the App Store upload fails with ITMS-91053
+      # because WidgetSharedStore calls UserDefaults(suiteName:).
+      - path: LuminaWidget/PrivacyInfo.xcprivacy
+        buildPhase: resources
     info:
       path: LuminaWidget/Info.plist
       properties:

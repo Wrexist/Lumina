@@ -21,8 +21,6 @@ mkdir -p "${ROOT}/secrets"
 # server-side (backend `/interpret`), so the key must never reach the app
 # bundle — a client-side key is extractable from the IPA.
 KEYS=(
-  ELEVENLABS_API_KEY
-  ELEVENLABS_VOICE_ID
   REVENUECAT_API_KEY_IOS
   ONESIGNAL_APP_ID
   SUPABASE_URL
@@ -45,10 +43,43 @@ fi
   echo ""
   for key in "${KEYS[@]}"; do
     value="${!key:-}"
-    # Xcconfig is sensitive to '//' (treated as comment), '$' (variable), and trailing whitespace.
-    # Empty values are written as `KEY =` so xcconfig parsing succeeds.
-    printf '%s = %s\n' "${key}" "${value}"
+    # xcconfig treats '//' as a line comment ANYWHERE in the line, so writing
+    # a URL raw silently truncates it:
+    #
+    #   SWISS_EPH_SERVICE_URL = https://lumina-ephemeris.fly.dev
+    #                                 ^^ everything from here is a comment
+    #
+    # …leaving the literal value `https:`. That is non-empty, so
+    # `BuildConfig.realValue` accepted it and the app failed EVERY backend
+    # call at runtime — invisible in CI (simulator builds are expected to hit
+    # `.missingConfiguration`) and only manifesting in the TestFlight/App
+    # Store build. The comment here named the hazard and then did nothing
+    # about it.
+    #
+    # `$()` is xcconfig's empty-variable-substitution idiom: it evaluates to
+    # nothing, so `https:$()//host` parses as `https://host` while breaking up
+    # the `//` token. Applied to every value, not just ones that look like
+    # URLs, so a secret that happens to contain '//' survives too.
+    escaped="${value//\/\//\$()\/\/}"
+    printf '%s = %s\n' "${key}" "${escaped}"
   done
 } > "${OUT_FILE}"
+
+# Fail loudly rather than shipping a binary that can't reach its backend.
+# A truncated URL is the failure this whole block exists to prevent, so
+# verify the round trip instead of trusting it.
+for key in "${KEYS[@]}"; do
+  raw="${!key:-}"
+  [[ -z "${raw}" ]] && continue
+  written="$(sed -n "s/^${key} = //p" "${OUT_FILE}")"
+  # Reverse the escape the way xcconfig would evaluate it.
+  restored="${written//\$()/}"
+  if [[ "${restored}" != "${raw}" ]]; then
+    echo "inject_env.sh: ERROR — ${key} did not survive xcconfig escaping." >&2
+    echo "  expected: ${raw}" >&2
+    echo "  got:      ${restored}" >&2
+    exit 1
+  fi
+done
 
 echo "inject_env.sh: wrote ${OUT_FILE}"

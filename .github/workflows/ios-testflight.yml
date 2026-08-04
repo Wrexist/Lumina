@@ -53,6 +53,39 @@ jobs:
       - name: Inject env -> secrets/Config.xcconfig
         run: bash scripts/inject_env.sh
 
+      # `inject_env.sh` writes `KEY =` (empty) for any unset variable, and
+      # nothing here used to check. With these blank, `BuildConfig.realValue`
+      # returns nil, `EphemerisService` throws `.missingConfiguration` for
+      # every call, and the uploaded build has no charts, no IAP and no push
+      # — a guaranteed Guideline 2.1 rejection that looks fine in CI, because
+      # simulator builds are *expected* to hit that path.
+      #
+      # Also asserts the service URL is https. A plain-http URL would fail ATS
+      # at runtime with no exception declared, which is the same silent
+      # breakage one layer down.
+      - name: Verify release secrets are populated
+        run: |
+          set -euo pipefail
+          CONFIG="secrets/Config.xcconfig"
+          MISSING=0
+          for key in SWISS_EPH_SERVICE_URL SWISS_EPH_API_SECRET REVENUECAT_API_KEY_IOS ONESIGNAL_APP_ID; do
+            value="$(sed -n "s/^${key} = //p" "$CONFIG" || true)"
+            # Undo the xcconfig `$()` escaping to read the real value back.
+            value="${value//\$()/}"
+            if [ -z "$value" ]; then
+              echo "::error::$key is empty. Set it under Settings → Secrets → Actions before releasing."
+              MISSING=1
+            fi
+          done
+          URL="$(sed -n 's/^SWISS_EPH_SERVICE_URL = //p' "$CONFIG" || true)"
+          URL="${URL//\$()/}"
+          if [ -n "$URL" ] && case "$URL" in https://*) false;; *) true;; esac; then
+            echo "::error::SWISS_EPH_SERVICE_URL must be https (got '$URL'). ATS blocks cleartext and no exception is declared."
+            MISSING=1
+          fi
+          if [ "$MISSING" -ne 0 ]; then exit 1; fi
+          echo "all required release secrets are populated"
+
       - name: Generate Xcode project
         run: xcodegen generate
 
