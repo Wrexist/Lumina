@@ -102,6 +102,20 @@ Go to **Settings → Secrets and variables → Actions → New repository secret
 | `SUPABASE_URL` | optional — sign-in works without it |
 | `SUPABASE_ANON_KEY` | optional |
 
+**If you do configure Supabase**, also deploy the account-deletion function —
+otherwise "Delete account" wipes the device but leaves the server account behind,
+which is the exact thing Guideline 5.1.1(v) is about:
+
+```bash
+supabase functions deploy delete-account
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=... \
+  APPLE_TEAM_ID=... APPLE_KEY_ID=... APPLE_CLIENT_ID=app.lumina.ios
+supabase secrets set APPLE_PRIVATE_KEY="$(cat AuthKey_XXXX.p8)"   # revokes the Sign in with Apple token
+```
+
+Without Supabase the app treats deletion as local-only and says so — that's a
+supported configuration, not a bug.
+
 > The name says "Swiss Eph" for historical reasons. It's the Node service you just
 > deployed; the ephemeris is `astronomy-engine`. Don't rename it — the app, the
 > injection script and both workflows all agree on this name.
