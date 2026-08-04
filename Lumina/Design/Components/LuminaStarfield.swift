@@ -94,7 +94,7 @@ struct LuminaStarfield: View {
     /// frame. With two stacked fields behind the launch tab at 120 Hz that was
     /// ~150,000 hashes a second computing constants. They're hoisted into a
     /// single `static let` now; the draw loop does arithmetic only.
-    private struct StarSeed {
+    private struct StarSeed: Sendable {
         let unitX: CGFloat
         let unitY: CGFloat
         let radius: CGFloat
@@ -108,10 +108,15 @@ struct LuminaStarfield: View {
 
     /// Precomputed once for the largest field any caller asks for; smaller
     /// fields take a prefix, so star *n* is identical everywhere it appears.
-    private static let maxStarCount = 256
-    private static let seeds: [StarSeed] = (0..<maxStarCount).map(makeSeed)
+    ///
+    /// `nonisolated` because the view type infers `@MainActor` (it holds
+    /// `@State` on a main-actor-isolated store), and a main-actor function
+    /// can't be passed to `map` in a non-isolated static initialiser. These
+    /// are pure arithmetic over `Sendable` values, so isolation buys nothing.
+    private nonisolated static let maxStarCount = 256
+    private nonisolated static let seeds: [StarSeed] = (0..<maxStarCount).map(makeSeed)
 
-    private static func makeSeed(index: Int) -> StarSeed {
+    private nonisolated static func makeSeed(index: Int) -> StarSeed {
         let rx = pseudoRandom(index * 3 + 1)
         let ry = pseudoRandom(index * 3 + 2)
         let rz = pseudoRandom(index * 3 + 3)
@@ -167,7 +172,7 @@ struct LuminaStarfield: View {
 
     /// Deterministic hash-based PRNG (splitmix-style) → 0…1, matching
     /// `MoonSphere3DView`'s crater placement so star positions never reseed.
-    private static func pseudoRandom(_ seed: Int) -> Double {
+    private nonisolated static func pseudoRandom(_ seed: Int) -> Double {
         var value = UInt64(bitPattern: Int64(seed)) &* 0x9E37_79B9_7F4A_7C15
         value ^= value >> 30
         value = value &* 0xBF58_476D_1CE4_E5B9
