@@ -45,8 +45,10 @@ curl -L https://fly.io/install.sh | sh
 fly auth login
 
 cd backend
-fly launch --no-deploy     # keep the app name from fly.toml (`lumina-ephemeris`);
-                           # pick a region near your users
+fly launch --no-deploy     # accept everything from the existing fly.toml —
+                           # app name `lumina-ephemeris`, region `arn`
+                           # (Stockholm). Change the region only if most of
+                           # your users are elsewhere.
 ```
 
 Set the two secrets it needs:
@@ -76,6 +78,9 @@ Then set a spend alarm, because an unbounded LLM bill is the classic first-month
 surprise:
 
 - Fly: <https://fly.io/dashboard> → Billing → set a monthly budget alert.
+  Expect a few dollars a month: `fly.toml` keeps one machine warm on purpose,
+  because a cold start on the first request of the day surfaced as an error
+  state on four tabs at once.
 - Anthropic: <https://console.anthropic.com/settings/limits> → set a monthly spend
   limit. Start low (e.g. $50) and raise it when you see real traffic.
 
