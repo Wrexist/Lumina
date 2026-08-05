@@ -114,6 +114,31 @@ else
   note "ok"
 fi
 
+echo "== Swift: one XCTestCase per test file (single_test_class) =="
+# Appending a second suite to an existing test file is the natural move and
+# SwiftLint rejects it. Cheap to catch here; a full CI round trip otherwise.
+TESTCLS="$(python3 - <<'PY'
+import pathlib, re
+decl = re.compile(r'^(?:final |public |internal )*class (\w+)\s*:\s*(?:XCTestCase|QuickSpec)\b')
+for path in pathlib.Path("LuminaTests").rglob("*.swift"):
+    found = [
+        (i + 1, m.group(1))
+        for i, line in enumerate(path.read_text().splitlines())
+        if (m := decl.match(line))
+    ]
+    if len(found) > 1:
+        names = ", ".join(f"{n} (line {i})" for i, n in found)
+        print(f"{path} — {len(found)} test classes in one file: {names}")
+PY
+)"
+if [ -n "$TESTCLS" ]; then
+  echo "$TESTCLS"
+  note "split each suite into its own file"
+  FAILED=1
+else
+  note "ok"
+fi
+
 echo "== YAML syntax =="
 for f in .github/workflows/*.yml project.yml; do
   if ! python3 -c "import yaml,sys; yaml.safe_load(open('$f'))" 2>/dev/null; then
