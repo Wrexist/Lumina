@@ -5,19 +5,28 @@ on:
     branches: [main, "claude/**"]
   pull_request:
     branches: [main]
-  # Re-run the full pipeline without pushing. Needed because
-  # `cancel-in-progress` below means a burst of commits leaves only the last
-  # one verified — and if that run is itself cancelled, nothing is.
+  # Re-run the full pipeline without pushing — for when a run was cancelled,
+  # or a flake needs a second look.
   workflow_dispatch:
 
 # A push to a claude/** branch and the pull_request opened from that same
-# branch fire two separate events for the same commit. github.ref differs
-# between them (refs/heads/<branch> vs refs/pull/<n>/merge), so without
-# normalizing, both used to run the full pipeline — including the iOS job —
-# in parallel. Falling back to the PR's source-branch name keys both events
-# to the same group, so cancel-in-progress kills the older, redundant run.
+# branch fire two separate events for the same commit, and both used to run
+# the full pipeline — including the 45-minute macOS job — in parallel.
+#
+# Keyed on the **commit**, not the branch. Branch-keyed grouping deduped those
+# two events but also let each new commit cancel the previous commit's run,
+# which produced a failure mode worth spelling out: a burst of commits left
+# only the last one verified, and when that run was itself superseded, nothing
+# was. Worse, a docs-only commit would cancel an in-flight iOS run and its
+# replacement would skip the iOS job entirely (paths filter), leaving the
+# branch with no iOS verification at all while every check showed green.
+#
+# Commit-keyed grouping still collapses the push/PR double-run — same SHA,
+# same group — and never cancels a run for a different commit. It costs runner
+# minutes on a fast series of pushes; on a public repo those are free, and an
+# unverified commit is not.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: true
 
 jobs:
