@@ -100,8 +100,7 @@ extension TabPreviews {
         }
     }
 
-    static func friendRow(name: String, score: Int, signs: String, label: String,
-                                  sunSign: String) -> some View {
+    static func friendRow(name: String, score: Int, signs: String, label: String, sunSign: String) -> some View {
         LuminaCard(padding: LuminaSpacing.md) {
             HStack(spacing: LuminaSpacing.md) {
                 // The shipped list draws the person's Sun-sign constellation
