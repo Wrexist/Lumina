@@ -57,13 +57,20 @@ Run `python3 scripts/aso_lint.py --print` for the exact strings. Summary:
 | Subtitle | 30/30 | `Daily transits, moon, synastry` |
 | Keywords (en-US) | 97/100 | `horoscope,natal,zodiac,rising,human,design,forecast,retrograde,ephemeris,saturn,return,phase,sign` |
 | Keywords (es-MX) | 94/100 | `aspects,houses,composite,placidus,sidereal,ascendant,venus,mars,mercury,ritual,journal,tracker` |
+| Keywords (pt-BR) | 99/100 | `conjunction,trine,square,sextile,opposition,jupiter,neptune,uranus,pluto,element,cycle,wheel,couple` |
 | Keywords (en-GB) | 97/100 | `star,lunar,eclipse,solar,planet,degree,orb,report,reading,guide,calendar,planner,insight,sky,cusp` |
 
 **How to add the extra keyword fields.** In ASC → your app → the version →
-the language dropdown at the top right → **Add Language** → Spanish (Mexico)
-and English (U.K.). Fill in *only* the keyword field for each; leave the name,
-subtitle and description inheriting from en-US. This is a five-minute change
-that nearly triples indexed keyword space.
+the language dropdown at the top right → **Add Language** → Spanish (Mexico),
+Portuguese (Brazil) and English (U.K.). Fill in *only* the keyword field for
+each; leave the name, subtitle and description inheriting from en-US. Ten
+minutes of clicking for 3.5× the indexed keyword space.
+
+**Which of those reach US search:** `es-MX` and `pt-BR` do — both are on
+Apple's US secondary-locale list. `en-GB` does **not**; it serves the UK
+storefront, which is worth having on its own terms. See
+[`KEYWORD-RESEARCH.md` §5](./KEYWORD-RESEARCH.md) for the full list and why an
+earlier draft of this pack had that wrong.
 
 ---
 

@@ -117,35 +117,55 @@ compatibility (via `composite`/`aspects` in the second field).
 
 ---
 
-## 5. Three keyword fields, not one
+## 5. Four keyword fields, not one
 
-The US storefront indexes secondary-locale metadata alongside `en-US`. Adding
-`es-MX` (and, reportedly, `en-GB`) gives a second and third 100-character
-keyword field that also apply to US search. The field is never shown to a
-user, so filling it with English long-tail is not a deception — it is filling
-space Apple has already decided to index. This is standard practice, not a
-loophole ([Appfigures](https://appfigures.com/resources/guides/extend-keyword-list),
+The US storefront indexes secondary-locale metadata alongside `en-US`. The
+keyword field is never shown to a user, so filling a secondary locale with
+English long-tail is not a deception — it is filling space Apple has already
+decided to index. Standard practice, not a loophole
+([Appfigures](https://appfigures.com/resources/guides/extend-keyword-list),
 [AppTweak](https://www.apptweak.com/en/aso-blog/how-to-benefit-from-cross-localization-on-the-app-store),
 [MobileAction](https://www.mobileaction.co/blog/app-store-cross-localization/)).
 
+**Which locales the US storefront actually indexes** matters more than the
+technique, and it is where the first draft of this document was wrong. The US
+secondary list is: Arabic, Chinese (Simplified), Chinese (Traditional),
+French, Korean, **Portuguese (Brazil)**, Russian, **Spanish (Mexico)** and
+Vietnamese. **English (U.K.) is not on it.** An earlier version of this plan
+put English long-tail in `en-GB` expecting it to reach US search; it doesn't.
+
+So the four fields split by the market each one actually serves:
+
 ```
-es-MX  aspects,houses,composite,placidus,sidereal,ascendant,venus,mars,mercury,ritual,journal,tracker   (94/100)
-en-GB  star,lunar,eclipse,solar,planet,degree,orb,report,reading,guide,calendar,planner,insight,sky,cusp (97/100)
+en-US  horoscope,natal,zodiac,rising,human,design,forecast,retrograde,ephemeris,saturn,return,phase,sign   (97/100)  → US
+es-MX  aspects,houses,composite,placidus,sidereal,ascendant,venus,mars,mercury,ritual,journal,tracker      (94/100)  → US + Mexico
+pt-BR  conjunction,trine,square,sextile,opposition,jupiter,neptune,uranus,pluto,element,cycle,wheel,couple (99/100)  → US + Brazil
+en-GB  star,lunar,eclipse,solar,planet,degree,orb,report,reading,guide,calendar,planner,insight,sky,cusp   (97/100)  → UK
 ```
 
-Total: **347 indexed characters, 40 distinct keywords** — versus 127 characters
-if we had shipped one field.
+Total: **446 indexed characters, 53 distinct keywords** — versus 127 characters
+and 13 keywords if we had shipped one field. Three of the four reach US search.
 
-Two caveats, stated plainly:
+`en-GB` stays, but for the honest reason: it serves the UK storefront, which is
+a real English-speaking market where every one of those terms is relevant to an
+actual reader. It is not doing double duty in the US, and the metadata says so
+rather than quietly hoping.
 
-- `es-MX` cross-indexing into the US storefront is well documented. `en-GB`
-  into the US is *reported* and worth taking (it costs nothing and it
-  definitely serves the UK storefront), but do not build a plan on it.
-- Adding a localization means Apple expects that localization's product page
-  to make sense. The `es-MX` page inherits the en-US name, subtitle and
-  description unless you fill them in; that is acceptable, but if you ever
-  translate the page properly, the keyword field must be rewritten in Spanish
-  for the actual Mexican market.
+Two caveats worth keeping in view:
+
+- Adding a localization means Apple expects that localization's product page to
+  make sense. `es-MX` and `pt-BR` inherit the en-US name, subtitle and
+  description; that is acceptable and common, but a Spanish or Portuguese
+  speaker sees an English page. If you ever translate those pages properly,
+  their keyword fields must be rewritten in the local language for the local
+  market — the English long-tail is only worth its slot while the page is
+  English anyway.
+- Every term in `pt-BR` names something the app computes: it plots Jupiter,
+  Neptune, Uranus and Pluto, it names conjunctions, trines, squares, sextiles
+  and oppositions, `CosmicSignature` reads the dominant element,
+  `ProgressedChapter` is the cycle, `ChartWheelView` is the wheel, and synastry
+  is what a couple is looking for. The accuracy rule doesn't relax because a
+  field is invisible.
 
 ---
 

@@ -43,8 +43,12 @@
       "keywords": "aspects,houses,composite,placidus,sidereal,ascendant,venus,mars,mercury,ritual,journal,tracker"
     },
     "en-GB": {
-      "$comment": "Third indexed keyword field. Serves the UK storefront for certain, and is reported to feed US indexing too — verify before counting on the US half.",
+      "$comment": "Serves the UK storefront, where these terms are indexed for real users. It does NOT feed US search — Apple's US secondary locales are ar, zh-Hans, zh-Hant, fr, ko, pt-BR, ru, es-MX and vi. See docs/aso/KEYWORD-RESEARCH.md §5.",
       "keywords": "star,lunar,eclipse,solar,planet,degree,orb,report,reading,guide,calendar,planner,insight,sky,cusp"
+    },
+    "pt-BR": {
+      "$comment": "The third US-indexed field. Portuguese (Brazil) is on Apple's US secondary-locale list, so English long-tail here reaches US search the same way es-MX does — and Brazil is a large astrology market worth having a presence in.",
+      "keywords": "conjunction,trine,square,sextile,opposition,jupiter,neptune,uranus,pluto,element,cycle,wheel,couple"
     }
   },
   "in_app_purchases": [
@@ -94,19 +98,9 @@
         "why": "High volume via 'birthday horoscope'; combines with the name's 'birth'. Broad, so expect low conversion."
       },
       {
-        "term": "couple",
-        "replaces": "tracker",
-        "why": "'couple compatibility' is a large intent cluster the synastry feature genuinely serves."
-      },
-      {
         "term": "nodes",
         "replaces": "degree",
         "why": "North/south node searches are small and high-intent — but only once the chart shows them."
-      },
-      {
-        "term": "wheel",
-        "replaces": "report",
-        "why": "'chart wheel' is what people call the thing the app draws best."
       },
       {
         "term": "almanac",
