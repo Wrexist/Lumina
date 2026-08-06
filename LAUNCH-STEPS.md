@@ -11,7 +11,8 @@ one optional screenshot (the SceneKit moon) would need a hand capture, and
 shipping five instead is a fine trade.
 
 Time estimate for the whole list: **one long day, plus 1–3 days of waiting on Apple
-review.** The blocking path is Steps 1 → 2 → 5 → 7 → 9.
+review.** The blocking path is Steps 1 → 2 → 5 → 7 → 9. (Step 4 is automatic
+now — merging this branch publishes the site and verifies the three URLs.)
 
 ---
 
@@ -128,20 +129,26 @@ URL is `https`, so a mistake here fails loudly instead of shipping a dead app.
 
 ---
 
-## Step 4 — Turn on GitHub Pages
+## Step 4 — GitHub Pages ✅ automatic
 
 Your Support URL and Privacy Policy URL must resolve, or App Review rejects the
-submission outright. The pages are already written and committed.
+submission outright. **This now happens by itself when this branch merges.**
 
-1. **Settings → Pages**.
-2. Source: **Deploy from a branch**. Branch: `main`, folder: **`/docs`**. Save.
-3. Wait ~2 minutes, then open all three in a browser:
-   - <https://wrexist.github.io/Lumina/>
-   - <https://wrexist.github.io/Lumina/privacy.html>
-   - <https://wrexist.github.io/Lumina/support.html>
+`.github/workflows/pages.yml` enables Pages via the API if it isn't already,
+publishes `docs/`, and then curls all three URLs Apple loads — failing loudly
+if any of them doesn't return 200, because a successful deploy that still
+404s on `support.html` is the failure that actually matters.
 
-All three must load. If they 404, the folder setting is wrong — it must be `/docs`,
-not `/root`.
+Nothing to do unless the run fails. If it does, the message will say why; the
+usual cause is an account or org policy blocking API enablement, in which case:
+
+1. **Settings → Pages**, Source: **GitHub Actions**. Save.
+2. Actions → `pages` → **Run workflow**.
+
+Then confirm in a browser:
+- <https://wrexist.github.io/Lumina/>
+- <https://wrexist.github.io/Lumina/privacy.html>
+- <https://wrexist.github.io/Lumina/support.html>
 
 ---
 
