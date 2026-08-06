@@ -14,7 +14,6 @@
   "age_rating": "4+",
   "primary_language": "English (U.S.)",
   "price_tier": "Free with subscription",
-
   "urls": {
     "marketing": "https://wrexist.github.io/Lumina/",
     "support": "https://wrexist.github.io/Lumina/support.html",
@@ -23,13 +22,13 @@
     "terms": "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
     "copyright": "2026 Lumina"
   },
-
   "contact": {
     "$comment": "Used for the App Store Connect support field, the App Review contact, and the published pages. lumina.app was never registered, so every address at it bounced — an unmonitored support contact is a rejection. aso_lint.py fails on any address at that domain and checks this one is actually on the support page.",
     "support_email": "Luminasupporthelp@gmail.com",
-    "unregistered_domains": ["lumina.app"]
+    "unregistered_domains": [
+      "lumina.app"
+    ]
   },
-
   "localizations": {
     "en-US": {
       "name": "Lumina: Birth Chart Astrology",
@@ -48,7 +47,6 @@
       "keywords": "star,lunar,eclipse,solar,planet,degree,orb,report,reading,guide,calendar,planner,insight,sky,cusp"
     }
   },
-
   "in_app_purchases": [
     {
       "reference_name": "Lumina Plus Monthly",
@@ -61,15 +59,82 @@
       "description": "One year of everything in Lumina Plus."
     }
   ],
-
   "review": {
     "demo_account_required": true,
     "notes": "Lumina computes real charts from a Swiss-Ephemeris backend, so the app needs network access to show its main content.\n\nWHAT TO ENTER\nOnboarding asks for a birth date, time and place. Any values work; for a chart with every feature populated, use 14 March 1990, 09:25, Stockholm, Sweden.\n\nWHERE THE SUBSCRIPTION IS\nSettings > Lumina Plus opens the paywall, and every gated surface (Chart > Human Design, People > any person > Compatibility, Today > Ahead > What's coming) offers it too. Restore Purchases is on the paywall and in Settings > Account.\n\nACCOUNT DELETION\nSettings > Account > Delete account removes the account and all server-side data in-app, per Guideline 5.1.1(v). No email or support request is involved.\n\nWHAT THIS BUILD DOES NOT DO\nThe app does not read palms. Earlier marketing mentioned it; nothing in this binary claims it as a shipping feature, the Palm tab is not present, and the in-app FAQ states plainly that it isn't built yet.\n\nENTERTAINMENT DISCLAIMER\nAstrological content is presented for entertainment and self-reflection, disclosed on the Today tab, in Settings > About, and in the description."
   },
-
   "accuracy_rules": {
     "$comment": "Enforced by scripts/aso_lint.py. Terms that must not appear in any user-visible metadata field while the feature is unreachable in the binary (Guideline 2.3.1).",
-    "forbidden_terms": ["palm", "palmistry", "tarot", "psychic", "fortune telling", "numerology"],
+    "forbidden_terms": [
+      "palm",
+      "palmistry",
+      "tarot",
+      "psychic",
+      "fortune telling",
+      "numerology"
+    ],
     "forbidden_terms_reason": "No palm capture, no tarot deck, no numerology engine ships in 1.0. Keywords are indexed metadata and fall under the same accuracy rule as the app name."
+  },
+  "keyword_bench": {
+    "$comment": "Ranked candidates NOT in the live fields, with what each would replace. Keyword fields can only change with a new version, so every release should swap the bottom performers rather than rewriting the whole set — a wholesale rewrite makes the result unattributable. aso_lint.py checks these don't already collide with a live field.",
+    "candidates": [
+      {
+        "term": "chiron",
+        "replaces": "cusp",
+        "why": "A real chart point with a devoted audience and almost no competition. Only swap in once the chart actually plots it."
+      },
+      {
+        "term": "vedic",
+        "replaces": "solar",
+        "why": "Sidereal houses ship, and 'vedic' is the term that audience searches. Verify the app satisfies the intent before betting on it."
+      },
+      {
+        "term": "birthday",
+        "replaces": "orb",
+        "why": "High volume via 'birthday horoscope'; combines with the name's 'birth'. Broad, so expect low conversion."
+      },
+      {
+        "term": "couple",
+        "replaces": "tracker",
+        "why": "'couple compatibility' is a large intent cluster the synastry feature genuinely serves."
+      },
+      {
+        "term": "nodes",
+        "replaces": "degree",
+        "why": "North/south node searches are small and high-intent — but only once the chart shows them."
+      },
+      {
+        "term": "wheel",
+        "replaces": "report",
+        "why": "'chart wheel' is what people call the thing the app draws best."
+      },
+      {
+        "term": "almanac",
+        "replaces": "planner",
+        "why": "Adjacent, low competition, and honest for a transit forecast."
+      }
+    ],
+    "do_not_use": [
+      {
+        "term": "tarot",
+        "why": "no tarot deck ships"
+      },
+      {
+        "term": "palm",
+        "why": "no palm capture ships"
+      },
+      {
+        "term": "psychic",
+        "why": "the app makes no such claim, and the word attracts refund-prone intent"
+      },
+      {
+        "term": "numerology",
+        "why": "no numerology engine ships"
+      },
+      {
+        "term": "free",
+        "why": "Apple ignores it and it wastes four characters"
+      }
+    ]
   }
 }

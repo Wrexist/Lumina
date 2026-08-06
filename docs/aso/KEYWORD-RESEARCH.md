@@ -193,6 +193,24 @@ before you commit them to the field: a week of ASA data tells you conversion
 rate per term, which is the number that actually predicts organic performance.
 That is the ASA→ASO loop ([Stormy](https://stormy.ai/blog/asa-to-aso-keyword-loop-strategy)).
 
+### The bench
+
+Release 2 shouldn't start from a blank page. `metadata/app-store.json` carries
+a `keyword_bench`: ranked candidates that are *not* live, each naming the term
+it would replace and why. The linter checks that none of them is already
+indexed, that each swap target actually exists, and that none names an
+unshipped feature — a wasted swap costs a whole release, because the keyword
+field can only change with a new version.
+
+Three of them are gated on the app, not on the data, and the note says so:
+`chiron` and `nodes` only once the chart plots those points, `vedic` only if
+the sidereal option genuinely satisfies that searcher. Shipping a keyword
+ahead of its feature is the mistake this whole document exists to prevent.
+
+There is also a `do_not_use` list — `tarot`, `palm`, `psychic`, `numerology`,
+`free` — with the reason attached, so nobody re-adds one in six months when
+the context has been forgotten. That is exactly how `tarot` got in.
+
 ---
 
 ## 8. Screenshot captions are a fourth, weaker index

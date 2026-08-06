@@ -215,6 +215,38 @@ def check_contact(report: Report, contact: dict) -> None:
                 report.fail(f"docs/{page.name}", f"still links mail at {dead}")
 
 
+def check_bench(report: Report, bench: dict | None, live: list[str],
+                indexed: set[str], forbidden: list[str]) -> None:
+    """Keep the swap candidates usable.
+
+    A bench term that is already live, or that names an unshipped feature, is
+    a swap that would waste a release — and keyword fields can only change
+    with a new version, so a wasted swap costs months.
+    """
+    if not bench:
+        return
+
+    live_stems = {stem(word.lower()) for word in live} | indexed
+    candidates = bench.get("candidates", [])
+    for candidate in candidates:
+        term = candidate["term"]
+        if stem(term.lower()) in live_stems:
+            report.fail("keyword bench", f"'{term}' is already live — nothing to swap in")
+        if any(bad in term.lower() for bad in forbidden):
+            report.fail("keyword bench", f"'{term}' names an unshipped feature")
+
+        replaces = candidate.get("replaces")
+        if replaces and replaces not in live:
+            report.fail("keyword bench",
+                        f"'{term}' says it replaces '{replaces}', which isn't in any live field")
+
+    for entry in bench.get("do_not_use", []):
+        if stem(entry["term"].lower()) in live_stems:
+            report.fail("keyword bench", f"'{entry['term']}' is on the do-not-use list but is live")
+
+    report.ok("keyword bench", f"{len(candidates)} candidates, none live, each with a swap target")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--print", dest="emit", action="store_true",
@@ -289,6 +321,7 @@ def main() -> int:
 
     check_urls(report, data["urls"])
     check_contact(report, data["contact"])
+    check_bench(report, data.get("keyword_bench"), all_keywords, indexed, forbidden)
 
     total_indexed = len(primary["name"]) + len(primary["subtitle"]) + sum(
         len(p["keywords"]) for p in locales.values() if "keywords" in p
