@@ -4,8 +4,11 @@ Everything that could be fixed in code **is fixed**. What follows is the work th
 can only happen outside this repository: accounts, dashboards, DNS, and App Store
 Connect. It's written to be followed top to bottom in one sitting per section.
 
-Nothing here needs a Mac except **Step 8** (screenshots) — and even that can be done
-from a TestFlight build on a real iPhone.
+**Nothing here needs a Mac.** The TestFlight lane archives and uploads from CI,
+and four of the six App Store screenshots are rendered by CI at Apple's exact
+required size — download them from the `app-store-screenshots` artifact. Only
+two optional screenshots (the SceneKit moon, the Human Design bodygraph) would
+need a hand capture, and shipping four instead is a fine trade.
 
 Time estimate for the whole list: **one long day, plus 1–3 days of waiting on Apple
 review.** The blocking path is Steps 1 → 2 → 5 → 7 → 9.
@@ -157,8 +160,8 @@ shows "Subscription pricing isn't available right now" and sells nothing.
    | `Lumina Premium Monthly` | `lumina_plus_monthly` | 1 month |
    | `Lumina Premium Annual` | `lumina_plus_annual` | 1 year |
 
-3. Set prices, add a display name and a review description for each (copy is in
-   `docs/APP-STORE-LISTING.md`), and upload a review screenshot for each.
+3. Set prices, add a display name and a review description for each (display names and descriptions are in
+   `metadata/app-store.json` → `in_app_purchases`), and upload a review screenshot for each.
 4. **No weekly tier.** Apple is actively rejecting weekly subscriptions in this
    category.
 
@@ -234,20 +237,28 @@ offering isn't published.
 
 ## Step 8 — Screenshots
 
-Required: 6.9" (iPhone 16 Pro Max). Take them from the TestFlight build with your
-own chart in it — real data photographs better than sample data.
+**Four of them are already made.** Every CI run renders them at exactly
+1320 × 2868 — the 6.9" size Apple requires — and a test fails the build if the
+dimensions are ever wrong. Download them from the last green run:
 
-Six shots, in this order (captions and rationale in `docs/APP-STORE-LISTING.md`):
+GitHub → Actions → the latest `ci` run → Artifacts → **app-store-screenshots**
 
-1. Birth chart wheel
-2. Ask your chart
-3. Today / daily reading
-4. Cosmic Signature (Big Three)
-5. Compatibility result
-6. A tagline card (no device frame)
+That gives you `01-today`, `02-birth-chart`, `03-synastry` and `04-reflect`,
+captioned. Two frames from the storyboard can't be rendered this way — the 3D
+moon is SceneKit and the bodygraph needs a live Human Design computation, and
+neither survives `ImageRenderer`. Capture those two by hand from the TestFlight
+build if you want six; four honest screenshots beat six with two blank frames.
+
+Storyboard, captions and the per-frame rationale:
+[`docs/aso/SCREENSHOTS.md`](./docs/aso/SCREENSHOTS.md).
+
+If you do capture by hand, use your own chart — real data photographs better
+than sample data.
 
 **Do not include a palm-reading screenshot.** Palm reading isn't in this build, and
-a screenshot of a feature that doesn't exist is a Guideline 2.3.1 rejection.
+a screenshot of a feature that doesn't exist is a Guideline 2.3.1 rejection. CI
+no longer produces one either: `tab-palm.png` is skipped while the tab is
+unreachable.
 
 ---
 
@@ -332,13 +343,14 @@ Small, but they're public and they're wrong:
 
 1. ASC → Lumina → **Add for Review**.
 2. Attach the build from Step 7.
-3. Paste the App Review notes from `docs/APP-STORE-LISTING.md`. They tell the
+3. Paste the App Review notes from `metadata/app-store.json` (`python3
+   scripts/aso_lint.py --print` prints them last). They tell the
    reviewer exactly how to reach the paywall and the delete-account flow, which is
    the difference between a one-day review and a week of back-and-forth.
 4. Submit.
 
 Typical review is 24–48 hours. If it's rejected, the message names the guideline —
-`docs/APP-STORE-LISTING.md` covers 2.1, 2.3.1, 3.1.1, 3.1.2 and 5.1.1(v), which are
+The review notes cover 2.1, 2.3.1, 3.1.1, 3.1.2 and 5.1.1(v), which are
 the five this category actually gets hit with.
 
 ---

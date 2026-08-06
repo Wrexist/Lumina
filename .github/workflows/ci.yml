@@ -245,6 +245,14 @@ jobs:
       # `ScreenshotTests` renders key screens to PNGs via ImageRenderer; upload
       # them so the UI is reviewable without a Mac. `always()` so they surface
       # even if a later test fails.
+      - name: Upload App Store screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-screenshots
+          path: LuminaTests/__AppStoreShots__/*.png
+          if-no-files-found: warn
+
       - name: Upload UI screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -261,7 +269,7 @@ jobs:
         if: always()
         run: |
           shopt -s nullglob
-          for f in LuminaTests/__Screenshots__/*.png; do
+          for f in LuminaTests/__Screenshots__/*.png LuminaTests/__AppStoreShots__/*.png; do
             echo "===SHOT_BEGIN $(basename "$f")==="
             openssl base64 -A -in "$f"
             echo ""
