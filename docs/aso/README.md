@@ -9,6 +9,7 @@ and a linter that keeps it correct.
 | [`KEYWORD-RESEARCH.md`](./KEYWORD-RESEARCH.md) | Why these keywords, what Apple indexes, and the loop after launch |
 | [`SCREENSHOTS.md`](./SCREENSHOTS.md) | The six screenshots, their captions, sizes, and the preview script |
 | [`PRIVACY-LABELS.md`](./PRIVACY-LABELS.md) | Privacy answers, each traced to the code that justifies it |
+| [`SEARCH-ADS.md`](./SEARCH-ADS.md) | The paid seed plan — four campaigns, and the decision rules for what the data means |
 | [`../../metadata/app-store.json`](../../metadata/app-store.json) | **Source of truth** for every text field |
 | [`../../scripts/aso_lint.py`](../../scripts/aso_lint.py) | Validates limits, keyword overlap and accuracy claims |
 

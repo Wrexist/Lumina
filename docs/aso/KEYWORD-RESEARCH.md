@@ -212,6 +212,8 @@ Run paid Search Ads on the *exact* terms you want to rank for organically
 before you commit them to the field: a week of ASA data tells you conversion
 rate per term, which is the number that actually predicts organic performance.
 That is the ASA→ASO loop ([Stormy](https://stormy.ai/blog/asa-to-aso-keyword-loop-strategy)).
+The campaign structure to start from — and, more usefully, the rules for what
+each number should make you change — is in [`SEARCH-ADS.md`](./SEARCH-ADS.md).
 
 ### The bench
 
