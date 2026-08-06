@@ -67,12 +67,17 @@ errors; 80 shows only the tail of the warnings. Results routinely exceed the
 tool's token cap and get written to a file — parse that with `python3`, don't
 try to Read it.
 
-**A missing run does not mean Actions is broken.** On this repo, runs are
-created roughly 25 minutes after the push. Checking five minutes later and
-concluding "Actions is blocked" is a mistake this project has already made
-once, in writing, to the user. Confirm by looking at whether *anyone's* pushes
-are producing runs, and check `list_workflows` for a `disabled_*` state,
-before reporting an outage.
+**A missing run does not mean Actions is broken.** Runs on this repo have
+appeared 20–30 minutes after the push, measured as the gap between the local
+commit timestamp and the run's `created_at`. Some of that gap is clock skew —
+GitHub's clock has read several minutes *ahead* of this container's — so treat
+it as "expect a wait of tens of minutes", not as a calibrated number.
+
+Checking five minutes later and concluding "Actions is blocked" is a mistake
+this project has already made once, in writing, to the user. Before reporting
+an outage: check whether pushes to *other* branches are producing runs, and
+check `list_workflows` for a `disabled_*` state. Both were green while the
+runs were merely queued.
 
 **`workflow_dispatch` is not available to the agent** — the GitHub App token
 lacks `actions: write` and returns 403. Only a human can re-run a workflow
