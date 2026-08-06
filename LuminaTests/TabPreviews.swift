@@ -86,16 +86,24 @@ enum TabPreviews {
     static func people() -> some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
             Text("People").font(LuminaTypography.display)
-            friendRow(name: "Sam", score: 73, signs: "Gemini · Leo", label: "Harmonious")
-            friendRow(name: "Alex", score: 58, signs: "Virgo · Pisces", label: "Stimulating")
-            friendRow(name: "Mia", score: 84, signs: "Libra · Aquarius", label: "Magnetic")
+            friendRow(name: "Sam", score: 73, signs: "Gemini · Leo", label: "Harmonious",
+                      sunSign: "Gemini")
+            friendRow(name: "Alex", score: 58, signs: "Virgo · Pisces", label: "Stimulating",
+                      sunSign: "Virgo")
+            friendRow(name: "Mia", score: 84, signs: "Libra · Aquarius", label: "Magnetic",
+                      sunSign: "Libra")
             LuminaCard(surface: .glass) {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                     HStack(spacing: LuminaSpacing.sm) {
                         Image(systemName: "lock").foregroundStyle(LuminaColors.celestialBlue)
                         Text("Privacy").font(LuminaTypography.heading)
                     }
-                    Text("Friends live on this device only. We never sync names or birthdays to a server.")
+                    // Was: "We never sync names or birthdays to a server" —
+                    // which stopped being true when compatibility started
+                    // POSTing both people's birth dates to the chart service.
+                    // `PeopleHubView` was corrected; this render, the thing
+                    // everyone actually looks at, kept the old claim.
+                    Text("Names and notes stay on this device. Scoring compatibility does send both birth dates to our chart service, which stores nothing.")
                         .font(LuminaTypography.bodyLight)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                 }
@@ -126,9 +134,9 @@ enum TabPreviews {
             infoCard(
                 icon: "wand.and.sparkles",
                 title: "How we're building it",
-                body: "We're making sure the on-device line tracing works fairly across every skin tone "
-                    + "before we ship it. Every other app overlays a generic illustration — Lumina actually "
-                    + "traces your lines with an on-device model trained on real palm images.",
+                body: "We're building on-device line tracing and won't ship it until it works fairly "
+                    + "across every skin tone. Every other app overlays a generic illustration; ours will "
+                    + "trace your actual lines. It isn't built yet, and we won't pretend otherwise.",
                 badge: "Soon"
             )
         }
@@ -159,21 +167,32 @@ enum TabPreviews {
         }
     }
 
+    /// The **real** `RetrogradeCard`, driven by a fixed result, rather than a
+    /// hand-built lookalike. The lookalike drifted the moment the shipped
+    /// card gained its strip of retrograde planets — which is the failure
+    /// mode of every reimplemented preview, and the reason this one now feeds
+    /// the component its data instead of copying its markup.
     private static func retrogradeCard() -> some View {
-        LuminaCard {
-            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                kickerLabel("RETROGRADES")
-                Text("Mercury is retrograde right now.")
-                    .font(LuminaTypography.body)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
-                HStack(alignment: .top, spacing: LuminaSpacing.sm) {
-                    Text("•").font(LuminaTypography.caption)
-                    Text("Mercury turns direct Jun 14")
-                        .font(LuminaTypography.caption)
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-                }
-            }
-        }
+        var components = DateComponents()
+        components.year = 2026
+        components.month = 6
+        components.day = 14
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
+        let station = calendar.date(from: components) ?? Self.sampleDate
+
+        return RetrogradeCard(result: RetrogradesResult(
+            calculatedAt: Self.sampleDate,
+            at: Self.sampleDate,
+            planets: [
+                RetrogradeState(planet: "Mercury", isRetrograde: true,
+                                nextStationAt: station, nextStationDirection: .direct),
+                RetrogradeState(planet: "Saturn", isRetrograde: true,
+                                nextStationAt: nil, nextStationDirection: nil),
+                RetrogradeState(planet: "Venus", isRetrograde: false,
+                                nextStationAt: nil, nextStationDirection: nil),
+            ]
+        ))
     }
 
     private static func chapterCard() -> some View {
@@ -216,9 +235,15 @@ enum TabPreviews {
         }
     }
 
-    private static func friendRow(name: String, score: Int, signs: String, label: String) -> some View {
+    private static func friendRow(name: String, score: Int, signs: String, label: String,
+                                  sunSign: String) -> some View {
         LuminaCard(padding: LuminaSpacing.md) {
-            HStack {
+            HStack(spacing: LuminaSpacing.md) {
+                // The shipped list draws the person's Sun-sign constellation
+                // on a night-sky disc. A screenshot suite that skips it can't
+                // catch a regression in the one surface those twelve assets
+                // exist for.
+                avatar(sunSign: sunSign)
                 VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
                     Text(name).font(LuminaTypography.heading)
                     Text(signs)
@@ -234,6 +259,23 @@ enum TabPreviews {
                 }
             }
         }
+    }
+
+    /// Mirrors `PeopleHubView.avatar(for:)` — midnight disc, gold rim, the
+    /// real constellation art inset.
+    private static func avatar(sunSign: String) -> some View {
+        ZStack {
+            Circle()
+                .fill(LuminaColors.midnight)
+                .overlay(Circle().stroke(LuminaColors.mutedGold.opacity(0.3), lineWidth: 1))
+            if let constellation = LuminaImageAsset.constellation(sign: sunSign) {
+                constellation.image
+                    .resizable()
+                    .scaledToFit()
+                    .padding(LuminaSpacing.xs)
+            }
+        }
+        .frame(width: 44, height: 44)
     }
 
     private static func entryRow(date: String, excerpt: String) -> some View {

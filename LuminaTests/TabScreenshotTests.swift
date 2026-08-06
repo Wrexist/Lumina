@@ -26,7 +26,17 @@ final class TabScreenshotTests: XCTestCase {
 
     func testTabPeople() throws { try render(TabPreviews.people(), named: "tab-people") }
     func testTabReflect() throws { try render(TabPreviews.reflect(), named: "tab-reflect") }
-    func testTabPalm() throws { try render(TabPreviews.palm(), named: "tab-palm") }
+
+    /// Only rendered when the tab is actually reachable. `tab-palm.png` is
+    /// uploaded as a CI artifact and is the image people reach for when they
+    /// want to see the app — producing one for a tab that isn't in the build
+    /// is how a screenshot of an unshipped feature ends up somewhere it
+    /// shouldn't be.
+    func testTabPalm() throws {
+        try XCTSkipUnless(LuminaTab.visible.contains(.palm),
+                          "the Palm tab is not in this build — no screenshot of it should exist")
+        try render(TabPreviews.palm(), named: "tab-palm")
+    }
 
     private func render(_ view: some View, named name: String) throws {
         let framed = view
