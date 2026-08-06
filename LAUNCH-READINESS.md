@@ -28,6 +28,39 @@ CI checkmark is measuring the wrong things. Realistic estimate: **P0+P1 is 3–5
 
 ---
 
+## Status — 2026-08-06, art integration + metadata pass
+
+The 26 generated assets are wired into the app (see `docs/ASSET-BRIEF.md` §
+*Where each asset landed*), and the App Store metadata now lives in
+`metadata/app-store.json` behind a linter (`docs/aso/`).
+
+Doing that work surfaced **five more instances of the same defect this audit
+was created for** — shipped copy describing an app that doesn't exist. None
+were in the P0/P1 list, because the list was built from the code as it was,
+and all five sat in places nobody re-reads:
+
+| Found | Where | Now |
+|---|---|---|
+| "Lumina is a premium astrology and **palm-reading** app… on-device palm analysis" | `HelpView` — two articles above the FAQ admitting palm isn't built | Rewritten; the Palm help topic is gone; `ReleaseAccuracyTests` fails the build on a repeat |
+| Four palmistry glossary definitions for a feature with no surface | `Glossary.json`, under "every term in Lumina" | `GlossaryStore.shipped(_:)` filters them, keyed to `LuminaTab.visible` |
+| "Lumina **actually traces your lines** with an on-device model trained on real palm images" | `PalmHubView` — present tense, no model exists | Rewritten to future tense with an explicit "isn't built yet" |
+| "We never sync names or birthdays to a server" | `TabPreviews` — the People **screenshot**, after the real card was corrected | Corrected; the screenshot suite now uses the real components |
+| `tarot` in the keyword field | previous listing draft — no tarot deck in the app | Removed; `aso_lint.py` fails on it |
+
+Plus two dead-link classes: every published support address was at
+`lumina.app`, a domain that was never registered (mail bounced); and the
+privacy page still said data export was "planned but not available" months
+after it shipped.
+
+**The lesson to carry forward:** the audit fixed the claims in the places it
+looked — the app name, the keywords, the marketing site. The same claims
+survived in Help, the glossary, a preview, and a screenshot. Accuracy needs a
+test, not a pass. There are now three: `ReleaseAccuracyTests`,
+`scripts/aso_lint.py`, and the screenshot suite rendering real components
+instead of lookalikes.
+
+---
+
 ## Status — 2026-08-04, end of the remediation pass
 
 **Every P0 and P1 in this document has been fixed in the repo, along with most of P2/P3.**
