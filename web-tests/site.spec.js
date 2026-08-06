@@ -86,3 +86,41 @@ test('support page offers a way to reach a human', async ({ page }) => {
   const text = (await page.locator('body').innerText()).toLowerCase();
   expect(mailto > 0 || /@/.test(text), 'a reachable contact').toBeTruthy();
 });
+
+// `lumina.app` was in every published address for months and was never
+// registered — mail to it bounced silently, which is both a rejection and a
+// dead end for anyone who needed help. A generic "has an @ somewhere" check
+// passed the whole time, so these assert the specific failure.
+const UNREGISTERED_DOMAINS = ['lumina.app'];
+const SUPPORT_EMAIL = 'luminasupporthelp@gmail.com';
+
+for (const page_ of PAGES) {
+  test(`${page_.name} links no mail at an unregistered domain`, async ({ page }) => {
+    await page.goto(page_.path);
+    const mailtos = await page.locator('a[href^="mailto:"]').evaluateAll((els) =>
+      els.map((e) => e.getAttribute('href').toLowerCase())
+    );
+    const dead = mailtos.filter((href) =>
+      UNREGISTERED_DOMAINS.some((domain) => href.includes(`@${domain}`))
+    );
+    expect(dead, 'mail links at a domain that does not exist').toEqual([]);
+  });
+}
+
+test('support and privacy publish the same address the App Store listing gives', async ({ page }) => {
+  for (const path of ['/support.html', '/privacy.html']) {
+    await page.goto(path);
+    const text = (await page.locator('body').innerText()).toLowerCase();
+    expect(text, `${path} shows the support address`).toContain(SUPPORT_EMAIL);
+  }
+});
+
+// The policy claimed a self-serve export was "planned but not available" for
+// months after it shipped — understating the user's rights and contradicting
+// the app. Assert it describes what the app actually does.
+test('privacy page describes the export the app actually ships', async ({ page }) => {
+  await page.goto('/privacy.html');
+  const text = (await page.locator('body').innerText()).toLowerCase();
+  expect(text, 'names the in-app export').toContain('export my data');
+  expect(text, 'no stale "not available yet" claim').not.toMatch(/export[^.]{0,80}not available/);
+});
