@@ -28,7 +28,10 @@ echo "== Swift file/type body length (type_body_length: 250) =="
 BIG="$(python3 - <<'PY'
 import pathlib, re, sys
 limit = 250
-for path in list(pathlib.Path("Lumina").rglob("*.swift")) + list(pathlib.Path("LuminaWidget").rglob("*.swift")):
+# Every directory in .swiftlint.yml's `included:` list. LuminaTests was
+# missing here, which is how a 262-line TabPreviews reached CI green locally
+# and failed `swiftlint --strict` on the runner.
+for path in [p for d in ("Lumina", "LuminaTests", "LuminaWidget") for p in pathlib.Path(d).rglob("*.swift")]:
     lines = path.read_text().splitlines()
     start = None
     for i, line in enumerate(lines):
