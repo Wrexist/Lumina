@@ -452,6 +452,17 @@ Two things worth carrying forward from doing this work:
 
 ## P2 — Completeness & quality (needed for a credible v1)
 
+> **The checkboxes below are not a to-do list.** They are the audit's original
+> findings, kept unticked as the record of what was found — the fixes are in
+> the branch history, each commit naming its defect. Spot-checked again on
+> 2026-08-06 across both sections: house-system persistence, the birth-date
+> lower bound, widget publishing outside the Chart tab, the disabled-button
+> haptic, Reduce Motion no longer suppressing all haptics, `ChartCache`
+> in-flight de-duplication, transit-alert deep links, `/moon` and
+> `/retrogrades` caching, and the auth-before-rate-limit ordering are all in
+> place in the code today. Read `LAUNCH-STEPS.md` for what is actually
+> outstanding; it is all account work, none of it code.
+
 **Product gaps**
 - [ ] No cloud backup/restore. Journal, friends, chart, and Moments live only in
   `UserDefaults` + local SwiftData; uninstall destroys everything, and Sign in with Apple
