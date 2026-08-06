@@ -156,6 +156,14 @@ for f in Lumina/Resources/PrivacyInfo.xcprivacy LuminaWidget/PrivacyInfo.xcpriva
 done
 note "checked"
 
+echo "== App Store metadata =="
+if [ -f metadata/app-store.json ]; then
+  python3 scripts/aso_lint.py >/dev/null || { python3 scripts/aso_lint.py; FAILED=1; }
+  note "field limits, keyword overlap, accuracy rules"
+else
+  note "skipped (no metadata/app-store.json)"
+fi
+
 echo "== Backend =="
 if [ -d backend/node_modules ]; then
   (cd backend && npx tsc --noEmit) || FAILED=1

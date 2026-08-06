@@ -5,7 +5,9 @@ import UIKit
 /// grouped by topic, fully on-device. The pull-down search on Today
 /// (Phase 13) will index this content alongside the glossary.
 struct HelpView: View {
-    fileprivate struct Article: Identifiable, Hashable {
+    /// Internal, not fileprivate: `ReleaseAccuracyTests` reads the article
+    /// bodies to prove no shipped copy claims a feature the binary lacks.
+    struct Article: Identifiable, Hashable {
         let id: String
         let topic: Topic
         let title: String
@@ -15,7 +17,6 @@ struct HelpView: View {
     enum Topic: String, CaseIterable, Hashable, Identifiable, Sendable {
         case gettingStarted
         case chart
-        case palm
         case people
         case privacy
         case billing
@@ -26,7 +27,6 @@ struct HelpView: View {
             switch self {
             case .gettingStarted: "Getting started"
             case .chart: "Your chart"
-            case .palm: "Palm reading"
             case .people: "People"
             case .privacy: "Privacy"
             case .billing: "Billing & subscription"
@@ -34,11 +34,11 @@ struct HelpView: View {
         }
     }
 
-    private static let allArticles: [Article] = [
+    static let allArticles: [Article] = [
         .init(id: "what-is-lumina", topic: .gettingStarted, title: "What is Lumina?",
-              body: "Lumina is a premium astrology and palm-reading app. We use real Swiss-Ephemeris chart math, "
-                  + "on-device palm analysis, and interpretations grounded in your actual chart — "
-                  + "never generic horoscope copy."),
+              body: "Lumina is a premium astrology app built on real Swiss-Ephemeris chart math. Your birth "
+                  + "chart, today's transits, the moon phase and every reading come from the actual sky — "
+                  + "never generic horoscope copy, never invented placements."),
         .init(id: "what-time-do-i-need", topic: .gettingStarted, title: "Why do you need my birth time?",
               body: "The exact time decides your rising sign and which house each planet falls into. Without time "
                   + "we still calculate your sign and planets — only houses are hidden. You can always update it "
@@ -55,7 +55,10 @@ struct HelpView: View {
               body: "It's the traditional retrograde marker — the planet appears to move backwards from Earth's "
                   + "vantage point. Astrologers read it as an invitation to revisit, review, or revise rather "
                   + "than initiate."),
-        .init(id: "palm-when", topic: .palm, title: "Does Lumina do palm reading?",
+        // Kept — and kept honest. The name and the marketing site have both
+        // carried palm reading, so people will look for it; saying plainly
+        // that it isn't here beats a Help section implying it is.
+        .init(id: "palm-when", topic: .gettingStarted, title: "Does Lumina do palm reading?",
               body: "Not yet, and we'd rather say so than fake it. We're building on-device line tracing and "
                   + "won't ship it until it works fairly across every skin tone. There's nothing to try in "
                   + "the app today — when it arrives it'll be announced, not quietly switched on."),

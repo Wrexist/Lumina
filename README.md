@@ -114,7 +114,7 @@ cd backend && npm install && npm run dev
 - [`LAUNCH-STEPS.md`](./LAUNCH-STEPS.md) — **what's left to launch**, step by step
 - [`LAUNCH-READINESS.md`](./LAUNCH-READINESS.md) — the pre-launch audit this came from
 - [`docs/NAVIGATION.md`](./docs/NAVIGATION.md) — IA + UX clarity charter
-- [`docs/APP-STORE-LISTING.md`](./docs/APP-STORE-LISTING.md) — store copy and review notes
+- [`docs/aso/`](./docs/aso/) — **App Store metadata pack**: every ASC field, keyword research, screenshot storyboard, privacy answers (`python3 scripts/aso_lint.py --print`)
 - [`docs/ASSET-BRIEF.md`](./docs/ASSET-BRIEF.md) — 26 copy-paste image-generation prompts and the specs for wiring the results in
 
 ---

@@ -28,6 +28,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       ios: ${{ steps.filter.outputs.ios }}
+      metadata: ${{ steps.filter.outputs.metadata }}
     steps:
       - uses: actions/checkout@v4
 
@@ -37,6 +38,10 @@ jobs:
           filters: |
             backend:
               - 'backend/**'
+              - '.github/workflows/ci.yml'
+            metadata:
+              - 'metadata/**'
+              - 'scripts/aso_lint.py'
               - '.github/workflows/ci.yml'
             ios:
               - 'Lumina/**'
@@ -117,6 +122,23 @@ jobs:
           done
           echo "::error::/health never became ready within 30s"
           exit 1
+
+  metadata:
+    name: App Store metadata — limits · overlap · accuracy
+    needs: changes
+    if: needs.changes.outputs.metadata == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Seconds, not minutes — and it catches the failures App Store Connect
+      # will not: a keyword field one character over 100 is ignored in full,
+      # and a term naming an unshipped feature is a 2.3.1 rejection after a
+      # week of review queue.
+      - name: Validate metadata/app-store.json
+        run: python3 scripts/aso_lint.py
 
   secrets:
     name: Secret scan — gitleaks

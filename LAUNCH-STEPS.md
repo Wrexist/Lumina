@@ -253,37 +253,38 @@ a screenshot of a feature that doesn't exist is a Guideline 2.3.1 rejection.
 
 ## Step 9 — App Store Connect listing
 
-Everything you need to paste is in **`docs/APP-STORE-LISTING.md`** — name, subtitle,
-keywords, description, release notes, categories, age rating, review notes. It's
-pre-fit to Apple's character limits.
+Everything you need to paste is in **[`docs/aso/`](./docs/aso/)** — name, subtitle,
+three keyword fields, description, release notes, categories, age rating, IAP
+names, review notes, and the screenshot storyboard. The text itself lives in
+`metadata/app-store.json`, so run:
 
-Three things that need your own decision, not a paste:
+```bash
+python3 scripts/aso_lint.py --print   # every field with its character count
+```
+
+Nothing there is guesswork about limits: `scripts/aso_lint.py` validates each
+field, fails on a keyword field that would be silently voided for being one
+character over 100, and fails on any term naming a feature this build doesn't
+have. It runs in CI too.
+
+Work through **`docs/aso/METADATA-PACK.md` §10** — it's the submission
+checklist, ordered so nothing waits on something later in the list.
+
+Two things that need your own decision, not a paste:
 
 - **Support URL** — must be a mailbox you actually read. The pages currently point
   at `@lumina.app`, a domain that doesn't exist. Either do Step 10, or change
   `docs/support.html` and `docs/privacy.html` to a real address (a Gmail is fine)
   before submitting. **An unmonitored support address is a rejection.**
-- **Privacy nutrition label** — the questionnaire in ASC → App Privacy. Answer it
-  from `Lumina/Resources/PrivacyInfo.xcprivacy` and the in-app privacy dashboard,
-  which are the truth about what the app does. Accurately:
-  - Journal entries, saved people, and your name stay on the device. They are
-    never sent anywhere.
-  - Drawing a chart **does** send your birth date, exact time, and city-level
-    coordinates to the chart service on every request. It isn't stored there,
-    but it *is* transmitted, so it must be declared as collected — most likely
-    under "Sensitive Info" / "Other Data", **not linked to identity** and **not
-    used for tracking**.
-  - The interpretation call sends only signs and aspect types — never the birth
-    date, time, or coordinates.
-  - Declare **no tracking** and **no advertising identifier**. There is no
-    analytics SDK in the app.
-
-  If you'd rather not declare transmitted birth data at all, that's a product
-  change (compute charts on-device), not a questionnaire answer. Don't answer
-  "no data collected" — it's the single most common cause of a post-approval
-  metadata rejection.
 - **Export compliance** — the app uses only standard HTTPS. Answer "Yes" to using
   encryption, then "Yes" to the exemption for standard encryption.
+
+The privacy questionnaire is no longer a judgement call: every answer, and the
+line of code that justifies it, is in
+**[`docs/aso/PRIVACY-LABELS.md`](./docs/aso/PRIVACY-LABELS.md)**, derived from
+`PrivacyInfo.xcprivacy` so the two can't contradict each other. Don't answer
+"no data collected" — it's the single most common cause of a post-approval
+metadata rejection.
 
 ---
 
