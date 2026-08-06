@@ -60,6 +60,41 @@ final class GlossaryStoreTests: XCTestCase {
         XCTAssertEqual(store.entry(for: "Midheaven")?.displayName, "Midheaven")
     }
 
+    /// Terms for a feature the build can't reach are decoded but not served —
+    /// a definition of "heart line" in an app with no palm surface advertises
+    /// something that isn't there. See `GlossaryStore.shipped(_:)`.
+    @MainActor
+    func testEntriesForUnreachableFeaturesAreNotServed() throws {
+        let json = Data("""
+        [
+          {
+            "key": "heart line",
+            "displayName": "Heart line",
+            "category": "palmistry",
+            "summary": "The horizontal line near the top of the palm.",
+            "body": "Read for emotional style."
+          },
+          {
+            "key": "midheaven",
+            "displayName": "Midheaven",
+            "category": "astrology",
+            "summary": "The highest point of the sky at birth.",
+            "body": "Often abbreviated MC."
+          }
+        ]
+        """.utf8)
+        let store = GlossaryStore()
+        try store.load(data: json)
+
+        XCTAssertNotNil(store.entry(for: "midheaven"))
+        if LuminaTab.visible.contains(.palm) {
+            XCTAssertNotNil(store.entry(for: "heart line"), "palm ships — its terms belong")
+        } else {
+            XCTAssertNil(store.entry(for: "heart line"), "palm is unreachable — its terms must not show")
+            XCTAssertEqual(store.entries.count, 1)
+        }
+    }
+
     func testEntryWithoutAliasesKeyStillDecodes() throws {
         let raw = try JSONDecoder().decode([GlossaryEntry].self, from: Self.fixtureJSON)
         XCTAssertEqual(raw.count, 3)

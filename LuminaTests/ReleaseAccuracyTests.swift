@@ -10,6 +10,11 @@ import XCTest
 ///
 /// When palm reading actually ships, `.palm` joins `LuminaTab.visible` and
 /// every assertion here flips by itself — nothing to remember to undo.
+///
+/// `@MainActor` on the class, not per-test: `GlossaryStore` is main-actor
+/// isolated and `HelpView` inherits isolation from `View`, so every assertion
+/// here touches main-actor state under Swift 6's strict checking.
+@MainActor
 final class ReleaseAccuracyTests: XCTestCase {
     private static let palmTerms = ["palm", "palmistry", "life line", "heart line", "head line"]
 
@@ -57,7 +62,6 @@ final class ReleaseAccuracyTests: XCTestCase {
         XCTAssertTrue(GlossaryStore.shipped(.general))
     }
 
-    @MainActor
     func testTheLoadedGlossaryContainsNoUnshippedCategories() throws {
         let store = GlossaryStore()
         store.loadIfNeeded(bundle: .main)
