@@ -155,11 +155,16 @@ Lumina/
 │   ├── Settings/           account, privacy dashboard, notifications, legal
 │   └── Today/              daily reading, moon, retrogrades, forecast, returns
 ├── Design/
-│   ├── Tokens/             LuminaColors · LuminaTypography · LuminaSpacing
+│   ├── Tokens/             LuminaColors · LuminaTypography · LuminaSpacing · LuminaImageAsset
 │   └── Components/         reusable SwiftUI views (buttons, cards, states, fields)
 ├── Models/                 JournalEntry · Friend · SharedBirthData · LuminaSchema
 └── Resources/              Assets.xcassets · Fonts/ (empty) · Glossary.json
                             Localizable.xcstrings · PrivacyInfo.xcprivacy
+
+assets/                     image masters — full-size generated art, never loaded
+                            by the app. `scripts/build_image_assets.py` derives
+                            the @2x/@3x catalog slots from them; `LuminaImageAsset`
+                            is the only place their names appear in Swift.
 
 LuminaWidget/               CosmicWidget · LuminaWidgetBundle · PrivacyInfo.xcprivacy
 LuminaTests/                XCTest suite (runs in CI after the build)

@@ -44,11 +44,7 @@ struct PlanetDetailSheet: View {
 
     private var header: some View {
         HStack(spacing: LuminaSpacing.md) {
-            Text(ChartGlyphs.planetGlyph(planet.planet))
-                .font(.system(size: glyphSize))
-                .foregroundStyle(LuminaColors.goldInk)
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
+            planetMark
             VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
                 Text(ChartGlyphs.summary(planet: planet.planet, longitude: planet.longitude, house: house))
                     .font(LuminaTypography.heading)
@@ -58,6 +54,14 @@ struct PlanetDetailSheet: View {
             }
             Spacer()
         }
+    }
+
+    /// The body itself, at the top of its own reading — the sphere where
+    /// there's art for it, the glyph for the Moon (see `PlanetMark`). The
+    /// scaled size is capped so the largest accessibility sizes don't leave
+    /// the summary beside it wrapping one word per line.
+    private var planetMark: some View {
+        PlanetMark(planet: planet.planet, size: min(glyphSize, 96))
     }
 
     private var factsCard: some View {

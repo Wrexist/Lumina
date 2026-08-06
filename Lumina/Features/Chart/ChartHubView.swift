@@ -106,6 +106,7 @@ struct ChartHubView: View {
             systemImage: "circle.dotted",
             title: "Add your birth info",
             body: "We need a date, time, and place to compute your chart.",
+            illustration: .emptyBirthInfo,
             primaryCTA: LuminaEmptyState.CTA(title: "Add birth info", action: handleOpenSettings)
         )
     }

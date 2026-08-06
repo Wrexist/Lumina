@@ -144,7 +144,16 @@ struct MoonSphere3DView: UIViewRepresentable {
         UIColor(red: red, green: green, blue: blue, alpha: alpha)
     }
 
-    // MARK: - Procedural texture
+    // MARK: - Surface texture
+
+    /// The real lunar surface — an equirectangular map of the maria and
+    /// highlands, lit flat with no terminator baked in, so the light/dark
+    /// split stays the one this view computes from the actual phase angle.
+    /// Falls back to the procedural texture below if the asset is ever
+    /// missing, which keeps the sphere renderable rather than black.
+    private static func makeMoonTexture() -> UIImage {
+        LuminaImageAsset.moonSurface.uiImage ?? makeProceduralMoonTexture()
+    }
 
     /// Generates a desaturated, silvery moon-surface texture at runtime —
     /// no downloaded or bundled image, in the same "draw it in code" spirit
@@ -152,7 +161,7 @@ struct MoonSphere3DView: UIViewRepresentable {
     /// seed so the texture is stable across renders and app launches, not
     /// re-randomized every time (which would look like flickering noise if
     /// this view were ever rebuilt).
-    private static func makeMoonTexture() -> UIImage {
+    private static func makeProceduralMoonTexture() -> UIImage {
         let size = CGSize(width: 512, height: 512)
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { context in

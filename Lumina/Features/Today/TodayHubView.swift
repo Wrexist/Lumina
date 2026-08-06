@@ -133,6 +133,7 @@ struct TodayHubView: View {
             systemImage: "sparkles",
             title: "Finish your chart",
             body: "Add your birth date, time, and place to see your sky today.",
+            illustration: .emptyBirthInfo,
             primaryCTA: LuminaEmptyState.CTA(title: "Add birth info", action: openSettings)
         )
     }

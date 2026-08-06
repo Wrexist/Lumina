@@ -1,0 +1,18 @@
+{
+  "images": [
+    {
+      "filename": "constellation-scorpio@2x.png",
+      "idiom": "universal",
+      "scale": "2x"
+    },
+    {
+      "filename": "constellation-scorpio@3x.png",
+      "idiom": "universal",
+      "scale": "3x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

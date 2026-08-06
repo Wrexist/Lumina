@@ -5,6 +5,7 @@ import SwiftUI
 /// meaningful slower-planet timing stands out. Pushed from the Today tab.
 struct ForecastView: View {
     @State private var state: Load = .idle
+    @ScaledMetric private var markSize: CGFloat = 36
 
     private enum Load {
         case idle
@@ -82,14 +83,19 @@ struct ForecastView: View {
 
     private func eventRow(_ event: ForecastEvent) -> some View {
         LuminaCard(padding: LuminaSpacing.md) {
-            VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
-                Text(ForecastPhrasing.line(for: event))
-                    .font(LuminaTypography.body)
-                Text(Self.dateText(event.exactAt))
-                    .font(LuminaTypography.mono)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.55))
+            HStack(alignment: .top, spacing: LuminaSpacing.md) {
+                // The body doing the moving, so a list of dates scans as a
+                // sequence of planets rather than a wall of sentences.
+                PlanetMark(planet: event.transiting, size: markSize)
+                VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
+                    Text(ForecastPhrasing.line(for: event))
+                        .font(LuminaTypography.body)
+                    Text(Self.dateText(event.exactAt))
+                        .font(LuminaTypography.mono)
+                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.55))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 

@@ -6,11 +6,15 @@ fill in — the style rules are already written into each one, which is the
 only reliable way to get twenty-six images that look like a set.
 
 Written against the design board (dark presentation, cream app screens, deep
-navy chart disc, celestial hero imagery). The app currently ships **zero**
-image assets — every visual is procedural (`Canvas`, SceneKit) or an SF
-Symbol — so everything here is net new and nothing gets replaced by accident.
+navy chart disc, celestial hero imagery).
 
 **26 assets:** 10 planets · 12 constellations · 3 empty states · 1 moon texture.
+
+> **Status: generated and wired in.** All 26 masters live in `assets/`, the
+> catalog slots are derived from them by `scripts/build_image_assets.py`, and
+> every one is on screen somewhere — see [Where each asset
+> landed](#where-each-asset-landed) at the end. The prompts stay here because
+> they are how you regenerate or replace one without the set drifting.
 
 ---
 
@@ -644,22 +648,41 @@ line, regenerate — it is not usable, however good it looks on its own.
    with even margin. Sets A and B must be optically centred or they will
    jitter when the app swaps between them in a list.
 
-3. **Export the three iOS scales** from the master:
+3. **Drop the master in `assets/`**, named exactly as the heading of its
+   block above, at whatever size it came out of the generator. Nothing in
+   `assets/` is loaded by the app — these are the originals, and they are the
+   only file you ever edit by hand.
 
-   | Suffix | Set A / C | Set B |
-   |---|---|---|
-   | `@1x` | 128 px | 64 px |
-   | `@2x` | 256 px | 128 px |
-   | `@3x` | 384 px | 192 px |
+4. **Run the build script.** It does steps 2–4 of the old manual process —
+   trim, centre, scale, encode — and writes the `.imageset` folders and their
+   `Contents.json`:
 
-4. **Compress.** `pngquant --quality 65-85` typically drops these ~70% with
-   no visible loss. Budget: the whole set should land under ~2 MB. App size
-   is a real download-conversion factor and there is no reason for a 40 MB
-   binary of spheres.
+   ```sh
+   pip install Pillow
+   python3 scripts/build_image_assets.py
+   ```
 
-5. **Drop them in** `Lumina/Resources/Assets.xcassets/`, one `.imageset` per
-   asset, named exactly as the heading of each block above. Send them over
-   and I'll wire them up — the code doesn't reference any of these yet.
+   | | Set A (planets) | Set B (constellations) | Set C (illustrations) | Set D (texture) |
+   |---|---|---|---|---|
+   | `@2x` | 256 px | 128 px | 512 px wide | — |
+   | `@3x` | 384 px | 192 px | 768 px wide | — |
+   | single scale | — | — | — | 1024×512 |
+   | re-framed | no — already a matched set | trimmed and re-centred | margin trimmed | no |
+   | encoding | 8-bit RGBA | 256-colour palette | 256-colour palette | 8-bit RGB, opaque |
+
+   No `@1x`: the deployment target is iOS 26, so every device that can install
+   Lumina has a Retina screen and a `@1x` slot would be dead weight.
+
+   The planets keep full RGBA because their soft alpha glows — the Sun's
+   corona above all — band visibly under a palette. The line art doesn't, and
+   quantises to about a fifth the size with no visible change. The set lands
+   at ~2.7 MB of PNG in the catalog; the old ~2 MB target assumed `pngquant`
+   could take the spheres too, and it can't without wrecking the corona.
+
+5. **Check what the script wrote.** It prints a per-group count and the total.
+   `ImageAssetTests` then fails the build if any name in `LuminaImageAsset`
+   doesn't resolve against the compiled catalog, so a mistyped or missing
+   file can't reach a device silently.
 
 ---
 
@@ -676,3 +699,28 @@ line, regenerate — it is not usable, however good it looks on its own.
 
 The pattern: anything derived from **your actual chart** stays computed.
 Images are only for things that are the same for everyone.
+
+---
+
+## Where each asset landed
+
+Every asset is on a real screen. Nothing here is decoration held in reserve.
+
+| Asset | Surface | Notes |
+|---|---|---|
+| `planet-*` (9 chart bodies) | `PlanetDetailSheet` header | The hero of a placement's reading, via `PlanetMark` |
+| `planet-*` | `ForecastView` rows | The transiting body, leading each upcoming-date row |
+| `planet-*` | `TodayTransparencySheet` rows | The transiting body, beside the "why this line" detail |
+| `planet-*` | `RetrogradeCard` | The bodies currently walking backwards, as a strip |
+| `planet-earth` | `TodayTransparencySheet` footer | Where the positions are measured *from* — geocentric, said plainly |
+| `constellation-*` (12) | `PeopleHubView` avatars | Keyed to each person's Sun sign, read in their own birth zone |
+| `empty-birth-info` | Chart hub + Today hub, missing birth data | Both routes to the same "add your birth info" state |
+| `empty-people` | `PeopleHubView` empty state | |
+| `reveal-signature` | `DailyRevealVeilCard` | The pre-reveal face of the daily reading |
+| `moon-surface` | `MoonSphere3DView` | Wrapped on the SceneKit sphere; the phase stays computed |
+
+Two things stay glyphs on purpose: the **Moon** in any planet row (its real
+phase is rendered live — a static Moon would be wrong most nights) and every
+**zodiac sign** in chart text (Unicode, scales with Dynamic Type). `PlanetMark`
+falls back to the glyph for anything without art, so a body the backend adds
+later renders as a glyph rather than a hole.

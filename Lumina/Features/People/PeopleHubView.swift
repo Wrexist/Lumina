@@ -123,6 +123,7 @@ struct PeopleHubView: View {
                     systemImage: "person.2",
                     title: "No one here yet",
                     body: "Add a friend, partner, or family member to see what's happening between you.",
+                    illustration: .emptyPeople,
                     primaryCTA: LuminaEmptyState.CTA(title: "Add someone", action: presentAdd),
                     secondaryCTA: LuminaEmptyState.CTA(title: "Share my chart", action: presentQR)
                 )
@@ -285,16 +286,38 @@ struct PeopleHubView: View {
         .padding(.vertical, LuminaSpacing.xs)
     }
 
+    /// A night-sky disc carrying the person's Sun-sign constellation — the
+    /// real star pattern, not a pictorial ram or crab. The name sits right
+    /// beside it, so the disc reads as identity rather than information; the
+    /// monogram stays as the fallback for anything the sign lookup can't
+    /// place.
     private func avatar(for friend: Friend) -> some View {
         ZStack {
             Circle()
-                .fill(LuminaColors.parchment)
-                .overlay(Circle().stroke(LuminaColors.inkBlack.opacity(0.15), lineWidth: 1))
-            Text(initial(for: friend.name))
-                .font(LuminaTypography.body)
-                .foregroundStyle(LuminaColors.inkBlack)
+                .fill(LuminaColors.midnight)
+                .overlay(Circle().stroke(LuminaColors.mutedGold.opacity(0.3), lineWidth: 1))
+            if let constellation = LuminaImageAsset.constellation(sign: sunSign(for: friend)) {
+                constellation.image
+                    .resizable()
+                    .scaledToFit()
+                    .padding(LuminaSpacing.xs)
+            } else {
+                Text(initial(for: friend.name))
+                    .font(LuminaTypography.body)
+                    .foregroundStyle(LuminaColors.parchment)
+            }
         }
         .frame(width: 36, height: 36)
+        .accessibilityHidden(true)
+    }
+
+    /// Read in the friend's own birth zone, so someone born just after a cusp
+    /// abroad doesn't get the previous sign's constellation.
+    private func sunSign(for friend: Friend) -> String {
+        ChartGlyphs.sunSign(
+            for: friend.birthDate,
+            calendar: BirthMoment.calendar(friend.birthTimeZoneIdentifier)
+        )
     }
 
     private func initial(for name: String) -> String {
