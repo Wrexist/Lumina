@@ -5,6 +5,10 @@ on:
     branches: [main, "claude/**"]
   pull_request:
     branches: [main]
+  # Re-run the full pipeline without pushing. Needed because
+  # `cancel-in-progress` below means a burst of commits leaves only the last
+  # one verified — and if that run is itself cancelled, nothing is.
+  workflow_dispatch:
 
 # A push to a claude/** branch and the pull_request opened from that same
 # branch fire two separate events for the same commit. github.ref differs
