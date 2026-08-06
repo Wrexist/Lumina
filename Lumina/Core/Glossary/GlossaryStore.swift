@@ -77,7 +77,12 @@ final class GlossaryStore {
     /// naming the app after it (Guideline 2.3.1). Keyed to the tab rather
     /// than a hardcoded flag, so the terms come back by themselves on the
     /// release that makes palm reachable.
-    static func shipped(_ category: GlossaryEntry.Category) -> Bool {
+    /// `nonisolated` because it is a pure function of an enum: it reads no
+    /// store state, and inheriting the class's main-actor isolation would
+    /// force every caller onto the main actor for a switch statement. (It
+    /// did exactly that once — the accuracy tests failed to compile against
+    /// it before the isolation was made explicit.)
+    nonisolated static func shipped(_ category: GlossaryEntry.Category) -> Bool {
         switch category {
         case .palmistry: LuminaTab.visible.contains(.palm)
         default: true

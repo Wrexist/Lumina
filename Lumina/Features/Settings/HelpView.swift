@@ -7,7 +7,9 @@ import UIKit
 struct HelpView: View {
     /// Internal, not fileprivate: `ReleaseAccuracyTests` reads the article
     /// bodies to prove no shipped copy claims a feature the binary lacks.
-    struct Article: Identifiable, Hashable {
+    /// `Sendable` so `allArticles` can be `nonisolated` — a constant array of
+    /// strings has no business requiring the main actor to read.
+    struct Article: Identifiable, Hashable, Sendable {
         let id: String
         let topic: Topic
         let title: String
@@ -34,7 +36,7 @@ struct HelpView: View {
         }
     }
 
-    static let allArticles: [Article] = [
+    nonisolated static let allArticles: [Article] = [
         .init(id: "what-is-lumina", topic: .gettingStarted, title: "What is Lumina?",
               body: "Lumina is a premium astrology app built on real Swiss-Ephemeris chart math. Your birth "
                   + "chart, today's transits, the moon phase and every reading come from the actual sky — "
