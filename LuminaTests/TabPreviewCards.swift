@@ -2,12 +2,15 @@
 import SwiftUI
 
 // The card facsimiles and shared building blocks, in an extension so the main
-// `TabPreviews` declaration stays under SwiftLint's 250-line type body. Split
-// mechanically — nothing here changed when it moved.
+// `TabPreviews` declaration stays under SwiftLint's 250-line type body.
+//
+// Internal rather than `private`: Swift scopes `private` to the *file*, and
+// `TabPreviews.swift` calls every one of these. They were private while they
+// lived in the same file; splitting the file is what changed the requirement.
 extension TabPreviews {
     // MARK: - Today cards (facsimiles of the real self-loading cards)
 
-    private static func moonCard() -> some View {
+    static func moonCard() -> some View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 kickerLabel("TONIGHT'S MOON")
@@ -34,7 +37,7 @@ extension TabPreviews {
     /// card gained its strip of retrograde planets — which is the failure
     /// mode of every reimplemented preview, and the reason this one now feeds
     /// the component its data instead of copying its markup.
-    private static func retrogradeCard() -> some View {
+    static func retrogradeCard() -> some View {
         var components = DateComponents()
         components.year = 2026
         components.month = 6
@@ -57,7 +60,7 @@ extension TabPreviews {
         ))
     }
 
-    private static func chapterCard() -> some View {
+    static func chapterCard() -> some View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 kickerLabel("YOUR CURRENT CHAPTER")
@@ -71,21 +74,21 @@ extension TabPreviews {
 
     // MARK: - Shared building blocks
 
-    private static func kickerLabel(_ text: String) -> some View {
+    static func kickerLabel(_ text: String) -> some View {
         Text(text)
             .font(LuminaTypography.mono)
             .tracking(1.4)
             .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
     }
 
-    private static func sectionHeader(kicker: String, title: String) -> some View {
+    static func sectionHeader(kicker: String, title: String) -> some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
             kickerLabel(kicker)
             Text(title).font(LuminaTypography.display)
         }
     }
 
-    private static func bulletSection(title: String, lines: [String]) -> some View {
+    static func bulletSection(title: String, lines: [String]) -> some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
             kickerLabel(title)
             ForEach(lines, id: \.self) { line in
@@ -97,7 +100,7 @@ extension TabPreviews {
         }
     }
 
-    private static func friendRow(name: String, score: Int, signs: String, label: String,
+    static func friendRow(name: String, score: Int, signs: String, label: String,
                                   sunSign: String) -> some View {
         LuminaCard(padding: LuminaSpacing.md) {
             HStack(spacing: LuminaSpacing.md) {
@@ -125,7 +128,7 @@ extension TabPreviews {
 
     /// Mirrors `PeopleHubView.avatar(for:)` — midnight disc, gold rim, the
     /// real constellation art inset.
-    private static func avatar(sunSign: String) -> some View {
+    static func avatar(sunSign: String) -> some View {
         ZStack {
             Circle()
                 .fill(LuminaColors.midnight)
@@ -140,7 +143,7 @@ extension TabPreviews {
         .frame(width: 44, height: 44)
     }
 
-    private static func entryRow(date: String, excerpt: String) -> some View {
+    static func entryRow(date: String, excerpt: String) -> some View {
         LuminaCard(padding: LuminaSpacing.md) {
             VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
                 Text(date)
@@ -153,7 +156,7 @@ extension TabPreviews {
         }
     }
 
-    private static func infoCard(icon: String?, title: String, body: String, badge: String?) -> some View {
+    static func infoCard(icon: String?, title: String, body: String, badge: String?) -> some View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 HStack(spacing: LuminaSpacing.sm) {
