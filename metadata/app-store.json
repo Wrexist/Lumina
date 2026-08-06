@@ -24,6 +24,12 @@
     "copyright": "2026 Lumina"
   },
 
+  "contact": {
+    "$comment": "Used for the App Store Connect support field, the App Review contact, and the published pages. lumina.app was never registered, so every address at it bounced — an unmonitored support contact is a rejection. aso_lint.py fails on any address at that domain and checks this one is actually on the support page.",
+    "support_email": "Luminasupporthelp@gmail.com",
+    "unregistered_domains": ["lumina.app"]
+  },
+
   "localizations": {
     "en-US": {
       "name": "Lumina: Birth Chart Astrology",

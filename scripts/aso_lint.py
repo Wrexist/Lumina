@@ -180,6 +180,40 @@ def check_urls(report: Report, urls: dict) -> None:
             report.fail(f"url {field}", f"docs/{page} does not exist — this URL would 404")
 
 
+def check_contact(report: Report, contact: dict) -> None:
+    """The support contact has to be a mailbox that exists, and the published
+    support page has to show the same one.
+
+    `lumina.app` was in every published address for months and was never
+    registered — mail to it bounced, which is a rejection on its own and a
+    dead end for anyone who needed help.
+    """
+    email = contact.get("support_email", "")
+    if "@" not in email:
+        report.fail("support email", "not an address")
+        return
+
+    domain = email.rsplit("@", 1)[1].lower()
+    if domain in {d.lower() for d in contact.get("unregistered_domains", [])}:
+        report.fail("support email", f"{domain} is not registered — mail to it bounces")
+        return
+    report.ok("support email", email)
+
+    support_page = SITE_ROOT / "support.html"
+    if support_page.exists():
+        published = support_page.read_text(encoding="utf-8")
+        if email.lower() in published.lower():
+            report.ok("support page", "publishes the same address")
+        else:
+            report.fail("support page", f"docs/support.html does not show {email}")
+
+    for page in sorted(SITE_ROOT.glob("*.html")):
+        text = page.read_text(encoding="utf-8").lower()
+        for dead in contact.get("unregistered_domains", []):
+            if f"@{dead.lower()}" in text:
+                report.fail(f"docs/{page.name}", f"still links mail at {dead}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--print", dest="emit", action="store_true",
@@ -247,6 +281,7 @@ def main() -> int:
                        iap["display_name"] + " " + iap["description"], forbidden)
 
     check_urls(report, data["urls"])
+    check_contact(report, data["contact"])
 
     total_indexed = len(primary["name"]) + len(primary["subtitle"]) + sum(
         len(p["keywords"]) for p in locales.values() if "keywords" in p

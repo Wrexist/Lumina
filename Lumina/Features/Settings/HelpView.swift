@@ -192,7 +192,7 @@ private struct ArticleView: View {
 /// Builds the pre-filled `mailto:` URL for `FeedbackView`. A separate type
 /// so the address and query encoding are unit-testable.
 enum FeedbackMail {
-    static let address = "feedback@lumina.app"
+    static let address = "Luminasupporthelp@gmail.com"
 
     /// `nil` only if `URLComponents` can't serialize (practically never).
     static func mailtoURL(subject: String, message: String) -> URL? {

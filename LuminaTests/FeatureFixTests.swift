@@ -94,7 +94,12 @@ final class FeatureFixTests: XCTestCase {
         let url = try XCTUnwrap(FeedbackMail.mailtoURL(subject: "A thought", message: "Love the app"))
         XCTAssertEqual(url.scheme, "mailto")
         let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
-        XCTAssertEqual(components.path, "feedback@lumina.app")
+        // Pinned to the constant, not a literal: the address moved once
+        // already (lumina.app never existed, so every mail to it bounced) and
+        // a hardcoded copy here would have gone stale silently.
+        XCTAssertEqual(components.path, FeedbackMail.address)
+        XCTAssertTrue(FeedbackMail.address.contains("@"), "feedback address must be a real mailbox")
+        XCTAssertFalse(FeedbackMail.address.hasSuffix("@lumina.app"), "lumina.app does not exist yet")
         XCTAssertEqual(components.queryItems?.first { $0.name == "subject" }?.value, "A thought")
         XCTAssertEqual(components.queryItems?.first { $0.name == "body" }?.value, "Love the app")
     }

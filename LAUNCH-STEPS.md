@@ -270,14 +270,19 @@ have. It runs in CI too.
 Work through **`docs/aso/METADATA-PACK.md` §10** — it's the submission
 checklist, ordered so nothing waits on something later in the list.
 
-Two things that need your own decision, not a paste:
+One thing that needs your own decision, not a paste:
 
-- **Support URL** — must be a mailbox you actually read. The pages currently point
-  at `@lumina.app`, a domain that doesn't exist. Either do Step 10, or change
-  `docs/support.html` and `docs/privacy.html` to a real address (a Gmail is fine)
-  before submitting. **An unmonitored support address is a rejection.**
 - **Export compliance** — the app uses only standard HTTPS. Answer "Yes" to using
   encryption, then "Yes" to the exemption for standard encryption.
+
+**Support contact — done, but check the inbox.** Everything published now points
+at `Luminasupporthelp@gmail.com`: `docs/support.html`, `docs/privacy.html`, and
+the in-app Send feedback form. Paste the same address into App Store Connect's
+support field. It replaced `@lumina.app`, a domain that was never registered,
+so every mail to the old addresses bounced — an unmonitored support contact is
+a rejection on its own. `scripts/aso_lint.py` now fails if any published page
+goes back to that domain, or if the address in the metadata isn't the one on
+the support page. **Send yourself a test mail before submitting.**
 
 The privacy questionnaire is no longer a judgement call: every answer, and the
 line of code that justifies it, is in
