@@ -1,0 +1,5 @@
+Lumina 1.0.
+
+Your chart, computed from a real ephemeris — exact degrees, real houses, true aspects. Daily readings built from the transits actually hitting your chart, with the raw data one tap away. A 3D moon lit by tonight's real phase angle. Synastry and composite charts for the people you add. Your Human Design bodygraph. A private journal that never leaves your iPhone.
+
+We'd rather ship what's real than claim what isn't. Palm reading is being built on-device and will arrive when it works fairly for everyone — not before.

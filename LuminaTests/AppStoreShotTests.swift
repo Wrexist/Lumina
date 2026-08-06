@@ -20,11 +20,10 @@ import XCTest
 /// listing: they carry real keywords (Apple OCRs screenshot text) and each
 /// one describes what its own frame actually shows.
 ///
-/// **Two of the six frames in that storyboard aren't here.** The 3D moon is a
-/// SceneKit `UIViewRepresentable` and the bodygraph needs a live Human Design
-/// computation; `ImageRenderer` can drive neither. Capture those two by hand
-/// on a simulator, or ship four — four honest screenshots beat six with two
-/// blank frames.
+/// **One frame from that storyboard isn't here.** The 3D moon is a SceneKit
+/// `UIViewRepresentable`, which `ImageRenderer` cannot drive. Capture it by
+/// hand on a simulator, or ship five — five honest screenshots beat six with
+/// one blank frame.
 @MainActor
 final class AppStoreShotTests: XCTestCase {
     private static let canvas = CGSize(width: 440, height: 956)
@@ -59,7 +58,16 @@ final class AppStoreShotTests: XCTestCase {
     func testReflectShot() throws {
         try shot(TabPreviews.reflect(),
                  caption: "A private journal that\nnever leaves your iPhone",
-                 named: "04-reflect")
+                 named: "05-reflect")
+    }
+
+    /// `HumanDesignActivation.compute(from:)` is pure, so this frame shows the
+    /// real calculation rather than a drawing of one — which is what lets it
+    /// be generated at all.
+    func testHumanDesignShot() throws {
+        try shot(TabPreviews.humanDesign(BirthChartViewModel.sampleChart()),
+                 caption: "Your Human Design bodygraph,\nfrom the same birth data",
+                 named: "04-human-design")
     }
 
     /// Every shot must land on Apple's exact pixel dimensions — App Store

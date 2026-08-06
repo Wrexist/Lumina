@@ -128,6 +128,26 @@ enum TabPreviews {
         .padding(LuminaSpacing.lg)
     }
 
+    /// The bodygraph, from the same sample chart the other compositions use —
+    /// `HumanDesignActivation.compute(from:)` is pure, so this is the real
+    /// calculation, not a drawing of one. `BodygraphView` sizes itself from a
+    /// `GeometryReader`, hence the explicit height.
+    static func humanDesign(_ chart: NatalChart) -> some View {
+        VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
+            Text("Human Design").font(LuminaTypography.display)
+            LuminaCard {
+                BodygraphView(activation: HumanDesignActivation.compute(from: chart))
+                    .frame(height: 380)
+            }
+            // The scope note ships on the real screen; a screenshot that
+            // crops it out would sell a complete bodygraph.
+            Text(BodygraphView.designSideMissingNote)
+                .font(LuminaTypography.bodyLight)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+        }
+        .padding(LuminaSpacing.lg)
+    }
+
     static func palm() -> some View {
         VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
             Text("Palm").font(LuminaTypography.display)

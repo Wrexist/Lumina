@@ -7,9 +7,14 @@ Copy-paste ready. Fields appear in the order App Store Connect asks for them.
 on every change. To get the blocks with their character counts:
 
 ```sh
-python3 scripts/aso_lint.py --print   # paste-ready
-python3 scripts/aso_lint.py           # validate after any edit
+python3 scripts/aso_lint.py --print      # paste-ready
+python3 scripts/aso_lint.py              # validate after any edit
+python3 scripts/aso_lint.py --fastlane   # regenerate fastlane/metadata/
 ```
+
+If you'd rather not paste fifteen fields by hand, `fastlane/metadata/` is
+already generated from the same JSON — `fastlane deliver` uploads the lot,
+screenshots included, and you can diff exactly what went up.
 
 Editing the JSON and re-running is always right. Editing a value pasted into
 this file is always wrong — it will drift, and nothing checks it.

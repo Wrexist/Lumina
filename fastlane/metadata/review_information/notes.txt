@@ -1,0 +1,16 @@
+Lumina computes real charts from a Swiss-Ephemeris backend, so the app needs network access to show its main content.
+
+WHAT TO ENTER
+Onboarding asks for a birth date, time and place. Any values work; for a chart with every feature populated, use 14 March 1990, 09:25, Stockholm, Sweden.
+
+WHERE THE SUBSCRIPTION IS
+Settings > Lumina Plus opens the paywall, and every gated surface (Chart > Human Design, People > any person > Compatibility, Today > Ahead > What's coming) offers it too. Restore Purchases is on the paywall and in Settings > Account.
+
+ACCOUNT DELETION
+Settings > Account > Delete account removes the account and all server-side data in-app, per Guideline 5.1.1(v). No email or support request is involved.
+
+WHAT THIS BUILD DOES NOT DO
+The app does not read palms. Earlier marketing mentioned it; nothing in this binary claims it as a shipping feature, the Palm tab is not present, and the in-app FAQ states plainly that it isn't built yet.
+
+ENTERTAINMENT DISCLAIMER
+Astrological content is presented for entertainment and self-reflection, disclosed on the Today tab, in Settings > About, and in the description.

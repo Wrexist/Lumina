@@ -11,8 +11,9 @@ It also enforces the repo's own accuracy rule: no metadata field may name a
 feature the binary doesn't have (Guideline 2.3.1). That rule already cost this
 project a rewrite of the name, the subtitle and the keywords once.
 
-    python3 scripts/aso_lint.py           # validate, non-zero exit on failure
-    python3 scripts/aso_lint.py --print   # paste-ready blocks for ASC
+    python3 scripts/aso_lint.py              # validate, non-zero exit on failure
+    python3 scripts/aso_lint.py --print      # paste-ready blocks for ASC
+    python3 scripts/aso_lint.py --fastlane   # write fastlane/metadata for `deliver`
 """
 
 from __future__ import annotations
@@ -218,6 +219,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--print", dest="emit", action="store_true",
                         help="print paste-ready App Store Connect blocks")
+    parser.add_argument("--fastlane", action="store_true",
+                        help="write the fastlane/metadata tree `deliver` uploads")
     args = parser.parse_args()
 
     data = json.loads(METADATA.read_text(encoding="utf-8"))
@@ -227,6 +230,10 @@ def main() -> int:
 
     if args.emit:
         emit(data)
+        return 0
+
+    if args.fastlane:
+        write_fastlane(data)
         return 0
 
     report = Report()
@@ -296,6 +303,62 @@ def main() -> int:
         return 1
     print(f"\nAll checks passed ({len(report.warnings)} warning(s))")
     return 0
+
+
+FASTLANE = ROOT / "fastlane" / "metadata"
+
+# Which JSON field lands in which file `fastlane deliver` expects.
+FASTLANE_FILES = {
+    "name": "name.txt",
+    "subtitle": "subtitle.txt",
+    "keywords": "keywords.txt",
+    "promotional_text": "promotional_text.txt",
+    "description": "description.txt",
+    "whats_new": "release_notes.txt",
+}
+
+
+def write_fastlane(data: dict) -> None:
+    """Emit the `fastlane/metadata/` tree `deliver` reads.
+
+    Fifteen paste operations into App Store Connect is fifteen chances to
+    paste the wrong field, and no way to diff what was actually uploaded.
+    `fastlane deliver` reads this tree instead — same source of truth as the
+    linter, so the store page and the repo cannot disagree.
+    """
+    for locale, payload in data["localizations"].items():
+        directory = FASTLANE / locale
+        directory.mkdir(parents=True, exist_ok=True)
+        for field, filename in FASTLANE_FILES.items():
+            if field in payload:
+                (directory / filename).write_text(payload[field] + "\n", encoding="utf-8")
+
+    urls = data["urls"]
+    root_files = {
+        "primary_category.txt": data["primary_category"],
+        "secondary_category.txt": data["secondary_category"],
+        "copyright.txt": urls["copyright"],
+    }
+    for filename, value in root_files.items():
+        (FASTLANE / filename).write_text(value + "\n", encoding="utf-8")
+
+    en = FASTLANE / "en-US"
+    en.mkdir(parents=True, exist_ok=True)
+    for filename, value in {
+        "marketing_url.txt": urls["marketing"],
+        "support_url.txt": urls["support"],
+        "privacy_url.txt": urls["privacy_policy"],
+    }.items():
+        (en / filename).write_text(value + "\n", encoding="utf-8")
+
+    review = FASTLANE / "review_information"
+    review.mkdir(parents=True, exist_ok=True)
+    (review / "notes.txt").write_text(data["review"]["notes"] + "\n", encoding="utf-8")
+    (review / "email_address.txt").write_text(
+        data["contact"]["support_email"] + "\n", encoding="utf-8")
+
+    count = sum(1 for _ in FASTLANE.rglob("*.txt"))
+    print(f"wrote {count} files under {FASTLANE.relative_to(ROOT)}/")
 
 
 def emit(data: dict) -> None:

@@ -5,10 +5,10 @@ can only happen outside this repository: accounts, dashboards, DNS, and App Stor
 Connect. It's written to be followed top to bottom in one sitting per section.
 
 **Nothing here needs a Mac.** The TestFlight lane archives and uploads from CI,
-and four of the six App Store screenshots are rendered by CI at Apple's exact
+and five of the six App Store screenshots are rendered by CI at Apple's exact
 required size — download them from the `app-store-screenshots` artifact. Only
-two optional screenshots (the SceneKit moon, the Human Design bodygraph) would
-need a hand capture, and shipping four instead is a fine trade.
+one optional screenshot (the SceneKit moon) would need a hand capture, and
+shipping five instead is a fine trade.
 
 Time estimate for the whole list: **one long day, plus 1–3 days of waiting on Apple
 review.** The blocking path is Steps 1 → 2 → 5 → 7 → 9.
@@ -243,11 +243,11 @@ dimensions are ever wrong. Download them from the last green run:
 
 GitHub → Actions → the latest `ci` run → Artifacts → **app-store-screenshots**
 
-That gives you `01-today`, `02-birth-chart`, `03-synastry` and `04-reflect`,
-captioned. Two frames from the storyboard can't be rendered this way — the 3D
-moon is SceneKit and the bodygraph needs a live Human Design computation, and
-neither survives `ImageRenderer`. Capture those two by hand from the TestFlight
-build if you want six; four honest screenshots beat six with two blank frames.
+That gives you `01-today`, `02-birth-chart`, `03-synastry`,
+`04-human-design` and `05-reflect`, captioned. One frame from the storyboard
+can't be rendered this way — the 3D moon is SceneKit, which `ImageRenderer`
+cannot drive. Capture that one by hand from the TestFlight build if you want
+six; five honest screenshots beat six with one blank frame.
 
 Storyboard, captions and the per-frame rationale:
 [`docs/aso/SCREENSHOTS.md`](./docs/aso/SCREENSHOTS.md).

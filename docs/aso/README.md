@@ -12,12 +12,18 @@ and a linter that keeps it correct.
 | [`../../metadata/app-store.json`](../../metadata/app-store.json) | **Source of truth** for every text field |
 | [`../../scripts/aso_lint.py`](../../scripts/aso_lint.py) | Validates limits, keyword overlap and accuracy claims |
 
-## The two commands
+## The three commands
 
 ```sh
-python3 scripts/aso_lint.py --print   # paste-ready blocks with character counts
-python3 scripts/aso_lint.py           # validate — also runs in CI and local_checks.sh
+python3 scripts/aso_lint.py              # validate — also runs in CI and local_checks.sh
+python3 scripts/aso_lint.py --print      # paste-ready blocks with character counts
+python3 scripts/aso_lint.py --fastlane   # regenerate fastlane/metadata/ for `deliver`
 ```
+
+`fastlane/metadata/` is committed and generated — never hand-edit it. Fifteen
+paste operations into App Store Connect is fifteen chances to paste the wrong
+field with no way to diff what was uploaded; `fastlane deliver` reads that tree
+instead, from the same source of truth this linter checks.
 
 ## The rules this encodes
 
