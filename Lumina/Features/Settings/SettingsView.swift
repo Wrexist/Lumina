@@ -343,6 +343,9 @@ extension SettingsView {
         WidgetSharedStore.clear()
         MomentsStore.shared.clear()
         ChartDiscovery.shared.clear()
+        // The rating record is device state about the *previous* account's
+        // use; leaving it would let a fresh account be asked on day one.
+        ReviewPrompt.shared.clear()
         // Drop the persisted natal chart + every cached ephemeris read so the
         // deleted account leaves nothing behind (Apple 5.1.1(v)).
         await ChartCache.shared.clear()

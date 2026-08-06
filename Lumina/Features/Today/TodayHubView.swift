@@ -66,6 +66,9 @@ struct TodayHubView: View {
         .sheet(isPresented: $showingWhy) {
             TodayTransparencySheet(transits: viewModel.transits)
         }
+        // The only place the app ever asks for a rating, and only after the
+        // reading has actually been unveiled on three separate days.
+        .requestsReviewOnReveal(day: reveal.lastRevealedDay)
     }
 
     // MARK: - View building blocks
