@@ -52,6 +52,14 @@ Plus two dead-link classes: every published support address was at
 privacy page still said data export was "planned but not available" months
 after it shipped.
 
+One gap the audit never listed, because it was an absence rather than a wrong
+claim: **the app never asked for an App Store rating.** No `requestReview`
+anywhere in the tree. A listing with no ratings converts worse than the same
+listing with twenty, so for an app whose whole distribution story is search,
+that is a launch defect. It now asks — once per version, after the daily
+reading has been unveiled on three separate days, and structurally never from
+an error state. See [`docs/aso/RATINGS.md`](docs/aso/RATINGS.md).
+
 **The lesson to carry forward:** the audit fixed the claims in the places it
 looked — the app name, the keywords, the marketing site. The same claims
 survived in Help, the glossary, a preview, and a screenshot. Accuracy needs a
