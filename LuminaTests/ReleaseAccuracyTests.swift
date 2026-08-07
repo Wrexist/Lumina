@@ -86,6 +86,21 @@ final class ReleaseAccuracyTests: XCTestCase {
         )
     }
 
+    /// The onboarding stars sit one tap away from Apple's rating card, which
+    /// is only defensible under Guideline 1.1.7 while two things stay true:
+    /// the card is not conditional on the stars, and the screen says so
+    /// before the tap. The first is structural — nothing reads the value —
+    /// and this pins the second.
+    func testTheOnboardingRatingScreenWarnsBeforeItAsks() {
+        let disclosure = OnboardingScreens.Excitement.ratingCardDisclosure.lowercased()
+        XCTAssertTrue(disclosure.contains("rating card"), "the card must be named before it appears")
+        XCTAssertTrue(
+            disclosure.contains("whatever you tapped"),
+            "the no-filtering promise is the point — one star opens the card too"
+        )
+        XCTAssertTrue(disclosure.contains("skipping"), "the screen must say it can be skipped")
+    }
+
     /// The paywall may only list features that are actually gated, and each
     /// one has to carry its own copy — a blank or duplicated line means the
     /// list stopped describing what a subscriber actually receives.

@@ -92,7 +92,7 @@ We allow at most one primary + two secondary on a single screen. If a feature wa
 
 ---
 
-## 6. Onboarding flow (8 screens)
+## 6. Onboarding flow (9 screens)
 
 ```
 launch
@@ -103,7 +103,8 @@ launch
   → 5. Birth time (with "I don't know")
   → 6. Birth place (with manual fallback)
   → 7. Chart reveal
-  → 8. What you can do next ───┐
+  → 8. How excited are you? (5 stars → Apple's rating card, skippable)
+  → 9. What you can do next ───┐
                                 ↓
                           MainTabs(.today)
 ```

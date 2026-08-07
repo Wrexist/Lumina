@@ -12,19 +12,51 @@ is how apps collect one-star reviews from people who were about to leave.
 
 ## What ships
 
-One ask, from one place: `RequestsReviewOnReveal.swift`, applied in
-`TodayHubView`.
+Two entry points, one slot. Whichever fires first burns the version's single
+ask, so nobody is asked twice.
+
+**1 — Onboarding** (`OnboardingExcitement.swift`, step 8 of 9). "How excited
+are you to start your Lumina adventure?", five tappable stars, then Apple's
+card. New users land here.
+
+**2 — Third day of real use** (`RequestsReviewOnReveal.swift`, applied in
+`TodayHubView`). Existing users, who never see onboarding again, land here.
 
 | Gate | Value | Where |
 |---|---|---|
-| Distinct days of use before the first ask | 3 | `ReviewPrompt.requiredEngagedDays` |
-| Asks per marketing version | 1 | `ReviewPrompt.markAsked()` |
-| Delay after the trigger | 2s | `RequestsReviewOnReveal.swift` |
+| Distinct days of use before the Today ask | 3 | `ReviewPrompt.requiredEngagedDays` |
+| Asks per marketing version, across both entry points | 1 | `ReviewPrompt.markAsked()` |
+| Delay after the Today trigger | 2s | `RequestsReviewOnReveal.swift` |
 | Reachable from an error state | never | see below |
 
 A "day of use" is a day the daily reading was actually unveiled — a deliberate
 tap on a screen that loaded. Five visits in one evening is one day, not five
 (`testRepeatVisitsInOneDayCountOnce`).
+
+## The three rules the onboarding stars follow
+
+Guideline 1.1.7 rejects "custom review prompts that mimic or replace the system
+rating and review prompts, or that manipulate customers into leaving positive
+reviews." A star widget wired to a review prompt lives close to that line, so
+it stays on the right side of it deliberately:
+
+1. **The system card appears for every answer, one star included.** Nothing
+   reads the value to decide. Showing Apple's card only to happy taps is the
+   textbook rejection, and it is also how a team ends up with a rating that
+   tells them nothing.
+2. **The stars are not a review.** They measure anticipation, before the app
+   has been used. They are stored on-device and sent nowhere.
+3. **The screen is skippable.** The button says "Skip" until a star is tapped;
+   `canAdvance(from: .excitement)` is unconditionally `true`. A rating is never
+   the price of finishing onboarding.
+
+The screen also says in advance that Apple's card is coming. Springing it on
+someone reads as a trick the first time and is remembered as one. The App
+Store review notes in `metadata/app-store.json` spell all of this out, so a
+reviewer meets the explanation before the screen.
+
+**If this ever gets rejected**, the fix is to drop the stars and keep entry
+point 2 — not to make the card conditional on the rating.
 
 Apple's own throttle sits underneath ours: at most three system prompts per
 user per year, and none at all if the user has turned them off in Settings.
@@ -55,10 +87,14 @@ Marking after would re-trigger on every unveil forever.
 
 ## After launch
 
-- **Never chase a rating with a custom pre-prompt** ("do you like Lumina?
-  → yes → show the real one"). Apple allows it and plenty of apps do it; it
-  inflates the average by filtering, and it costs you the honest signal about
-  what's wrong. This app doesn't have one.
+- **Never make the system card conditional on the stars** ("do you like
+  Lumina? → yes → show the real one"). Plenty of apps do it; it inflates the
+  average by filtering, costs you the honest signal about what's wrong, and is
+  the specific thing 1.1.7 names. The onboarding screen deliberately doesn't.
+- **Watch what onboarding actually returns.** Asking on day zero buys volume
+  at the cost of signal — those raters have used the app for ninety seconds.
+  If the average from the first hundred sits well below what the Today ask
+  produces, the honest move is to drop entry point 1 and keep entry point 2.
 - **Respond to reviews in App Store Connect.** Replies are public, and a
   reply flips a fair number of one-stars once the issue is fixed. It's the
   cheapest rating work there is.

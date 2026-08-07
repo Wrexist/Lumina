@@ -20,6 +20,13 @@ final class OnboardingState {
         case birthTime
         case birthPlace
         case chartReveal
+        /// The rating moment. Inserted after the reveal rather than appended
+        /// at the end, so it lands on the emotional peak of the flow instead
+        /// of after a destination picker the user has already tapped through.
+        /// This renumbers `whatNext` from 7 to 8; a snapshot persisted by an
+        /// older build resumes one step early, which is harmless and cannot
+        /// happen after 1.0 anyway.
+        case excitement
         case whatNext
 
         var index: Int { rawValue }
@@ -56,6 +63,14 @@ final class OnboardingState {
     var birthLongitude: Double?
     var birthTimeZoneIdentifier: String?
 
+    /// 1–5 from the excitement step, `nil` if they skipped it.
+    ///
+    /// Persisted so backing out of the step and returning doesn't wipe the
+    /// answer, and read by exactly one thing: `OnboardingFlowView` deciding
+    /// whether the button says "Send" or "Skip". Nothing branches on the
+    /// *value* — see `OnboardingScreens.Excitement` for why that matters.
+    var excitement: Int?
+
     /// `true` once the chart has been computed and we can advance to the
     /// final "what's next" step.
     var chartReady = false
@@ -87,7 +102,8 @@ final class OnboardingState {
             birthPlaceName: birthPlaceName,
             birthLatitude: birthLatitude,
             birthLongitude: birthLongitude,
-            birthTimeZoneIdentifier: birthTimeZoneIdentifier
+            birthTimeZoneIdentifier: birthTimeZoneIdentifier,
+            excitement: excitement
         )
     }
 
@@ -119,6 +135,7 @@ final class OnboardingState {
         self.birthLatitude = snapshot.birthLatitude
         self.birthLongitude = snapshot.birthLongitude
         self.birthTimeZoneIdentifier = snapshot.birthTimeZoneIdentifier
+        self.excitement = snapshot.excitement
     }
 
     /// `true` if the field captured at `step` is sufficient to move forward.
@@ -131,6 +148,10 @@ final class OnboardingState {
         case .birthTime: birthTimeUnknown || birthTime != nil
         case .birthPlace: birthPlaceResolved
         case .chartReveal: chartReady || chartDeferred
+        // Never a gate. Requiring a tap to leave the screen would make the
+        // rating the price of entry, which is both coercive and the reading
+        // of Guideline 1.1.7 nobody wants to argue in an appeal.
+        case .excitement: true
         case .whatNext: true
         }
     }
@@ -250,4 +271,7 @@ struct OnboardingSnapshot: Codable, Sendable {
     var birthLatitude: Double?
     var birthLongitude: Double?
     var birthTimeZoneIdentifier: String?
+    /// Optional with a default, so a snapshot written before this field
+    /// existed still decodes instead of stranding the user at step one.
+    var excitement: Int?
 }

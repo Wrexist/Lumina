@@ -1,6 +1,7 @@
+import StoreKit
 import SwiftUI
 
-/// Orchestrates the 8-screen onboarding flow per `ROADMAP.md` Phase 2 and
+/// Orchestrates the 9-screen onboarding flow per `ROADMAP.md` Phase 2 and
 /// `docs/NAVIGATION.md` §6. Each screen is a small dedicated view; this
 /// orchestrator owns the `OnboardingState`, the progress bar, and the
 /// next/back chrome.
@@ -21,6 +22,8 @@ struct OnboardingFlowView: View {
     /// dropped into the free app believing they subscribed.
     @State private var purchaseError: LuminaError?
     @Environment(\.scenePhase) private var scenePhase
+    /// Apple's rating card. Called from `sendExcitement()` only.
+    @Environment(\.requestReview) private var requestReview
     @State private var pendingDestination: LuminaDeepLink?
     /// One-time completion guard: the trial purchase runs in a `Task`, so a
     /// second final-step tap could otherwise call `onComplete` twice.
@@ -122,6 +125,8 @@ struct OnboardingFlowView: View {
             OnboardingScreens.BirthPlace(state: state)
         case .chartReveal:
             OnboardingScreens.ChartReveal(state: state)
+        case .excitement:
+            OnboardingScreens.Excitement(rating: $state.excitement, name: state.trimmedName)
         case .whatNext:
             OnboardingScreens.WhatNext(motivation: state.motivation) { handleFinalTap($0) }
         }
@@ -129,18 +134,42 @@ struct OnboardingFlowView: View {
 
     private var bottomBar: some View {
         let isFinal = state.currentStep == .whatNext
-        let title = isFinal ? "Take me to Today" : "Continue"
         return LuminaButton(
-            title: title,
+            title: bottomBarTitle(isFinal: isFinal),
             variant: .primary,
             isEnabled: state.canAdvance(from: state.currentStep)
         ) {
             if isFinal {
                 handleFinalTap(nil)
             } else {
+                if state.currentStep == .excitement { sendExcitement() }
                 state.advance()
             }
         }
+    }
+
+    private func bottomBarTitle(isFinal: Bool) -> String {
+        if isFinal { return "Take me to Today" }
+        guard state.currentStep == .excitement else { return "Continue" }
+        // "Skip" rather than a disabled button: the screen is never a gate,
+        // and a greyed-out Continue would read as one.
+        return state.excitement == nil ? "Skip" : "Send in"
+    }
+
+    /// Opens Apple's rating card — for every answer, including one star.
+    ///
+    /// The star value is deliberately not consulted. Guideline 1.1.7 rejects
+    /// custom prompts that "manipulate customers into leaving positive
+    /// reviews", and a screen that only surfaces the system sheet for happy
+    /// taps is exactly the pattern that gets pulled. `ReviewPromptTests`
+    /// covers the gate this shares with the Today ask.
+    private func sendExcitement() {
+        guard state.excitement != nil else { return }
+        // Burns the once-per-version slot, so someone asked here isn't asked
+        // again on their third day. Existing users, who never see onboarding,
+        // still get the engagement-based ask in `TodayHubView`.
+        ReviewPrompt.shared.markAsked()
+        requestReview()
     }
 
     /// Final-step tap. The first time, present the paywall offer as a

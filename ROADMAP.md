@@ -232,7 +232,7 @@ Rewritten from v1 Phase 2 with **clarity-first** changes: progress indicator, re
 #### Goal
 A first-run user goes from launch to "I have a chart and I know what to do next" in **under 90 seconds** with **zero confusion**.
 
-#### Step list (8 screens)
+#### Step list (9 screens)
 
 | # | Screen | Primary action | Validation / fail-soft |
 |---|---|---|---|
@@ -243,11 +243,12 @@ A first-run user goes from launch to "I have a chart and I know what to do next"
 | 5 | Birth time | Continue | wheel + "I don't know — use noon" equally prominent; explanatory caption "Without time, your sign and planets are accurate; houses are hidden." |
 | 6 | Birth place | Continue | MapKit autocomplete, manual lat/lon fallback for airplane mode |
 | 7 | Chart reveal (slow draw + soft chime) | "See my chart" | reduced motion → fade |
-| 8 | What you can do next (3 quick-win cards: read today, scan palm, add a friend) | tap any → land on that tab | always offers "Maybe later → go to Today" |
+| 8 | How excited are you to start? (5 tappable stars) | "Send in" → Apple's rating card | never gates: button reads "Skip" until a star is tapped, and the card shows for every answer (Guideline 1.1.7 — see `docs/aso/RATINGS.md`) |
+| 9 | What you can do next (3 quick-win cards: read today, see your chart, add a friend) | tap any → land on that tab | always offers "Maybe later → go to Today" |
 
 #### Tasks
-- `[CARRY/REWRITTEN]` 8 screen views in `Features/Onboarding/Screens/`
-- `[NEW]` `OnboardingProgressBar` — 8 dots, no labels, no percent; ties to step
+- `[CARRY/REWRITTEN]` 9 screen views in `Features/Onboarding/Screens/`
+- `[NEW]` `OnboardingProgressBar` — one dot per step (reads `Step.totalCount`), no labels, no percent
 - `[NEW]` Persistent `OnboardingState` SwiftData model — survives force-quit; resumes on the same step with field state
 - `[NEW]` Inline validation (debounced) instead of submit-then-error — show name length, date sanity, place lookup states immediately
 - `[NEW]` "Why we ask" link under each sensitive field — opens 2-sentence explainer sheet
