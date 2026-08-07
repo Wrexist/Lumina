@@ -52,6 +52,19 @@ Plus two dead-link classes: every published support address was at
 privacy page still said data export was "planned but not available" months
 after it shipped.
 
+Generating the App Store screenshots then found two more, both on the paid
+Human Design screen, and both invisible until a frame was rendered from a chart
+that actually had definitions:
+
+| Found | Now |
+|---|---|
+| An all-open bodygraph read *"All open — receiving and amplifying everyone around you"* — the description of a Reflector, ~1% of people. Lumina computes 11 of the 26 activations a full chart uses, so ~45% of charts reach it. | Copy names the limitation as ours; the Earth (always Sun + 180°, free to derive) is now activated, taking charts with any definition from ~55% to ~65% |
+| Every *defined* centre labelled itself in `parchment`. Three of the four fills are light — 1.97:1 on `mutedGold`, 1.38:1 on `blush`, against WCAG AA's 4.5:1. Five of nine centres were unreadable. | Label colour chosen per centre; `GoldInkContrastTests` measures every pairing rather than trusting the mapping |
+
+Neither was reachable by reading the code — the sample chart completes no
+channel, so the bodygraph rendered blank and nothing downstream of "defined"
+had ever been looked at. Rendering the screenshot is what executed that path.
+
 One gap the audit never listed, because it was an absence rather than a wrong
 claim: **the app never asked for an App Store rating.** No `requestReview`
 anywhere in the tree. A listing with no ratings converts worse than the same
