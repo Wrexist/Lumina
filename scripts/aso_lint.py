@@ -181,6 +181,50 @@ def check_urls(report: Report, urls: dict) -> None:
             report.fail(f"url {field}", f"docs/{page} does not exist — this URL would 404")
 
 
+PROJECT_YML = ROOT / "project.yml"
+
+
+def check_version(report: Report, version: str, whats_new: str) -> None:
+    """The binary's marketing version has to match the version this metadata
+    describes.
+
+    App Store Connect attaches an uploaded build to the App Store version whose
+    number matches its `CFBundleShortVersionString`. Upload a build stamped
+    0.1.0 against a 1.0 release and it does not appear in the build list — no
+    error, no email, just an empty list and no clue why. This repo shipped
+    exactly that state: `project.yml` said 0.1.0 while the release notes below
+    opened with "Lumina 1.0."
+    """
+    if not PROJECT_YML.exists():
+        report.fail("version", "project.yml is missing — the binary's version can't be checked")
+        return
+    found = re.search(
+        r'^\s*MARKETING_VERSION:\s*"?([0-9.]+)"?\s*$',
+        PROJECT_YML.read_text(encoding="utf-8"),
+        re.M,
+    )
+    if not found:
+        report.fail("version", "no MARKETING_VERSION in project.yml")
+        return
+
+    marketing = found.group(1)
+    if marketing != version:
+        report.fail(
+            "version",
+            f"project.yml stamps {marketing}, this metadata describes {version} — "
+            "a build at the wrong version can't be attached to the release",
+        )
+        return
+    report.ok("version", f"{version} in both project.yml and metadata")
+
+    # Release notes that open by naming a version have to name this one.
+    named = re.search(r"\b(\d+\.\d+(?:\.\d+)?)\b", whats_new.split("\n", 1)[0])
+    if named and named.group(1) != version:
+        report.fail("whats_new", f"opens with {named.group(1)} but the release is {version}")
+    elif named:
+        report.ok("whats_new version", f"names {version}, matching the release")
+
+
 def check_contact(report: Report, contact: dict) -> None:
     """The support contact has to be a mailbox that exists, and the published
     support page has to show the same one.
@@ -277,6 +321,7 @@ def main() -> int:
     check_length(report, "description", primary["description"], "description")
     check_length(report, "whats_new", primary["whats_new"], "whats_new")
     check_length(report, "review notes", data["review"]["notes"], "review_notes")
+    check_version(report, data["version"], primary["whats_new"])
 
     # The three indexed fields must not spend budget on the same token twice.
     name_tokens = tokens(primary["name"])

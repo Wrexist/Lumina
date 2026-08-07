@@ -28,7 +28,11 @@ settings:
     # CURRENT_PROJECT_VERSION on the xcodebuild command line so every upload
     # gets a unique build number — and app + appex stay in lockstep (a
     # mismatch is an App Store Connect rejection).
-    MARKETING_VERSION: "0.1.0"
+    # Must equal `version` in metadata/app-store.json — App Store Connect
+    # attaches an upload to the App Store version whose number matches this
+    # string, so a build stamped 0.1.0 simply never appears under a 1.0
+    # release. `scripts/aso_lint.py` fails the build if the two drift.
+    MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "1"
     # Warnings-as-errors and upcoming-features are applied per-target below
     # so they only gate our own code, not SPM dependency builds.
