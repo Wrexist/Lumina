@@ -19,6 +19,19 @@ struct BodygraphView: View {
         + "at the moment you were born. Type, Profile, and Authority are read from a second, "
         + "design-side chart cast about 88 days earlier, which Lumina doesn't compute."
 
+    /// Shown when no channel completes and every centre reads open.
+    ///
+    /// This used to say "All open — receiving and amplifying everyone around
+    /// you", which is the description of a Reflector: roughly one person in a
+    /// hundred. It is reached here by about a third of charts, because Lumina
+    /// computes eleven of the twenty-six activations a full bodygraph uses —
+    /// so the old line told a great many people something about themselves
+    /// that was an artefact of our scope, not a reading of their chart.
+    static let allOpenNote = "No channel completes from the placements Lumina computes, so every "
+        + "centre here reads open. A full chart also uses the lunar nodes and a second, design-side "
+        + "chart — with those, some of these would likely be defined. We'd rather say that than let "
+        + "you read this as a finished result."
+
     let activation: HumanDesignActivation
     var onTapCenter: ((HumanDesignCenter) -> Void)?
 

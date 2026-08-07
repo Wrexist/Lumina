@@ -28,6 +28,17 @@ import XCTest
 final class AppStoreShotTests: XCTestCase {
     private static let canvas = CGSize(width: 440, height: 956)
     private static let contentWidth: CGFloat = 393
+    /// Fixed so every frame crops the screen at the same line, whether the
+    /// caption runs to two lines or three.
+    private static let captionHeight: CGFloat = 120
+    /// Whatever the caption block and the stack's spacing leave. Derived
+    /// rather than typed, so the page can never overflow its own canvas —
+    /// `ImageRenderer` would happily hand back a taller image, and
+    /// `testEveryShotIsExactlyTheRequiredSize` would be the only thing that
+    /// noticed.
+    private static var contentHeight: CGFloat {
+        canvas.height - LuminaSpacing.xl - captionHeight - LuminaSpacing.lg
+    }
 
     func testTodayShot() throws {
         let transits = TodayViewModel.sampleTransits()
@@ -44,7 +55,7 @@ final class AppStoreShotTests: XCTestCase {
     }
 
     func testChartShot() throws {
-        try shot(TabPreviews.chart(BirthChartViewModel.sampleChart()),
+        try shot(TabPreviews.chartForStore(BirthChartViewModel.sampleChart()),
                  caption: "Your birth chart,\ncomputed — not guessed",
                  named: "02-birth-chart")
     }
@@ -64,10 +75,27 @@ final class AppStoreShotTests: XCTestCase {
     /// `HumanDesignActivation.compute(from:)` is pure, so this frame shows the
     /// real calculation rather than a drawing of one — which is what lets it
     /// be generated at all.
+    ///
+    /// Not the shared sample chart: that one completes no channel, so the
+    /// frame was nine empty boxes. `chartWithDefinedChannels()` is a different
+    /// real birth moment, with four.
     func testHumanDesignShot() throws {
-        try shot(TabPreviews.humanDesign(BirthChartViewModel.sampleChart()),
-                 caption: "Your Human Design bodygraph,\nfrom the same birth data",
+        try shot(TabPreviews.humanDesign(TabPreviews.chartWithDefinedChannels()),
+                 caption: "Human Design,\nfrom the same birth data",
                  named: "04-human-design")
+    }
+
+    /// The frame the storyboard sells has to actually show something. A
+    /// bodygraph with no channels is a correct render of a chart that has
+    /// none, and a terrible screenshot — this is the assertion that stops it
+    /// silently coming back if the sample longitudes are ever edited.
+    func testTheBodygraphFrameHasChannelsToShow() {
+        let activation = HumanDesignActivation.compute(from: TabPreviews.chartWithDefinedChannels())
+        XCTAssertFalse(
+            HumanDesignChannels.defined(in: activation).isEmpty,
+            "the App Store bodygraph frame would render every centre open"
+        )
+        XCTAssertGreaterThanOrEqual(activation.definedCenters.count, 4)
     }
 
     /// Every shot must land on Apple's exact pixel dimensions — App Store
@@ -100,18 +128,30 @@ final class AppStoreShotTests: XCTestCase {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, LuminaSpacing.lg)
-                .padding(.top, LuminaSpacing.xl)
+                .frame(height: Self.captionHeight)
 
             // The real screen, at its real width, on a card — cropped at the
             // bottom rather than squashed, so nothing in the frame is a
             // rendering that the app can't produce.
+            //
+            // `.fixedSize(vertical:)` is what makes that true, and it was
+            // missing. Without it the canvas height propagates back down into
+            // the cards, and every `Text` collapses to a single truncated line
+            // — the first submission set read "Pluto trine your Mercur…" and
+            // "Tap any planet on the Chart tab to learn…". The chart wheel is
+            // the same bug seen differently: `ChartWheelView` fits a square
+            // into `min(width, height)`, so a squeezed height rendered it at a
+            // quarter of the frame. Laying out at the natural height and
+            // cropping is what a phone screen does anyway.
             content
                 .frame(width: Self.contentWidth, alignment: .topLeading)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(width: Self.contentWidth, height: Self.contentHeight, alignment: .top)
+                .clipped()
                 .background(LuminaColors.parchment)
                 .luminaCornerRadius(LuminaRadii.lg)
-                .frame(maxHeight: .infinity, alignment: .top)
-                .clipped()
         }
+        .padding(.top, LuminaSpacing.xl)
         .frame(width: Self.canvas.width, height: Self.canvas.height, alignment: .top)
         .background(LuminaColors.midnight)
         .environment(GlossaryStore.shared)

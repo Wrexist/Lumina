@@ -225,8 +225,9 @@ struct ChartHubView: View {
                 .tracking(1.4)
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
             if activation.definedCenters.isEmpty {
-                Text("All open — receiving and amplifying everyone around you.")
-                    .font(LuminaTypography.body)
+                Text(BodygraphView.allOpenNote)
+                    .font(LuminaTypography.bodyLight)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
             } else {
                 ForEach(Array(activation.definedCenters).sorted(by: { $0.rawValue < $1.rawValue })) { center in
                     HStack {

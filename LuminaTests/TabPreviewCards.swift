@@ -8,6 +8,64 @@ import SwiftUI
 // `TabPreviews.swift` calls every one of these. They were private while they
 // lived in the same file; splitting the file is what changed the requirement.
 extension TabPreviews {
+    /// A real birth moment — 1996-01-13 14:30 UTC — whose natal placements
+    /// complete four Human Design channels (Exploration, Perfected Form,
+    /// Recognition, Power), defining the G, Sacral, Spleen and Throat centres.
+    ///
+    /// The shared `BirthChartViewModel.sampleChart()` completes *none*, so the
+    /// App Store bodygraph frame rendered nine empty boxes. That render was
+    /// correct — see `HumanDesignActivation` — which is precisely why the fix
+    /// is a different real chart rather than a drawing of a fuller one. These
+    /// longitudes come from the same `astronomy-engine` call the backend makes
+    /// (`Ecliptic(GeoVector(body, t, aberration: true)).elon`) at that instant.
+    static func chartWithDefinedChannels() -> NatalChart {
+        let placements: [(name: String, longitude: Double)] = [
+            ("Sun", 292.68), ("Moon", 199.53), ("Mercury", 303.84), ("Venus", 328.07),
+            ("Mars", 304.04), ("Jupiter", 272.31), ("Saturn", 350.35), ("Uranus", 300.07),
+            ("Neptune", 295.15), ("Pluto", 242.34),
+        ]
+        return NatalChart(
+            calculatedAt: sampleDate,
+            houseSystem: .placidus,
+            planets: placements.map {
+                NatalChart.PlanetPosition(
+                    planet: $0.name,
+                    longitude: $0.longitude,
+                    latitude: 0,
+                    isRetrograde: false
+                )
+            },
+            aspects: [],
+            houses: nil
+        )
+    }
+
+    /// The Chart tab as the store frame shows it — same real components as
+    /// `chart(_:)`, minus `AskYourChartCard`.
+    ///
+    /// That card's glass surface has no still frame: `ImageRenderer` resolves
+    /// the material to a flat grey slab, so the first submission set had an
+    /// opaque grey block sitting above the wheel. Cropping it out is honest
+    /// (the card is a navigation affordance, not a result) and it lifts the
+    /// wheel — the one thing this frame is selling — above the fold.
+    static func chartForStore(_ chart: NatalChart) -> some View {
+        VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
+            Text("Chart").font(LuminaTypography.display)
+            BigThreeBand(chart: chart)
+            // Explicit height for the same reason `humanDesign(_:)` pins the
+            // bodygraph: `ChartWheelView` is a bare `GeometryReader` with no
+            // intrinsic size, and the store frame lays its content out with
+            // `.fixedSize(vertical:)` — which proposes no height at all, so an
+            // unpinned wheel collapses. 345 is the content width less the
+            // stack's padding, i.e. a square wheel at full bleed.
+            ChartWheelView(chart: chart)
+                .frame(height: 345)
+            AspectLegend()
+            StrongestAspectsCard(chart: chart)
+        }
+        .padding(LuminaSpacing.lg)
+    }
+
     // MARK: - Today cards (facsimiles of the real self-loading cards)
 
     static func moonCard() -> some View {

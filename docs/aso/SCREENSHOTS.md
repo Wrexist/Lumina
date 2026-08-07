@@ -67,9 +67,17 @@ the argument on their own.
 > real aspects. Carries `synastry` + `composite`.
 
 **6 — Human Design** · generated (`04-human-design.png`)
-> Caption: **Your Human Design bodygraph, from the same birth data**
+> Caption: **Human Design, from the same birth data**
 > Shows: the bodygraph with defined centres. Adjacent category, high intent,
 > and it is what Plus mostly sells.
+>
+> Rendered from `TabPreviews.chartWithDefinedChannels()`, not the shared
+> sample chart. The shared one completes no channel, so the frame came out as
+> nine empty boxes — a correct render (Lumina computes 11 of the 26
+> activations a full bodygraph uses) and a useless screenshot.
+> `testTheBodygraphFrameHasChannelsToShow` fails the build if that regresses.
+> The caption lost the word "bodygraph" because the longer line wrapped to
+> three, pushing the frame's crop line up.
 
 ### Caption rules
 

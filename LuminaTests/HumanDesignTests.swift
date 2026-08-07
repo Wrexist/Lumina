@@ -63,7 +63,7 @@ final class HumanDesignTests: XCTestCase {
     func testActivationCentersFollowTheChannelRule() {
         let chart = BirthChartViewModel.sampleChart()
         let activation = HumanDesignActivation.compute(from: chart)
-        XCTAssertEqual(activation.personality.count, 10, "one activation per natal planet")
+        XCTAssertEqual(activation.personality.count, 11, "one per natal planet, plus the Earth")
         XCTAssertFalse(activation.activatedGates.isEmpty)
         // A center is defined only by a complete channel — never by a lone
         // (hanging) gate. The defined set must be exactly the endpoints of
@@ -73,5 +73,29 @@ final class HumanDesignTests: XCTestCase {
                 .flatMap { [$0.centerA, $0.centerB] }
         )
         XCTAssertEqual(activation.definedCenters, expected)
+    }
+
+    /// The Earth is a personality activation in every real Human Design chart
+    /// and is always exactly opposite the Sun. It was missing, which cost
+    /// every user one of their eleven chances at completing a channel — on a
+    /// paid feature that renders an all-open bodygraph when none complete.
+    @MainActor
+    func testTheEarthIsActivatedOppositeTheSun() throws {
+        let chart = BirthChartViewModel.sampleChart()
+        let activation = HumanDesignActivation.compute(from: chart)
+
+        let sun = try XCTUnwrap(chart.planets.first { $0.planet == "Sun" })
+        let earth = try XCTUnwrap(activation.personality.first { $0.planet == "Earth" })
+        XCTAssertEqual(earth.gate, HumanDesignMandala.gate(forLongitude: sun.longitude + 180))
+        XCTAssertEqual(earth.line, HumanDesignMandala.line(forLongitude: sun.longitude + 180))
+
+        // Exactly one Earth, and it doesn't displace any natal body.
+        XCTAssertEqual(activation.personality.filter { $0.planet == "Earth" }.count, 1)
+        for planet in chart.planets {
+            XCTAssertTrue(
+                activation.personality.contains { $0.planet == planet.planet },
+                "\(planet.planet) lost its activation"
+            )
+        }
     }
 }

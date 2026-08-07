@@ -72,6 +72,20 @@ final class ReleaseAccuracyTests: XCTestCase {
         XCTAssertTrue(shippable, "a glossary entry survived for an unshipped feature")
     }
 
+    /// Lumina computes 11 of the 26 activations a full bodygraph uses, so an
+    /// all-open result is usually our scope showing, not the user's chart. The
+    /// copy for that case must say so rather than describe them as a Reflector
+    /// — a type about one person in a hundred actually has.
+    func testTheAllOpenBodygraphCopyBlamesOurScopeNotTheUser() {
+        let note = BodygraphView.allOpenNote.lowercased()
+        XCTAssertTrue(note.contains("lumina computes"), "the note must name the limitation as ours")
+        XCTAssertFalse(note.contains("amplifying"), "the Reflector description must not come back")
+        XCTAssertFalse(
+            note.hasPrefix("all open"),
+            "leading with 'all open' reads as a finished result"
+        )
+    }
+
     /// The paywall may only list features that are actually gated, and each
     /// one has to carry its own copy — a blank or duplicated line means the
     /// list stopped describing what a subscriber actually receives.
