@@ -75,7 +75,7 @@ struct BodygraphView: View {
                 .overlay(
                     Text(center.displayName)
                         .font(LuminaTypography.caption)
-                        .foregroundStyle(isDefined ? LuminaColors.parchment : LuminaColors.inkBlack.opacity(0.7))
+                        .foregroundStyle(isDefined ? center.definedLabelColor : LuminaColors.inkBlack.opacity(0.7))
                         .padding(LuminaSpacing.xs)
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.6)

@@ -62,6 +62,22 @@ enum HumanDesignCenter: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
+    /// Label colour for a *defined* centre — chosen per fill, because three of
+    /// the four fills are light and one foreground can't serve them all.
+    ///
+    /// `parchment` measures 6.1:1 on `celestialBlue`, but only 1.97:1 on
+    /// `mutedGold` and 1.38:1 on `blush` — so every defined Throat, Root,
+    /// Heart, Sacral and Solar Plexus rendered its name in a colour you could
+    /// not read, on a paid screen. `inkBlack` measures 7.8:1 and 11.0:1 there.
+    /// `GoldInkContrastTests` measures every pairing and fails the build if a
+    /// fill drifts without its label following.
+    var definedLabelColor: Color {
+        switch self {
+        case .head, .ajna, .g, .spleen: LuminaColors.parchment
+        case .throat, .heart, .solarPlexus, .sacral, .root: LuminaColors.inkBlack
+        }
+    }
+
     /// Bodygraph layout — normalised position + size in [0,1] space.
     /// Anchor is top-leading. Sized to roughly match the canonical
     /// HD bodygraph proportions (the actual HD shapes are triangles for
