@@ -12,7 +12,7 @@
 
 | Pillar | Promise |
 |---|---|
-| **Real, not fake** | Real Swiss Eph math. Real on-device CV palm analysis. No hallucinated planet positions, no purchased clipart palms. |
+| **Real, not fake** | Real ephemeris math (`astronomy-engine`, self-hosted). Real on-device CV palm analysis when it ships. No hallucinated planet positions, no purchased clipart palms. |
 | **Clear, never confusing** | Every screen answers three questions in <2 seconds: *Where am I? What is this telling me? What's the next thing I can do?* |
 | **Honest billing** | Monthly + annual only. One soft rescue, then hard stop. No web funnel. No fleeceware framing. |
 | **Premium, not mystic** | Wellness-editorial, not purple-gradient mysticism. Anti-Duolingo (no streaks, no confetti). |
@@ -130,7 +130,7 @@ Pull-down on Today reveals `LuminaSearch`: surface natal placements, glossary te
 | 11 | Notifications + Engagement | promoted from backlog | 26 | 4 dev-days |
 | 12 | **Settings, Account, Privacy Dashboard** *(new)* | net new | 27 | 5 dev-days |
 | 13 | **Search, Glossary, Help Center** *(new)* | net new | 28 | 5 dev-days |
-| 14 | Accessibility, Localization (EN+ES), Performance | from v1 Phase 10 expanded | 29–30 | 9 dev-days |
+| 14 | Accessibility, Performance (localization deferred past 1.0 — see Phase 14) | from v1 Phase 10 expanded | 29–30 | 9 dev-days |
 | 15 | Beta, Compliance, App Store 1.0.0 | from v1 Phase 10 | 31–34 | 14 dev-days |
 | 16 | Post-Launch v2 (analytics, IAP ladder, Vedic, Watch, social, etc.) | from v1 Phase 11 | month 9–18 | 24+ wk |
 
@@ -232,7 +232,7 @@ Rewritten from v1 Phase 2 with **clarity-first** changes: progress indicator, re
 #### Goal
 A first-run user goes from launch to "I have a chart and I know what to do next" in **under 90 seconds** with **zero confusion**.
 
-#### Step list (8 screens)
+#### Step list (9 screens)
 
 | # | Screen | Primary action | Validation / fail-soft |
 |---|---|---|---|
@@ -243,11 +243,12 @@ A first-run user goes from launch to "I have a chart and I know what to do next"
 | 5 | Birth time | Continue | wheel + "I don't know — use noon" equally prominent; explanatory caption "Without time, your sign and planets are accurate; houses are hidden." |
 | 6 | Birth place | Continue | MapKit autocomplete, manual lat/lon fallback for airplane mode |
 | 7 | Chart reveal (slow draw + soft chime) | "See my chart" | reduced motion → fade |
-| 8 | What you can do next (3 quick-win cards: read today, scan palm, add a friend) | tap any → land on that tab | always offers "Maybe later → go to Today" |
+| 8 | How excited are you to start? (5 tappable stars) | "Send in" → Apple's rating card | never gates: button reads "Skip" until a star is tapped, and the card shows for every answer (Guideline 1.1.7 — see `docs/aso/RATINGS.md`) |
+| 9 | What you can do next (3 quick-win cards: read today, see your chart, add a friend) | tap any → land on that tab | always offers "Maybe later → go to Today" |
 
 #### Tasks
-- `[CARRY/REWRITTEN]` 8 screen views in `Features/Onboarding/Screens/`
-- `[NEW]` `OnboardingProgressBar` — 8 dots, no labels, no percent; ties to step
+- `[CARRY/REWRITTEN]` 9 screen views in `Features/Onboarding/Screens/`
+- `[NEW]` `OnboardingProgressBar` — one dot per step (reads `Step.totalCount`), no labels, no percent
 - `[NEW]` Persistent `OnboardingState` SwiftData model — survives force-quit; resumes on the same step with field state
 - `[NEW]` Inline validation (debounced) instead of submit-then-error — show name length, date sanity, place lookup states immediately
 - `[NEW]` "Why we ask" link under each sensitive field — opens 2-sentence explainer sheet
@@ -673,10 +674,10 @@ WHAT'S NOT
 - `[CARRY]` Instruments Allocations — peak memory < 150MB during palm CV on iPhone 13
 - `[CARRY]` Instruments Energy Log — all background work stops on app background
 - `[CARRY]` Scroll perf — 500+ item `LazyVStack` at 60fps
-- `[NEW]` Localization — EN + ES at launch, structure for FR / PT-BR / DE in v1.1. Use String Catalogs (`.xcstrings`).
+- `[NEW]` Localization — **not at 1.0.** The app ships English-only: `Localizable.xcstrings` is an empty catalog, there are no `String(localized:)` call sites, and the heavy `"…" + "…"` string concatenation in body copy wouldn't extract even if there were. Doing this properly means rewriting every user-facing string first. Target ES for 1.1, then FR / PT-BR / DE. Do not list Spanish in App Store metadata until it exists.
 - `[NEW]` RTL support audit — Arabic in v1.2, but visual layout must not assume LTR (chart wheel is symmetrical, but text alignment isn't)
 - `[NEW]` Voice Control test pass — every primary action has a unique callable name
-- `[NEW]` Crash reporting via Sentry or Apple's Diagnostics — anonymized
+- `[DONE]` Crash reporting — MetricKit (`Core/Diagnostics/CrashReporter.swift`), no vendor account and no added privacy-manifest burden. A hosted service can layer on later without changing call sites.
 - `[NEW]` Memory leak test — Instruments Leaks; strict zero-leak gate before TestFlight
 - `[NEW]` Battery test — 30 minutes active use must not cost > 8% battery on iPhone 13
 

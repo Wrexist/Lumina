@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Privacy manifest for the LuminaWidget app extension.
+
+	  An app extension is a separate bundle and needs its own manifest — the
+	  host app's does not cover it. This target ships none, yet compiles
+	  WidgetSharedStore.swift, which calls UserDefaults(suiteName:). That is a
+	  required-reason API, so the upload fails validation with ITMS-91053
+	  ("Missing API declaration").
+
+	  The widget only READS the snapshot the app writes. It collects nothing,
+	  tracks nothing, and contacts no network — hence the empty collected-data
+	  and tracking-domain arrays below.
+	-->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<!-- 1C8F.1: reads UserDefaults in the shared App Group
+				     container (group.app.lumina.ios). -->
+				<string>1C8F.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

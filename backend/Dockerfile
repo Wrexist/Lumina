@@ -1,12 +1,12 @@
 # Lumina ephemeris microservice.
 # Runs TypeScript directly on Node 22 via --experimental-strip-types (no build
 # step, matching the dev/CI toolchain). See backend/README.md.
-FROM node:22-slim AS deps
+FROM node:22.23.2-bookworm-slim@sha256:f32b81066cde10a75dbac96646099533316d94bac4150c55da1636e1f0ffdc46 AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-FROM node:22-slim AS runtime
+FROM node:22.23.2-bookworm-slim@sha256:f32b81066cde10a75dbac96646099533316d94bac4150c55da1636e1f0ffdc46 AS runtime
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=3001

@@ -18,6 +18,7 @@ struct ChartQAView: View {
                     conversation
                 }
                 curated
+                EntertainmentDisclaimer()
             }
             .padding(LuminaSpacing.lg)
         }
@@ -67,10 +68,15 @@ extension ChartQAView {
         case .idle, .loading:
             EmptyView()
         case .answer(let text):
-            Text(text)
-                .font(LuminaTypography.body)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
+                Text(text)
+                    .font(LuminaTypography.body)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                // This is the one surface where a language model writes the
+                // words. Say so, right next to them, with a way to report it.
+                AIGeneratedNote(reportedText: text)
+            }
         case .failed(let error):
             conversationNote(error)
         }

@@ -18,7 +18,13 @@ primary_region = "arn"
   force_https = true
   auto_stop_machines = "suspend"
   auto_start_machines = true
-  min_machines_running = 0
+  # Keep one machine warm. The iOS client calls /chart on launch with a 10s
+  # timeout and no retry, and in Release there is no sample-data fallback —
+  # so a suspend/resume cold start on the first request of the day showed up
+  # as an error state on Today, Chart, People and Reflect at once. One
+  # shared-cpu-1x/256mb machine is a few dollars a month; a cold start on the
+  # app's critical path is not worth saving it.
+  min_machines_running = 1
 
   [[http_service.checks]]
     interval = "30s"
@@ -30,3 +36,9 @@ primary_region = "arn"
 [[vm]]
   size = "shared-cpu-1x"
   memory = "256mb"
+
+# Node runs as PID 1 without this, so it never reaps zombies and signal
+# handling is entirely on us. The app installs SIGTERM/SIGINT handlers to
+# drain in-flight requests on deploy and autostop; tini makes that reliable.
+[experimental]
+  init = true

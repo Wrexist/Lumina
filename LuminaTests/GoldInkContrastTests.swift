@@ -21,6 +21,35 @@ final class GoldInkContrastTests: XCTestCase {
         XCTAssertLessThan(ratio, minimumAA, "mutedGold now passes AA — revisit goldInk")
     }
 
+    /// Every defined centre in the bodygraph must be readable. Three of the
+    /// four fills are light, so a single foreground can't serve them — this
+    /// measures the actual pairing each centre ships.
+    func testEveryDefinedCenterLabelClearsAAOnItsFill() {
+        for center in HumanDesignCenter.allCases {
+            let ratio = Self.contrast(center.definedLabelColor, on: center.fillColor)
+            XCTAssertGreaterThanOrEqual(
+                ratio, minimumAA,
+                "\(center.displayName) label is \(String(format: "%.2f", ratio)):1 on its fill"
+            )
+        }
+    }
+
+    /// Documents the regression: `parchment` was the label colour for *every*
+    /// defined centre, and it is unreadable on the two light fills. Guards
+    /// against a well-meaning simplification putting it back.
+    func testParchmentAloneWouldFailOnTheLightFills() {
+        var lightFills = 0
+        for center in HumanDesignCenter.allCases {
+            guard Self.contrast(LuminaColors.parchment, on: center.fillColor) < minimumAA else { continue }
+            lightFills += 1
+            XCTAssertGreaterThanOrEqual(
+                Self.contrast(LuminaColors.inkBlack, on: center.fillColor), minimumAA,
+                "\(center.displayName) has no legible label colour in the palette at all"
+            )
+        }
+        XCTAssertGreaterThan(lightFills, 0, "no fill needs ink any more — the mapping can be simplified")
+    }
+
     // MARK: - WCAG helpers
 
     private static func contrast(_ foreground: Color, on background: Color) -> Double {

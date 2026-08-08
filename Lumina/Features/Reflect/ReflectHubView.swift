@@ -138,27 +138,7 @@ struct ReflectHubView: View {
     @ViewBuilder
     private var premiumBanner: some View {
         if writtenEntryCount() >= 3 && !premium.isPremium && !plusBannerDismissed {
-            LuminaCard {
-                VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                    HStack {
-                        LuminaBadge(title: "Plus", tone: .premium)
-                        Text("Pattern detection at 30 entries")
-                            .font(LuminaTypography.body)
-                        Spacer()
-                        Button {
-                            plusBannerDismissed = true
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(LuminaTypography.caption)
-                                .foregroundStyle(LuminaColors.inkBlack.opacity(0.5))
-                        }
-                        .accessibilityLabel("Dismiss Plus banner")
-                    }
-                    Text("Once you've reflected for a month, Lumina Plus surfaces the emotional patterns connecting your entries. Free includes everything else.")
-                        .font(LuminaTypography.bodyLight)
-                        .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-                }
-            }
+            ReflectPlusBanner(dismissed: $plusBannerDismissed)
         }
     }
 

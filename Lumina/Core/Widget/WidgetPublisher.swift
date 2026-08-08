@@ -10,7 +10,14 @@ import WidgetKit
 /// unsigned CI build `WidgetSharedStore` degrades to standard `UserDefaults`,
 /// so this is a harmless no-op there rather than a crash.
 enum WidgetPublisher {
+    @MainActor
     static func publish(from chart: NatalChart) {
+        // The widget is a Plus feature (README tier table), so a free user's
+        // chart is not written to the shared container at all — the widget
+        // shows its own locked copy instead of silently rendering paid
+        // content on the home screen.
+        guard PremiumGate.isUnlocked(.widget) else { return }
+
         let signature = CosmicSignatureMaker.make(from: chart)
         let snapshot = WidgetSnapshot(
             sunSign: signature.sunSign,
@@ -19,6 +26,14 @@ enum WidgetPublisher {
             headline: signature.headline
         )
         WidgetSharedStore.write(snapshot)
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// Clears the shared snapshot — called when the entitlement lapses so a
+    /// former subscriber's widget doesn't keep serving Plus content
+    /// indefinitely.
+    static func clear() {
+        WidgetSharedStore.clear()
         WidgetCenter.shared.reloadAllTimelines()
     }
 }

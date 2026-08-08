@@ -8,6 +8,7 @@ import SwiftUI
 struct TodayTransparencySheet: View {
     let transits: [TransitReading]
     @Environment(\.dismiss) private var dismiss
+    @ScaledMetric private var markSize: CGFloat = 32
 
     var body: some View {
         NavigationStack {
@@ -27,6 +28,8 @@ struct TodayTransparencySheet: View {
                                     transitRow(transit)
                                 }
                             }
+                            Divider()
+                            vantageNote
                         }
                     }
                 }
@@ -46,14 +49,35 @@ struct TodayTransparencySheet: View {
     }
 
     private func transitRow(_ transit: TransitReading) -> some View {
-        VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
-            Text(TransitPhrasing.sentence(for: transit))
-                .font(LuminaTypography.body)
-            Text(detail(for: transit))
-                .font(LuminaTypography.mono)
-                .foregroundStyle(LuminaColors.inkBlack.opacity(0.55))
+        HStack(alignment: .top, spacing: LuminaSpacing.md) {
+            PlanetMark(planet: transit.transiting, size: markSize)
+            VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
+                Text(TransitPhrasing.sentence(for: transit))
+                    .font(LuminaTypography.body)
+                Text(detail(for: transit))
+                    .font(LuminaTypography.mono)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.55))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// The other half of showing our work: these are *geocentric* positions —
+    /// where each body sits as seen from here, which is what a birth chart is
+    /// measured against. Saying so costs one line and closes the "measured
+    /// from where?" question the rest of the sheet invites.
+    private var vantageNote: some View {
+        HStack(alignment: .top, spacing: LuminaSpacing.md) {
+            LuminaImageAsset.planetEarth.image
+                .resizable()
+                .scaledToFit()
+                .frame(width: markSize, height: markSize)
+                .accessibilityHidden(true)
+            Text("Positions are measured from Earth — the same vantage point your birth chart was cast from.")
+                .font(LuminaTypography.bodyLight)
+                .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 
     private func detail(for transit: TransitReading) -> String {

@@ -30,8 +30,6 @@ jobs:
       # App-runtime keys injected into secrets/Config.xcconfig so the shipped
       # binary has working services. Mirrors ci.yml — minus ANTHROPIC_API_KEY,
       # which by design never ships in the IPA (LLM calls are server-side).
-      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-      ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
       REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
       ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -47,14 +45,66 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Install xcodegen, xcbeautify
-        run: brew install xcodegen xcbeautify
+      - name: Install xcodegen, swiftlint, xcbeautify
+        run: brew install xcodegen swiftlint xcbeautify
 
       - name: Inject env -> secrets/Config.xcconfig
         run: bash scripts/inject_env.sh
 
+      # `inject_env.sh` writes `KEY =` (empty) for any unset variable, and
+      # nothing here used to check. With these blank, `BuildConfig.realValue`
+      # returns nil, `EphemerisService` throws `.missingConfiguration` for
+      # every call, and the uploaded build has no charts, no IAP and no push
+      # — a guaranteed Guideline 2.1 rejection that looks fine in CI, because
+      # simulator builds are *expected* to hit that path.
+      #
+      # Also asserts the service URL is https. A plain-http URL would fail ATS
+      # at runtime with no exception declared, which is the same silent
+      # breakage one layer down.
+      - name: Verify release secrets are populated
+        run: |
+          set -euo pipefail
+          CONFIG="secrets/Config.xcconfig"
+          MISSING=0
+          for key in SWISS_EPH_SERVICE_URL SWISS_EPH_API_SECRET REVENUECAT_API_KEY_IOS ONESIGNAL_APP_ID; do
+            value="$(sed -n "s/^${key} = //p" "$CONFIG" || true)"
+            # Undo the xcconfig `$()` escaping to read the real value back.
+            value="${value//\$()/}"
+            if [ -z "$value" ]; then
+              echo "::error::$key is empty. Set it under Settings → Secrets → Actions before releasing."
+              MISSING=1
+            fi
+          done
+          URL="$(sed -n 's/^SWISS_EPH_SERVICE_URL = //p' "$CONFIG" || true)"
+          URL="${URL//\$()/}"
+          if [ -n "$URL" ] && case "$URL" in https://*) false;; *) true;; esac; then
+            echo "::error::SWISS_EPH_SERVICE_URL must be https (got '$URL'). ATS blocks cleartext and no exception is declared."
+            MISSING=1
+          fi
+          if [ "$MISSING" -ne 0 ]; then exit 1; fi
+          echo "all required release secrets are populated"
+
       - name: Generate Xcode project
         run: xcodegen generate
+
+      # This workflow uploads a build to real testers, and it ran no checks at
+      # all — a lint error or a failing test could ship to TestFlight while
+      # `ci` sat red on the same commit. Lint and the full test suite run here
+      # before anything is archived, so the distribution path is at least as
+      # strict as the verification one.
+      - name: Lint (strict)
+        run: swiftlint lint --strict
+
+      - name: Test (simulator)
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -scheme "$SCHEME" \
+            -destination "platform=iOS Simulator,name=iPhone 16 Pro" \
+            -skipPackagePluginValidation \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify
 
       # The ASC API key (.p8) authenticates automatic cloud signing — Xcode
       # creates/downloads the distribution certificate + App Store profiles on

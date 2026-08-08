@@ -2,9 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- Marks the document as script-capable so the scroll-reveal CSS may hide
+     content it can later reveal. Without JS the class never lands and every
+     section renders visible. Inline and first so it runs before paint. -->
+<script>document.documentElement.classList.add("js");</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Support — Lumina</title>
-<meta name="description" content="Answers to common Lumina questions — birth time accuracy, palm privacy, subscriptions, and house systems — plus how to reach us.">
+<meta name="description" content="Answers to common Lumina questions — birth time accuracy, subscriptions, and house systems — plus how to reach us.">
 <link rel="icon" type="image/png" href="assets/img/brand/mark-1024.png">
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -46,9 +50,9 @@
       </details>
 
       <details class="faq-item">
-        <summary>Does my palm photo get uploaded anywhere?</summary>
+        <summary>Does Lumina do palm reading?</summary>
         <div class="faq-body">
-          <p>No. Palm reading runs entirely on your device using Apple's Vision framework and a custom on-device model. Your photo is analyzed on your phone and is never uploaded, stored on a server, or seen by anyone. Only the resulting geometric measurements — not the image — are used to generate your written reading.</p>
+          <p>Not in the current release. We're building on-device line tracing and won't ship it until it works fairly across every skin tone. When it does arrive, the photo will be analyzed on your phone and never uploaded. Today the app doesn't request camera access at all.</p>
         </div>
       </details>
 
@@ -68,9 +72,9 @@
       </details>
 
       <details class="faq-item">
-        <summary>Can I export or delete my data?</summary>
+        <summary>Can I delete my data?</summary>
         <div class="faq-body">
-          <p>Yes. Open Settings → Privacy in the app for an export of your stored data and the option to delete your account and everything associated with it. See our <a href="privacy.html">Privacy Policy</a> for the full detail on what's stored and where.</p>
+          <p>Yes. Settings → Account → Delete account removes your account and erases everything on the device. For a copy of your data, use <strong>Settings &rarr; Privacy &rarr; Export my data</strong>, which writes everything to a JSON file on the spot. See our <a href="privacy.html">Privacy Policy</a> for the full detail on what's stored and where.</p>
         </div>
       </details>
 
@@ -91,7 +95,7 @@
       <details class="faq-item">
         <summary>Why is this different from other astrology apps?</summary>
         <div class="faq-body">
-          <p>Most of the category does at least one of three things: approximates planetary positions instead of computing them properly, fakes palm reading with a stock animation, or uses billing patterns designed to make canceling hard. Lumina computes real positions from a genuine ephemeris, actually analyzes your palm on-device, and bills only through transparent monthly or annual Apple subscriptions.</p>
+          <p>Most of the category does at least one of three things: approximates planetary positions instead of computing them properly, fakes palm reading with a stock animation, or uses billing patterns designed to make canceling hard. Lumina computes real positions from a genuine ephemeris, doesn't ship palm reading until it actually works, and bills only through transparent monthly or annual Apple subscriptions.</p>
         </div>
       </details>
 
@@ -100,7 +104,7 @@
     <div class="contact-card reveal">
       <h3>Still stuck?</h3>
       <p>Write to us and a real person will get back to you.</p>
-      <a href="mailto:support@lumina.app" class="btn btn-on-dark">support@lumina.app</a>
+      <a href="mailto:Luminasupporthelp@gmail.com" class="btn btn-on-dark">Luminasupporthelp@gmail.com</a>
     </div>
   </div>
 </section>

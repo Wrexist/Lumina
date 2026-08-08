@@ -13,7 +13,7 @@ struct ChartStandoutCard: View {
                     VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                         HStack(spacing: LuminaSpacing.sm) {
                             Image(systemName: "sparkle")
-                                .foregroundStyle(LuminaColors.mutedGold)
+                                .foregroundStyle(LuminaColors.goldInk)
                             Text("WHAT MAKES YOUR CHART RARE")
                                 .font(LuminaTypography.mono)
                                 .tracking(1.4)

@@ -16,7 +16,9 @@ const ConfigSchema = z.object({
   // app bundle (a client-side key is extractable from the IPA).
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().default("claude-sonnet-5"),
-  ANTHROPIC_MAX_TOKENS: z.coerce.number().int().positive().default(1024),
+  // Headroom for a 2–4 paragraph interpretation. Was 1024, which left no
+  // margin once the model's own preamble ran long.
+  ANTHROPIC_MAX_TOKENS: z.coerce.number().int().positive().default(2048),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

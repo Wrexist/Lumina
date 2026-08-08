@@ -46,6 +46,71 @@ final class AuditFixTests: XCTestCase {
         XCTAssertNil(decoded)
     }
 
+    // MARK: - Hostile share payloads
+    //
+    // A share payload is fully untrusted: anyone can build a `lumina://share/…`
+    // URL or print a QR code. These pin that every field is range-checked at
+    // decode, so a bad payload fails cleanly instead of producing a
+    // confident-looking chart from nonsense.
+
+    private func sharePayload(_ overrides: [String: Any]) throws -> Data {
+        var object: [String: Any] = [
+            "birthYear": 1990,
+            "birthMonth": 6,
+            "birthDay": 15,
+            "placeName": "Stockholm",
+            "latitude": 59.3,
+            "longitude": 18.1,
+            "timeZoneIdentifier": "Europe/Stockholm",
+        ]
+        for (key, value) in overrides { object[key] = value }
+        return try JSONSerialization.data(withJSONObject: object)
+    }
+
+    func testSharePayloadRejectsOutOfRangeFields() throws {
+        let hostile: [String: Any] = [
+            "birthMonth": 77,
+            "birthDay": 99,
+            "birthYear": 99_999,
+            "latitude": 1_000.0,
+            "longitude": -1_000.0,
+            "timeZoneIdentifier": "Not/AZone",
+        ]
+        for (key, value) in hostile {
+            let data = try sharePayload([key: value])
+            XCTAssertThrowsError(
+                try JSONDecoder.luminaShare.decode(SharedBirthData.self, from: data),
+                "\(key) = \(value) must be rejected"
+            )
+        }
+    }
+
+    func testSharePayloadAcceptsAPlausibleOne() throws {
+        let decoded = try JSONDecoder.luminaShare.decode(
+            SharedBirthData.self,
+            from: try sharePayload([:])
+        )
+        XCTAssertEqual(decoded.birthYear, 1990)
+        XCTAssertEqual(decoded.birthMonth, 6)
+        XCTAssertEqual(decoded.birthDay, 15)
+    }
+
+    func testSharePayloadTruncatesUnboundedText() throws {
+        let data = try sharePayload([
+            "name": String(repeating: "a", count: 5_000),
+            "placeName": String(repeating: "b", count: 5_000),
+        ])
+        let decoded = try JSONDecoder.luminaShare.decode(SharedBirthData.self, from: data)
+        XCTAssertLessThanOrEqual(decoded.name?.count ?? 0, 60)
+        XCTAssertLessThanOrEqual(decoded.placeName.count, 200)
+    }
+
+    func testOversizedSharePayloadIsRefusedBeforeDecoding() {
+        // Valid base64url, just implausibly large for a share payload.
+        let huge = String(repeating: "A", count: Data.maxSharePayloadBytes + 4)
+        XCTAssertNil(Data(base64URLEncoded: huge))
+    }
+
     // MARK: - CompatibilityScorer stability (FNV-1a, not randomized hashValue)
 
     func testStableHashMatchesAFixedValue() {

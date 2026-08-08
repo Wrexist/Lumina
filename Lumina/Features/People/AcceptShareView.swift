@@ -124,12 +124,10 @@ struct AcceptShareView: View {
             birthTimeZoneIdentifier: shared.timeZoneIdentifier,
             source: .qr
         )
-        if let userBirth = UserBirthDataStore.userDefaults.load() {
-            friend.compatibilityScore = CompatibilityScorer.score(
-                userBirth.birthDate, calendar: BirthMoment.calendar(userBirth.timeZoneIdentifier),
-                friend.birthDate, calendar: BirthMoment.calendar(shared.timeZoneIdentifier)
-            )
-        }
+        // Deliberately NOT seeded with a Sun-sign heuristic. The score is
+        // only ever written from real synastry cross-aspects (see
+        // `FriendDetailView.applyLoadedAspects`), so People shows no number
+        // until one exists rather than a hash-derived placeholder.
         modelContext.insert(friend)
         modelContext.saveOrLog(category: "People")
         // A friend accepted via QR counts the same as one added by hand.

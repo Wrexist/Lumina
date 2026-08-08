@@ -1,0 +1,1 @@
+aspects,houses,composite,placidus,sidereal,ascendant,venus,mars,mercury,ritual,journal,tracker

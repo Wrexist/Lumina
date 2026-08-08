@@ -35,7 +35,14 @@ struct PrivacyDashboardView: View {
     // MARK: - View building blocks
 
     private var hero: some View {
-        Text("Lumina is honest about what it stores and where. This dashboard reflects exactly what's on your device right now — nothing here leaves it unless you explicitly share it.")
+        // Was: "nothing here leaves it unless you explicitly share it".
+        // That was false — `EphemerisService` POSTs the full birth date,
+        // exact time and coordinates to the chart service on every request,
+        // and `LuminaAIClient` forwards chart facts to the interpretation
+        // service. Say what actually happens.
+        Text("Lumina is honest about what it stores and where. Everything below lives on your "
+            + "device. To draw your chart we send your birth date, time and city coordinates to "
+            + "our chart service — that is the only thing we send, and we don't keep it.")
             .font(LuminaTypography.body)
             .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
     }
@@ -44,6 +51,7 @@ struct PrivacyDashboardView: View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 sectionHeader("On this device", systemImage: "iphone")
+                row("Your name", value: displayNameValue)
                 row("Your birth chart", value: hasBirthData ? "Yes" : "Not set")
                 row("Reflect entries", value: "\(writtenEntryCount)")
                 row("Friends", value: "\(friends.count)")
@@ -56,7 +64,9 @@ struct PrivacyDashboardView: View {
         LuminaCard(surface: .glass) {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 sectionHeader("What's never stored", systemImage: "lock.shield")
-                bullet("Your palm photos — discarded after on-device line extraction")
+                // Palm capture isn't built, so claiming photos are discarded
+                // described a pipeline that doesn't exist. Restore this line
+                // when the capture flow ships.
                 bullet("Your Reflect entry text — never leaves this device")
                 bullet("Your device location — never read; your birth coordinates come from the city you type at onboarding")
             }
@@ -67,12 +77,13 @@ struct PrivacyDashboardView: View {
         LuminaCard {
             VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
                 sectionHeader("Your data", systemImage: "tray.and.arrow.down")
-                Text("Delete your account any time from Settings → Account — it erases your chart, "
-                    + "journal, and friends for good. Exporting your data is coming soon. Either way, "
-                    + "your data lives only on this device, so uninstalling the app also removes everything.")
+                Text("Take it with you: Settings → Privacy → Export my data writes everything "
+                    + "listed above to a JSON file you choose where to save. Delete your account "
+                    + "any time from Settings → Account — it erases your chart, journal, and "
+                    + "friends for good, on this device and on our servers. Uninstalling the app "
+                    + "also removes everything stored here.")
                     .font(LuminaTypography.bodyLight)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-                LuminaBadge(title: "Export soon", tone: .neutral)
             }
         }
     }
@@ -92,6 +103,14 @@ struct PrivacyDashboardView: View {
                 .foregroundStyle(LuminaColors.celestialBlue)
             Text(title).font(LuminaTypography.heading)
         }
+    }
+
+    /// Shown, not printed: the dashboard's promise is that it lists what is
+    /// stored, and the name onboarding collects is now kept.
+    private var displayNameValue: String {
+        AppPreferences.shared.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? "Not set"
+            : "Saved on this device"
     }
 
     private func row(_ key: String, value: String) -> some View {

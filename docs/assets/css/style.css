@@ -39,7 +39,7 @@ p { margin: 0 0 var(--space-md); }
 
 .eyebrow {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--muted-gold);
@@ -203,7 +203,7 @@ section { position: relative; }
 }
 .hero-proof {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--parchment-on-midnight-soft);
@@ -241,7 +241,7 @@ section { position: relative; }
   gap: var(--space-md);
   text-align: center;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgba(245, 240, 230, 0.75);
@@ -329,6 +329,22 @@ section { position: relative; }
   margin-bottom: var(--space-md);
 }
 .feature-card h3 { margin-bottom: var(--space-xs); }
+/* Inline "not yet shipped" marker. A feature card in a features grid reads as
+ * available no matter what the paragraph underneath says, so the caveat has to
+ * live in the heading. */
+.feature-flag {
+  display: inline-block;
+  margin-left: 0.5em;
+  padding: 0.15em 0.6em;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.62em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  opacity: 0.65;
+}
 .feature-card p { color: var(--ink-soft); font-size: 0.95rem; margin: 0; }
 
 /* ---------- Quote / manifesto ---------- */
@@ -350,7 +366,7 @@ section { position: relative; }
   margin-top: var(--space-lg);
   font-family: var(--font-mono);
   font-style: normal;
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -379,11 +395,11 @@ section { position: relative; }
 }
 .appstore-badge svg { width: 22px; height: 22px; }
 .appstore-badge .badge-lines { text-align: left; line-height: 1.15; }
-.appstore-badge .badge-lines small { display: block; font-size: 0.68rem; font-weight: 400; opacity: 0.7; }
+.appstore-badge .badge-lines small { display: block; font-size: 0.82rem; font-weight: 400; opacity: 0.7; }
 .appstore-badge .badge-lines strong { font-family: var(--font-display); font-size: 1.05rem; font-style: italic; }
 .qr-note {
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(245,240,230,0.5);
@@ -414,15 +430,36 @@ section { position: relative; }
 .footer-links ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .footer-links a { text-decoration: none; color: rgba(245,240,230,0.7); }
 .footer-links a:hover { color: var(--parchment); }
-.footer-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--space-sm); font-size: 0.78rem; color: rgba(245,240,230,0.4); }
+.footer-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--space-sm); font-size: 0.82rem; color: rgba(245,240,230,0.55); }
+
+/* The eyebrow/label/footnote sizes below were 0.68–0.75rem (10.9–12px).
+ * docs/NAVIGATION.md and the design charter floor labels at 13pt, and a
+ * Playwright pass flagged them on the Privacy and Marketing URLs — the two
+ * pages App Review loads. 0.82rem = 13.1px keeps the same visual role. */
 
 /* ---------- Scroll reveal ---------- */
-.reveal {
+/*
+ * Scoped to `.js` — set by an inline script in each page's <head>.
+ *
+ * These rules used to apply unconditionally, so `opacity: 0` was the default
+ * and only JavaScript ever removed it. With scripts blocked or failing, every
+ * section below the hero stayed permanently invisible: the page rendered as a
+ * headline over a screen of blank parchment. Hiding content is now something
+ * only a browser that can un-hide it is allowed to do.
+ */
+.js .reveal {
   opacity: 0;
   transform: translateY(28px);
   transition: opacity var(--dur-slow) var(--ease-smooth), transform var(--dur-slow) var(--ease-smooth);
 }
-.reveal.is-visible { opacity: 1; transform: translateY(0); }
+.js .reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+/* Reduce Motion means "don't animate", never "don't show". The global rule
+ * above only collapses transition *duration*, which would leave these frozen
+ * at opacity 0 if the observer ever failed to fire. */
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal { opacity: 1; transform: none; transition: none; }
+}
 
 /* ---------- Simple page hero (Support / Privacy) ---------- */
 .page-hero {
@@ -490,7 +527,7 @@ section { position: relative; }
 .legal ul { padding-left: 1.2em; }
 .legal .updated {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-faint);

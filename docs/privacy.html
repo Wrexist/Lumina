@@ -2,9 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- Marks the document as script-capable so the scroll-reveal CSS may hide
+     content it can later reveal. Without JS the class never lands and every
+     section renders visible. Inline and first so it runs before paint. -->
+<script>document.documentElement.classList.add("js");</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Privacy Policy — Lumina</title>
-<meta name="description" content="How Lumina handles your data — birth details, palm measurements, journal entries, and subscriptions — in plain language.">
+<meta name="description" content="How Lumina handles your data — birth details, journal entries, and subscriptions — in plain language.">
 <link rel="icon" type="image/png" href="assets/img/brand/mark-1024.png">
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -50,14 +54,13 @@
   </nav>
 
   <h2 id="overview">Overview</h2>
-  <p>Lumina is an astrology and palm-reading app. To generate a real birth chart we need your birth date, time, and place; to write a grounded reading we process the astrological facts computed from that chart; to run a subscription we work with Apple's payment system. This policy explains what that involves in plain terms.</p>
+  <p>Lumina is an astrology app. To generate a real birth chart we need your birth date, time, and place; to write a grounded reading we process the astrological facts computed from that chart; to run a subscription we work with Apple's payment system. This policy explains what that involves in plain terms.</p>
 
   <h2 id="collect">What we collect</h2>
   <table>
     <thead><tr><th>Category</th><th>What it includes</th><th>Why</th></tr></thead>
     <tbody>
       <tr><td>Birth data</td><td>Date, time, and place of birth</td><td>Required to compute your real natal chart</td></tr>
-      <tr><td>Palm measurements</td><td>Geometric line/feature measurements only — never a photo</td><td>To generate your palm reading</td></tr>
       <tr><td>Journal entries</td><td>Text you write in Reflect</td><td>Stored on-device so you can revisit past entries</td></tr>
       <tr><td>Chart &amp; reading history</td><td>Cached charts and past interpretations</td><td>So readings load instantly without recomputing</td></tr>
       <tr><td>Subscription status</td><td>Entitlement state from Apple's App Store</td><td>To unlock premium features you've paid for</td></tr>
@@ -67,7 +70,7 @@
   </table>
 
   <h2 id="device">What never leaves your device</h2>
-  <p>Your palm photo is the clearest example of our privacy-by-design approach: it is captured and analyzed entirely on your iPhone using Apple's Vision framework and a custom on-device model. The photo itself is never uploaded, transmitted, or stored anywhere but your device. Only the resulting numeric measurements — line lengths, curvature, geometric ratios — are used to generate your reading.</p>
+  <p>Palm reading is not part of the current release. When it ships it will be captured and analyzed entirely on your iPhone, and the photo will never be uploaded — but until it does, Lumina neither requests camera access nor processes any palm data.</p>
   <p>Your journal entries and cached chart data are also stored locally on your device using Apple's SwiftData framework, protected behind Face ID if you enable app lock in Settings.</p>
 
   <h2 id="third-parties">Third-party services</h2>
@@ -86,7 +89,8 @@
   <p>Data that does leave your device (birth data sent for chart computation, chart facts sent for interpretation) travels over encrypted connections. Where account data is stored server-side, it's protected behind authenticated access — there is no public database of user charts.</p>
 
   <h2 id="rights">Your rights</h2>
-  <p>Open <strong>Settings → Privacy</strong> in the app to export a copy of your stored data or delete your account and everything associated with it. Deleting your account removes your birth data, journal entries, and chart history from our servers; on-device data is removed when you delete the app.</p>
+  <p>Open <strong>Settings → Account → Delete account</strong> in the app to delete your account and everything associated with it. That removes your server-side account, revokes the Sign in with Apple credential, and erases your birth data, journal entries, friends, and chart history from this device. Uninstalling the app also removes everything stored on it.</p>
+  <p>Open <strong>Settings &rarr; Privacy &rarr; Export my data</strong> in the app to write everything Lumina holds &mdash; your birth data, journal entries, saved people and settings &mdash; to a single JSON file you can save or send anywhere. It runs on the device, needs no request, and no one has to approve it.</p>
   <p>You can manage or cancel your subscription anytime from your Apple ID settings — see <a href="support.html">Support</a> for the exact steps. You can disable notifications, camera access, or Face ID individually in the iOS Settings app at any time without losing access to the rest of Lumina.</p>
 
   <h2 id="children">Children's privacy</h2>
@@ -99,7 +103,7 @@
   <p>If Lumina's data practices change in a way that affects you, we'll update this page and, for material changes, notify you in the app before the change takes effect.</p>
 
   <h2 id="contact">Contact</h2>
-  <p>Questions about this policy or your data — write to <a href="mailto:privacy@lumina.app">privacy@lumina.app</a>.</p>
+  <p>Questions about this policy or your data — write to <a href="mailto:Luminasupporthelp@gmail.com">Luminasupporthelp@gmail.com</a>.</p>
 </div>
 
 <footer class="site-footer">

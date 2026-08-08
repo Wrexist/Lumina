@@ -18,18 +18,21 @@ struct SettingsView: View {
     @State private var restoreMessage: String?
     @State private var isRestoringPurchases = false
     @State private var authManager = AuthManager.shared
+    @State private var premium = PremiumStatus.shared
     @State private var signInPresented = false
     @State private var deleteAccountConfirmPresented = false
     @State private var isDeletingAccount = false
+    @State private var settingsPath = NavigationPath()
     private let logger = Logger(subsystem: "app.lumina.ios", category: "AccountDeletion")
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $settingsPath) {
             List {
+                plusSection
                 accountSection
                 yourInfoSection
                 preferencesSection
-                privacySection
+                SettingsPrivacySection()
                 aboutSection
             }
             .listStyle(.insetGrouped)
@@ -46,10 +49,51 @@ struct SettingsView: View {
             .sheet(isPresented: $signInPresented) {
                 SignInView { _ in signInPresented = false }
             }
+            .navigationDestination(for: AppRouter.SettingsDestination.self) { destination in
+                switch destination {
+                case .birthInfo: EditBirthInfoView()
+                }
+            }
+            // A caller that asked for a specific destination (e.g. the
+            // "Add birth info" CTA) lands on it rather than on the root.
+            .task { consumePendingDestination() }
+            .onChange(of: router.pendingSettingsDestination) { _, _ in
+                consumePendingDestination()
+            }
         }
     }
 
+    private func consumePendingDestination() {
+        guard let destination = router.pendingSettingsDestination else { return }
+        router.pendingSettingsDestination = nil
+        settingsPath.append(destination)
+    }
+
     // MARK: - Sections
+
+    /// A persistent, always-reachable upgrade surface.
+    ///
+    /// The paywall used to be presented from exactly one place — a one-shot
+    /// during onboarding gated on `hasSeenInitialOffer` — so a user who
+    /// tapped "Continue free" once could never buy the subscription again.
+    /// That is also the classic "we were unable to locate the in-app
+    /// purchase" App Review rejection, because a reviewer who skips the
+    /// onboarding offer has no way to reach it.
+    private var plusSection: some View {
+        Section("Lumina Plus") {
+            if premium.isPremium {
+                SettingsRow(title: "Status", trailing: .text("Active"))
+                    .accessibilityLabel("Lumina Plus is active")
+            } else {
+                Button {
+                    PaywallPresenter.shared.present()
+                } label: {
+                    SettingsRow(title: "Upgrade to Lumina Plus", trailing: nil)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
 
     private var accountSection: some View {
         Section("Account") {
@@ -125,9 +169,7 @@ struct SettingsView: View {
 
     private var yourInfoSection: some View {
         Section("Your info") {
-            NavigationLink {
-                EditBirthInfoView()
-            } label: {
+            NavigationLink(value: AppRouter.SettingsDestination.birthInfo) {
                 SettingsRow(title: "Birth date, time, and place", trailing: nil)
             }
             NavigationLink {
@@ -140,17 +182,17 @@ struct SettingsView: View {
 
     private var preferencesSection: some View {
         Section("Preferences") {
-            // Read-only info until house-system selection ships — styled
-            // like the Version row (mono, dimmed) so it doesn't read as a
-            // tappable destination.
-            HStack {
-                Text("House system").font(LuminaTypography.body)
-                Spacer()
-                Text("Placidus")
-                    .font(LuminaTypography.mono)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            // House-system selection lives in the Chart tab (Placidus /
+            // Whole-sign / Sidereal). This used to be a static read-only
+            // "Placidus" row, which contradicted that control and told users
+            // their chart was Placidus even when it wasn't.
+            Button {
+                _ = router.handle(deepLink: .chart(planet: nil))
+                dismiss()
+            } label: {
+                SettingsRow(title: "House system", trailing: .text("Choose in Chart"))
             }
-            .accessibilityElement(children: .combine)
+            .buttonStyle(.plain)
             NavigationLink {
                 NotificationSettingsView()
             } label: {
@@ -165,21 +207,6 @@ struct SettingsView: View {
         }
     }
 
-    private var privacySection: some View {
-        Section {
-            NavigationLink {
-                PrivacyDashboardView()
-            } label: {
-                SettingsRow(title: "Privacy dashboard", trailing: nil)
-            }
-        } header: {
-            Text("Privacy")
-        } footer: {
-            sectionFootnote("Delete your account any time from the Account section above. "
-                + "Full data export is coming before public launch.")
-        }
-    }
-
     private var aboutSection: some View {
         Section {
             NavigationLink {
@@ -187,14 +214,11 @@ struct SettingsView: View {
             } label: {
                 SettingsRow(title: "Help & FAQ", trailing: nil)
             }
-            HStack {
-                Text("Palm reading").font(LuminaTypography.body)
-                Spacer()
-                Text("Coming soon")
-                    .font(LuminaTypography.mono)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
+            NavigationLink {
+                AcknowledgementsView()
+            } label: {
+                SettingsRow(title: "Acknowledgements", trailing: nil)
             }
-            .accessibilityElement(children: .combine)
             HStack {
                 Text("Version").font(LuminaTypography.body)
                 Spacer()
@@ -203,8 +227,8 @@ struct SettingsView: View {
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
             }
             sectionFootnote("On-device palm reading is in the works — we're getting fairness "
-                + "across every skin tone right before we ship it. Lumina is for reflection "
-                + "and entertainment, not medical, legal, or financial advice.")
+                + "across every skin tone right before we ship it. "
+                + LuminaDisclosure.entertainment)
         } header: {
             Text("About")
         } footer: {
@@ -257,17 +281,37 @@ struct SettingsView: View {
 
 extension SettingsView {
     /// Runs the full account teardown, then returns the user to onboarding.
-    /// The server delete is best-effort (`try?`): a failed or unprovisioned
-    /// backend must never block the on-device wipe.
+    ///
+    /// Ordering matters. This used to erase every model *before* tearing down
+    /// the navigation, and `eraseLocalData()` keeps awaiting afterwards
+    /// (`ChartCache.clear()`), so `MainTabsView` — and anything pushed inside
+    /// it, e.g. a `FriendDetailView` reached via the toolbar gear — was still
+    /// mounted and re-rendering against destroyed models. Swap the root out
+    /// first, then erase.
     private func performAccountDeletion() {
         guard !isDeletingAccount else { return }
         isDeletingAccount = true
         Task {
-            try? await AuthManager.shared.deleteAccount()
-            await eraseLocalData()
+            // `(any Error)?`, not `Error?` — the target builds with warnings
+            // as errors, and a bare protocol-as-type is a Swift 6 diagnostic.
+            var serverFailure: (any Error)?
+            do {
+                try await AuthManager.shared.deleteAccount()
+            } catch {
+                // Deletion of the server account genuinely failed. Still wipe
+                // locally — the user asked for it — but don't claim success.
+                serverFailure = error
+            }
+
+            // Unmount the tab UI before destroying the models it renders.
             router.resetForSignOut()
-            isDeletingAccount = false
             dismiss()
+            await eraseLocalData()
+            isDeletingAccount = false
+
+            if serverFailure != nil {
+                restoreMessage = "Everything on this device was erased, but we couldn't reach the server to remove your account. Please try again once you're back online."
+            }
         }
     }
 
@@ -299,6 +343,9 @@ extension SettingsView {
         WidgetSharedStore.clear()
         MomentsStore.shared.clear()
         ChartDiscovery.shared.clear()
+        // The rating record is device state about the *previous* account's
+        // use; leaving it would let a fresh account be asked on day one.
+        ReviewPrompt.shared.clear()
         // Drop the persisted natal chart + every cached ephemeris read so the
         // deleted account leaves nothing behind (Apple 5.1.1(v)).
         await ChartCache.shared.clear()
@@ -309,38 +356,13 @@ extension SettingsView {
     /// `AppPreferences` exposes no single reset, so restore each user-tunable
     /// flag to its default via its public setters.
     private func resetPreferences() {
+        // The name is personal data the user gave us, so it goes with the
+        // account (Apple 5.1.1(v)) — not just the toggles.
+        preferences.displayName = ""
         preferences.lockReflectWithFaceID = false
         preferences.reduceMotionOverride = false
         preferences.transitAlertsEnabled = false
         preferences.reflectReminderEnabled = false
-    }
-}
-
-private struct SettingsRow: View {
-    enum Trailing {
-        case text(String)
-    }
-
-    let title: String
-    var trailing: Trailing?
-
-    var body: some View {
-        HStack {
-            Text(title).font(LuminaTypography.body)
-            Spacer()
-            switch trailing {
-            case .text(let value):
-                Text(value)
-                    .font(LuminaTypography.body)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-            case nil:
-                EmptyView()
-            }
-            // No manual chevron: NavigationLink rows get the system disclosure
-            // indicator automatically, so plain rows correctly show none
-            // rather than a misleading affordance.
-        }
-        .accessibilityElement(children: .combine)
     }
 }
 

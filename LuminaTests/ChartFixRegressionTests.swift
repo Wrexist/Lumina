@@ -53,12 +53,17 @@ final class ChartFixRegressionTests: XCTestCase {
 
     func testCompleteChannelDefinesBothCenters() {
         // Gates 1 (G) + 8 (Throat) complete the 1-8 channel "Inspiration".
+        //
+        // The Earth rides exactly opposite the Sun, so it lands on gate 2 —
+        // activated, but its partner (gate 14) isn't, so it hangs and defines
+        // nothing. That is precisely the rule this test exists to pin, now
+        // with a live example of it in the same fixture.
         let chart = makeChart(planets: [
-            planet("Sun", at: 224.0), // Gate 1
+            planet("Sun", at: 224.0), // Gate 1 — Earth opposite at 44° is gate 2
             planet("Moon", at: 55.0), // Gate 8
         ])
         let activation = HumanDesignActivation.compute(from: chart)
-        XCTAssertEqual(activation.activatedGates, [1, 8])
+        XCTAssertEqual(activation.activatedGates, [1, 2, 8])
         XCTAssertEqual(activation.definedCenters, [.g, .throat])
         XCTAssertEqual(HumanDesignChannels.defined(in: activation).map(\.id), ["1-8"])
     }

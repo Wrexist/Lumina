@@ -48,6 +48,10 @@ struct LuminaButton: View {
         .opacity(isEnabled ? 1 : 0.45)
         .animation(reduceMotion ? .none : .smooth(duration: 0.2), value: isLoading)
         .simultaneousGesture(TapGesture().onEnded {
+            // Guard on the same condition as `.disabled` above. The modifier
+            // order means this gesture sits OUTSIDE the disabled subtree, so
+            // jabbing a greyed-out "Continue" used to buzz as if it worked.
+            guard isEnabled, !isLoading else { return }
             if variant == .primary || variant == .destructive {
                 Haptics.light.play()
             }

@@ -1,9 +1,15 @@
 import Foundation
 import SwiftData
 
-/// SwiftData model for one person in the user's people graph. Stored on
-/// device only — friend data never syncs to the server unless the user
-/// opts into discovery (Phase 10 of `ROADMAP.md`).
+/// SwiftData model for one person in the user's people graph.
+///
+/// Stored on device. **Not** entirely un-transmitted, despite what this
+/// comment used to claim: computing a compatibility score POSTs this person's
+/// `birthDate` and `birthTime` to the chart service as a `SynastryPerson`
+/// (see `FriendDetailView.loadSynastry`). The name, any note, and the
+/// coordinates never leave the device, and the service stores nothing — but
+/// "never syncs to the server" was false, and the Privacy card on
+/// `PeopleHubView` now says what actually happens.
 ///
 /// `birthTime` and birth-place coordinates are optional — friends imported
 /// from Contacts often only carry a date.

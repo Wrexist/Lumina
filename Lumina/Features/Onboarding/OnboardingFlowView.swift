@@ -1,6 +1,7 @@
+import StoreKit
 import SwiftUI
 
-/// Orchestrates the 8-screen onboarding flow per `ROADMAP.md` Phase 2 and
+/// Orchestrates the 9-screen onboarding flow per `ROADMAP.md` Phase 2 and
 /// `docs/NAVIGATION.md` §6. Each screen is a small dedicated view; this
 /// orchestrator owns the `OnboardingState`, the progress bar, and the
 /// next/back chrome.
@@ -14,7 +15,15 @@ struct OnboardingFlowView: View {
     @State private var paywall = PaywallTracker.shared
     @State private var paywallPresented = false
     @State private var paywallVariant: PaywallOfferView.Variant = .initial
+    /// True while a purchase is resolving, so the paywall can show progress
+    /// instead of vanishing and leaving a dead screen behind it.
+    @State private var purchaseInFlight = false
+    /// Set when a purchase genuinely fails, so the user is told rather than
+    /// dropped into the free app believing they subscribed.
+    @State private var purchaseError: LuminaError?
     @Environment(\.scenePhase) private var scenePhase
+    /// Apple's rating card. Called from `sendExcitement()` only.
+    @Environment(\.requestReview) private var requestReview
     @State private var pendingDestination: LuminaDeepLink?
     /// One-time completion guard: the trial purchase runs in a `Task`, so a
     /// second final-step tap could otherwise call `onComplete` twice.
@@ -32,8 +41,23 @@ struct OnboardingFlowView: View {
                     .padding(.horizontal, LuminaSpacing.lg)
                     .padding(.top, LuminaSpacing.md)
 
-                contentForCurrentStep
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Six of the eight steps had no ScrollView, and this fixed
+                // frame sits between a top bar and a 56pt button. At
+                // Accessibility XL on an iPhone SE the birth-time step —
+                // heading + "Why we ask" + a 216pt wheel picker + the
+                // "I'm not sure" ghost button — pushed that escape hatch off
+                // screen, making the documented unknown-birth-time path
+                // unreachable. docs/NAVIGATION.md §17 requires no truncation
+                // at AX XL.
+                //
+                // `.basedOnSize` keeps the steps that already fit from
+                // gaining a bouncy scroll they don't need.
+                ScrollView {
+                    contentForCurrentStep
+                        .frame(maxWidth: .infinity)
+                }
+                .scrollBounceBehavior(.basedOnSize)
+                .frame(maxHeight: .infinity)
 
                 bottomBar
                     .padding(.horizontal, LuminaSpacing.lg)
@@ -43,6 +67,8 @@ struct OnboardingFlowView: View {
         .fullScreenCover(isPresented: $paywallPresented) {
             PaywallOfferView(
                 variant: paywallVariant,
+                purchaseInFlight: purchaseInFlight,
+                purchaseError: purchaseError,
                 onStartTrial: handleStartTrial,
                 onContinueFree: handleContinueFree
             )
@@ -99,25 +125,51 @@ struct OnboardingFlowView: View {
             OnboardingScreens.BirthPlace(state: state)
         case .chartReveal:
             OnboardingScreens.ChartReveal(state: state)
+        case .excitement:
+            OnboardingScreens.Excitement(rating: $state.excitement, name: state.trimmedName)
         case .whatNext:
-            OnboardingScreens.WhatNext { handleFinalTap($0) }
+            OnboardingScreens.WhatNext(motivation: state.motivation) { handleFinalTap($0) }
         }
     }
 
     private var bottomBar: some View {
         let isFinal = state.currentStep == .whatNext
-        let title = isFinal ? "Take me to Today" : "Continue"
         return LuminaButton(
-            title: title,
+            title: bottomBarTitle(isFinal: isFinal),
             variant: .primary,
             isEnabled: state.canAdvance(from: state.currentStep)
         ) {
             if isFinal {
                 handleFinalTap(nil)
             } else {
+                if state.currentStep == .excitement { sendExcitement() }
                 state.advance()
             }
         }
+    }
+
+    private func bottomBarTitle(isFinal: Bool) -> String {
+        if isFinal { return "Take me to Today" }
+        guard state.currentStep == .excitement else { return "Continue" }
+        // "Skip" rather than a disabled button: the screen is never a gate,
+        // and a greyed-out Continue would read as one.
+        return state.excitement == nil ? "Skip" : "Send in"
+    }
+
+    /// Opens Apple's rating card — for every answer, including one star.
+    ///
+    /// The star value is deliberately not consulted. Guideline 1.1.7 rejects
+    /// custom prompts that "manipulate customers into leaving positive
+    /// reviews", and a screen that only surfaces the system sheet for happy
+    /// taps is exactly the pattern that gets pulled. `ReviewPromptTests`
+    /// covers the gate this shares with the Today ask.
+    private func sendExcitement() {
+        guard state.excitement != nil else { return }
+        // Burns the once-per-version slot, so someone asked here isn't asked
+        // again on their third day. Existing users, who never see onboarding,
+        // still get the engagement-based ask in `TodayHubView`.
+        ReviewPrompt.shared.markAsked()
+        requestReview()
     }
 
     /// Final-step tap. The first time, present the paywall offer as a
@@ -135,18 +187,36 @@ struct OnboardingFlowView: View {
         }
     }
 
-    private func handleStartTrial() {
+    private func handleStartTrial(_ plan: IAPManager.PremiumPlan) {
         paywall.recordInitialOfferSeen()
         if paywallVariant == .rescue {
             paywall.recordRescueShown()
         }
-        paywallPresented = false
-        // Never trap the user behind a stuck paywall — success, failure, and
-        // user-cancellation all land on the same "continue free" completion,
-        // matching `handleContinueFree`'s philosophy below.
+        // Keep the cover up while the purchase resolves. Dismissing first
+        // meant the paywall vanished instantly, a beat of dead onboarding
+        // screen went by, and *then* Apple's payment sheet appeared from
+        // nowhere — and because the result was discarded with `try?`, a
+        // failed purchase was indistinguishable from a successful one. A
+        // user whose RevenueCat offering wasn't provisioned tapped the
+        // primary CTA, got a silent no-op, and landed in the app believing
+        // they had subscribed.
+        purchaseInFlight = true
+        purchaseError = nil
         Task {
-            _ = try? await IAPManager.shared.purchaseCurrentOffering()
-            persistAndComplete()
+            defer { purchaseInFlight = false }
+            do {
+                _ = try await IAPManager.shared.purchase(plan: plan)
+                // Success *and* user-cancellation both continue into the app —
+                // we never trap someone behind a paywall. The entitlement
+                // itself is what gates features, so there's nothing to check
+                // here beyond having surfaced any real error.
+                paywallPresented = false
+                persistAndComplete()
+            } catch {
+                // Real failure (not configured, no offering, StoreKit error).
+                // Tell the user rather than pretending it worked.
+                purchaseError = LuminaError.from(error)
+            }
         }
     }
 
@@ -182,6 +252,10 @@ struct OnboardingFlowView: View {
         if let birthData = state.makeBirthData() {
             UserBirthDataStore.userDefaults.save(birthData)
         }
+        // Keep the name the user gave us. Onboarding gated Continue on it and
+        // then dropped it here, so we asked for something personal and did
+        // nothing with it.
+        AppPreferences.shared.displayName = state.trimmedName
         // Privacy: the resume-on-kill snapshot (name + full birth data) has
         // served its purpose now that the data lives in `UserBirthDataStore`.
         // Drop it so the Privacy dashboard's "Onboarding state: Cleared" is

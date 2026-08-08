@@ -87,9 +87,14 @@ struct JournalCalendarView: View {
     private var dayGrid: some View {
         let days = monthDays
         let columns = Array(repeating: GridItem(.flexible(), spacing: LuminaSpacing.xs), count: 7)
+        // Keyed by the day itself, not the slot index: an index key makes
+        // every cell's identity change when the month cursor moves, so
+        // SwiftUI rebuilds the whole grid and VoiceOver loses its place.
+        // Leading/trailing padding slots have no date, hence the offset key.
         return LazyVGrid(columns: columns, spacing: LuminaSpacing.xs) {
-            ForEach(0..<days.count, id: \.self) { index in
-                cell(days[index])
+            ForEach(Array(days.enumerated()), id: \.offset) { index, day in
+                cell(day)
+                    .id(day.map { calendar.startOfDay(for: $0).timeIntervalSinceReferenceDate } ?? Double(-index - 1))
             }
         }
     }
@@ -138,6 +143,13 @@ struct JournalCalendarView: View {
                     dayContent(day)
                 }
                 .buttonStyle(.plain)
+                // Without this VoiceOver read a bare number — "14" — with no
+                // month, no indication of whether anything was written, and
+                // no hint about what tapping does.
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(accessibilityLabel(for: day))
+                .accessibilityHint(hasEntry(on: day) ? "Opens your entry" : "Starts an entry")
+                .accessibilityAddTraits(isToday(day) ? [.isButton, .isSelected] : .isButton)
             }
         } else {
             Color.clear.frame(maxWidth: .infinity, minHeight: 44)
@@ -154,6 +166,12 @@ struct JournalCalendarView: View {
                 .frame(width: 6, height: 6)
         }
         .frame(maxWidth: .infinity, minHeight: 44)
+    }
+
+    private func accessibilityLabel(for day: Date) -> String {
+        let date = day.formatted(.dateTime.weekday(.wide).month(.wide).day())
+        let written = hasEntry(on: day) ? "entry written" : "no entry"
+        return isToday(day) ? "Today, \(date), \(written)" : "\(date), \(written)"
     }
 
     private func entry(on day: Date) -> JournalEntry? {

@@ -60,11 +60,18 @@ struct PalmHubView: View {
                     Text("How we're building it")
                         .font(LuminaTypography.heading)
                 }
-                Text("We're making sure the on-device line tracing works fairly across every "
-                    + "skin tone before we ship it — that's the part we won't rush. Every other "
+                // Was: "Lumina actually traces your lines with an on-device
+                // model trained on real palm images" — present tense, for a
+                // model that does not exist (`Core/PalmCV/Models/` holds a
+                // `.gitkeep` and nothing imports CoreML). Describing the
+                // intent as if it were the product is the exact thing this
+                // card criticises the rest of the category for.
+                Text("We're building on-device line tracing, and we won't ship it until it works "
+                    + "fairly across every skin tone — that's the part we won't rush. Every other "
                     + "major app in this category overlays a generic illustration on top of your "
-                    + "palm and writes a generic reading. Lumina actually traces your lines with "
-                    + "an on-device model trained on real palm images.")
+                    + "palm and writes a generic reading. When ours arrives it will trace your "
+                    + "actual lines, on your device. It isn't built yet, and we won't pretend "
+                    + "otherwise.")
                     .font(LuminaTypography.body)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.85))
             }

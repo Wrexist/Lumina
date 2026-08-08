@@ -11,7 +11,6 @@ import SwiftUI
 struct TodayHubView: View {
     @State private var viewModel = TodayViewModel()
     @Environment(AppRouter.self) private var router
-    @ScaledMetric private var iconSize: CGFloat = 28
     @State private var showingWhy = false
 
     // Daily reveal — the reading starts veiled on the first visit of each
@@ -38,7 +37,7 @@ struct TodayHubView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
-                CelestialHeroCard(date: .now)
+                CelestialHeroCard(date: .now, subtitle: heroSubtitle)
                 content
             }
             .padding(LuminaSpacing.lg)
@@ -67,6 +66,9 @@ struct TodayHubView: View {
         .sheet(isPresented: $showingWhy) {
             TodayTransparencySheet(transits: viewModel.transits)
         }
+        // The only place the app ever asks for a rating, and only after the
+        // reading has actually been unveiled on three separate days.
+        .requestsReviewOnReveal(day: reveal.lastRevealedDay)
     }
 
     // MARK: - View building blocks
@@ -113,6 +115,9 @@ struct TodayHubView: View {
             if let progressions = viewModel.progressions, !viewModel.chapterIsTimely {
                 ProgressedChapterCard(result: progressions)
             }
+            // Guideline 1.1/2.3: the disclaimer belongs where the reading is,
+            // not only in a Settings → About footnote nobody scrolls to.
+            EntertainmentDisclaimer()
         }
     }
 
@@ -131,6 +136,7 @@ struct TodayHubView: View {
             systemImage: "sparkles",
             title: "Finish your chart",
             body: "Add your birth date, time, and place to see your sky today.",
+            illustration: .emptyBirthInfo,
             primaryCTA: LuminaEmptyState.CTA(title: "Add birth info", action: openSettings)
         )
     }
@@ -287,39 +293,21 @@ struct TodayHubView: View {
 // A plain extension (SwiftLint bans `private extension`) so the view's
 // type body stays inside the length limit; members stay `private`.
 extension TodayHubView {
+    /// Uses the name onboarding collected, falling back to the impersonal
+    /// line when it wasn't given (or was erased with the account).
+    private var heroSubtitle: String {
+        DailyGreeting.text(for: .now, name: preferences.displayName)
+    }
+
     private func quickAction(_ title: String, systemImage: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            quickActionTile(title, systemImage: systemImage)
+            QuickActionTile(title: title, systemImage: systemImage)
         }
         .buttonStyle(.plain)
     }
 
-    /// The tile face shared by the tab-jump quick actions and the Moments
-    /// NavigationLink, so both keep the row's rhythm.
-    private func quickActionTile(_ title: String, systemImage: String) -> some View {
-        LuminaCard(padding: LuminaSpacing.md) {
-            VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                Image(systemName: systemImage)
-                    .font(.system(size: iconSize, weight: .light))
-                    .foregroundStyle(LuminaColors.celestialBlue)
-                Text(title).font(LuminaTypography.body)
-            }
-            .frame(width: 140, alignment: .leading)
-        }
-    }
-
     private var noRetrogradesCard: some View {
-        LuminaCard {
-            VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
-                Text("RETROGRADES")
-                    .font(LuminaTypography.mono)
-                    .tracking(1.4)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
-                Text("No retrogrades right now — all planets are direct.")
-                    .font(LuminaTypography.body)
-                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-            }
-        }
+        NoRetrogradesCard()
     }
     /// Moments has no tab of its own — this NavigationLink is its persistent
     /// home in the main flow (it was previously buried in Settings).
@@ -327,7 +315,7 @@ extension TodayHubView {
         NavigationLink {
             MomentsView()
         } label: {
-            quickActionTile("Moments", systemImage: "sparkles")
+            QuickActionTile(title: "Moments", systemImage: "sparkles")
         }
         .buttonStyle(.plain)
     }
@@ -387,8 +375,10 @@ extension TodayHubView {
         Task { await viewModel.retry() }
     }
 
+    /// The empty state's whole job is to get birth info entered, so it opens
+    /// the form — not the Settings root with the row left to find.
     private func openSettings() {
-        router.handle(deepLink: .settings)
+        router.openSettings(.birthInfo)
     }
 }
 

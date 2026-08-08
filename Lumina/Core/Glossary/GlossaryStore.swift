@@ -43,7 +43,8 @@ final class GlossaryStore {
     /// Decode and index a glossary payload. Internal so tests can exercise
     /// alias resolution with fixture JSON instead of the app bundle.
     func load(data: Data) throws {
-        let raw = try JSONDecoder().decode([GlossaryEntry].self, from: data)
+        let decoded = try JSONDecoder().decode([GlossaryEntry].self, from: data)
+        let raw = decoded.filter { Self.shipped($0.category) }
         // A duplicate key in the JSON is a content bug, not a crash — keep
         // the first entry rather than trapping in `uniqueKeysWithValues`.
         entries = Dictionary(raw.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
@@ -65,6 +66,27 @@ final class GlossaryStore {
     func entry(for term: String) -> GlossaryEntry? {
         let key = term.lowercased()
         return lookup[key]
+    }
+
+    /// Whether a category's terms belong in *this* build's glossary.
+    ///
+    /// The palmistry entries were written for a feature that isn't reachable
+    /// — `.palm` is not in `LuminaTab.visible` — so nothing in shipped copy
+    /// ever says "heart line". Listing definitions for it anyway advertises a
+    /// feature the binary doesn't have, which is the same accuracy problem as
+    /// naming the app after it (Guideline 2.3.1). Keyed to the tab rather
+    /// than a hardcoded flag, so the terms come back by themselves on the
+    /// release that makes palm reachable.
+    /// `nonisolated` because it is a pure function of an enum: it reads no
+    /// store state, and inheriting the class's main-actor isolation would
+    /// force every caller onto the main actor for a switch statement. (It
+    /// did exactly that once — the accuracy tests failed to compile against
+    /// it before the isolation was made explicit.)
+    nonisolated static func shipped(_ category: GlossaryEntry.Category) -> Bool {
+        switch category {
+        case .palmistry: LuminaTab.visible.contains(.palm)
+        default: true
+        }
     }
 }
 

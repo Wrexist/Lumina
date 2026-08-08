@@ -1,0 +1,82 @@
+name: pages
+
+# Publishes `docs/` to GitHub Pages, which is where the App Store Support URL
+# and Privacy Policy URL point. Both must return 200 before submission — a 404
+# on either is an automatic rejection, and it is the launch step most likely to
+# be left half-done because it lives in a settings screen rather than in code.
+#
+# `configure-pages` with `enablement: true` turns Pages on via the API if it
+# isn't already, so merging this is the whole of Step 4. If the account or org
+# blocks that, the job fails loudly with a permissions error rather than
+# silently publishing nothing — flip it on by hand at Settings → Pages
+# (source: GitHub Actions) and re-run.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; skip queued ones rather than cancel a deploy
+# that is already writing.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build · deploy · verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure Pages (enabling it if it isn't already)
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload docs/
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      # The point of the site is that Apple can load three specific pages.
+      # Deploying successfully and still 404ing on `support.html` is the
+      # failure that matters, so check the actual URLs rather than trusting
+      # the deploy step's own success.
+      - name: Verify the three URLs Apple loads
+        run: |
+          BASE="${{ steps.deployment.outputs.page_url }}"
+          BASE="${BASE%/}"
+          FAILED=0
+          for page in "" "privacy.html" "support.html"; do
+            URL="$BASE/$page"
+            for attempt in 1 2 3 4 5; do
+              CODE=$(curl -sS -o /dev/null -w "%{http_code}" -L "$URL" || echo 000)
+              [ "$CODE" = "200" ] && break
+              sleep 5
+            done
+            if [ "$CODE" = "200" ]; then
+              echo "ok    $CODE  $URL"
+            else
+              echo "::error::$URL returned $CODE — this is an App Store rejection"
+              FAILED=1
+            fi
+          done
+          exit "$FAILED"

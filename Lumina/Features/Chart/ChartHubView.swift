@@ -12,8 +12,8 @@ struct ChartHubView: View {
 
     @State private var viewModel = BirthChartViewModel()
     @State private var mode: ChartMode = .astrology
-    @State private var selectedPlanet: NatalChart.PlanetPosition?
-    @State private var selectedCenter: HumanDesignCenter?
+    @State private var selectedPlanet: ChartPlanetSelection?
+    @State private var selectedCenter: ChartCenterSelection?
     @State private var pendingPlanetName: String?
     @Environment(AppRouter.self) private var router
 
@@ -42,15 +42,19 @@ struct ChartHubView: View {
         // now instead of waiting for a relaunch. `loadIfNeeded()` no-ops when
         // the store revision hasn't actually moved. Mirrors TodayHubView.
         .onReceive(birthDataChanged) { _ in refresh() }
-        .sheet(item: $selectedPlanet) { planet in
-            if case .ready(let chart) = viewModel.state {
-                PlanetDetailSheet(planet: planet, chart: chart)
-            }
+        // The selection carries its own chart. Reading `viewModel.state`
+        // in here instead meant that anything moving the chart off `.ready`
+        // while a sheet was up — a birth-info edit, a house-system change,
+        // a pull-to-refresh — replaced the sheet's contents with nothing,
+        // leaving the user staring at a blank card they had to dismiss.
+        .sheet(item: $selectedPlanet) { selection in
+            PlanetDetailSheet(planet: selection.planet, chart: selection.chart)
         }
-        .sheet(item: $selectedCenter) { center in
-            if case .ready(let chart) = viewModel.state {
-                CenterDetailSheet(center: center, activation: HumanDesignActivation.compute(from: chart))
-            }
+        .sheet(item: $selectedCenter) { selection in
+            CenterDetailSheet(
+                center: selection.center,
+                activation: HumanDesignActivation.compute(from: selection.chart)
+            )
         }
         .toolbar {
             if case .ready(let chart) = viewModel.state, mode == .astrology {
@@ -101,8 +105,9 @@ struct ChartHubView: View {
         LuminaEmptyState(
             systemImage: "circle.dotted",
             title: "Add your birth info",
-            body: "We need a date, time, and place to compute your chart. Open Settings → Your info to add them.",
-            primaryCTA: LuminaEmptyState.CTA(title: "Open Settings", action: handleOpenSettings)
+            body: "We need a date, time, and place to compute your chart.",
+            illustration: .emptyBirthInfo,
+            primaryCTA: LuminaEmptyState.CTA(title: "Add birth info", action: handleOpenSettings)
         )
     }
 
@@ -199,17 +204,18 @@ struct ChartHubView: View {
             definedCentersSummary(activation)
             LuminaCard {
                 VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                    HStack {
-                        LuminaBadge(title: "Soon", tone: .neutral)
-                        Text("Type, Profile, and Authority")
-                            .font(LuminaTypography.body)
-                    }
+                    Text("Type, Profile and Authority")
+                        .font(LuminaTypography.body)
                     Text(BodygraphView.designSideMissingNote)
                         .font(LuminaTypography.bodyLight)
                         .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                 }
             }
         }
+        // Human Design is a Plus feature (README tier table). The paywall
+        // names it, so it has to actually be gated — otherwise a subscriber
+        // gets nothing they didn't already have.
+        .premiumGated(.humanDesign)
     }
 
     private func definedCentersSummary(_ activation: HumanDesignActivation) -> some View {
@@ -219,8 +225,9 @@ struct ChartHubView: View {
                 .tracking(1.4)
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
             if activation.definedCenters.isEmpty {
-                Text("All open — receiving and amplifying everyone around you.")
-                    .font(LuminaTypography.body)
+                Text(BodygraphView.allOpenNote)
+                    .font(LuminaTypography.bodyLight)
+                    .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
             } else {
                 ForEach(Array(activation.definedCenters).sorted(by: { $0.rawValue < $1.rawValue })) { center in
                     HStack {
@@ -236,11 +243,13 @@ struct ChartHubView: View {
     }
 
     private func handleTap(_ planet: NatalChart.PlanetPosition) {
-        selectedPlanet = planet
+        guard case .ready(let chart) = viewModel.state else { return }
+        selectedPlanet = ChartPlanetSelection(planet: planet, chart: chart)
     }
 
     private func handleTapCenter(_ center: HumanDesignCenter) {
-        selectedCenter = center
+        guard case .ready(let chart) = viewModel.state else { return }
+        selectedCenter = ChartCenterSelection(center: center, chart: chart)
     }
 
     private func handleRetry() {
@@ -248,7 +257,7 @@ struct ChartHubView: View {
     }
 
     private func handleOpenSettings() {
-        router.handle(deepLink: .settings)
+        router.openSettings(.birthInfo)
     }
 
     /// Consumes a pending chart deep link. We only react to chart-tab links so
@@ -265,7 +274,8 @@ struct ChartHubView: View {
 
     private func resolvePendingPlanet() {
         guard let name = pendingPlanetName, case .ready(let chart) = viewModel.state else { return }
-        selectedPlanet = chart.planets.first { $0.planet.caseInsensitiveCompare(name) == .orderedSame }
+        let match = chart.planets.first { $0.planet.caseInsensitiveCompare(name) == .orderedSame }
+        selectedPlanet = match.map { ChartPlanetSelection(planet: $0, chart: chart) }
         pendingPlanetName = nil
     }
 }
@@ -290,6 +300,23 @@ extension ChartHubView {
 
 extension NatalChart.PlanetPosition: Identifiable {
     var id: String { planet }
+}
+
+/// A sheet presentation pins the chart it was opened against, so the sheet
+/// keeps rendering the data the user tapped even if the view model reloads
+/// underneath it.
+struct ChartPlanetSelection: Identifiable {
+    let planet: NatalChart.PlanetPosition
+    let chart: NatalChart
+
+    var id: String { planet.id }
+}
+
+struct ChartCenterSelection: Identifiable {
+    let center: HumanDesignCenter
+    let chart: NatalChart
+
+    var id: String { center.id }
 }
 
 #Preview {

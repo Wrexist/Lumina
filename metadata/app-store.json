@@ -1,0 +1,134 @@
+{
+  "$comment": [
+    "Source of truth for every App Store Connect text field. Edit here, never",
+    "in the docs — `python3 scripts/aso_lint.py` validates this file against",
+    "Apple's limits and the repo's own accuracy rules, and `--print` emits the",
+    "paste-ready blocks. docs/aso/METADATA-PACK.md explains the reasoning.",
+    "",
+    "Rationale for every choice lives in docs/aso/KEYWORD-RESEARCH.md."
+  ],
+  "version": "1.0",
+  "bundle_id": "app.lumina.ios",
+  "primary_category": "Lifestyle",
+  "secondary_category": "Reference",
+  "age_rating": "4+",
+  "primary_language": "English (U.S.)",
+  "price_tier": "Free with subscription",
+  "urls": {
+    "marketing": "https://wrexist.github.io/Lumina/",
+    "support": "https://wrexist.github.io/Lumina/support.html",
+    "privacy_policy": "https://wrexist.github.io/Lumina/privacy.html",
+    "$terms_comment": "Apple's standard EULA — the same URL LuminaLegalLinks opens in the app. A custom terms page would have to be maintained in two places and match the binary exactly; the standard one can't drift.",
+    "terms": "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+    "copyright": "2026 Lumina"
+  },
+  "contact": {
+    "$comment": "Used for the App Store Connect support field, the App Review contact, and the published pages. lumina.app was never registered, so every address at it bounced — an unmonitored support contact is a rejection. aso_lint.py fails on any address at that domain and checks this one is actually on the support page.",
+    "support_email": "Luminasupporthelp@gmail.com",
+    "unregistered_domains": [
+      "lumina.app"
+    ]
+  },
+  "localizations": {
+    "en-US": {
+      "name": "Lumina: Birth Chart Astrology",
+      "subtitle": "Daily transits, moon, synastry",
+      "keywords": "horoscope,natal,zodiac,rising,human,design,forecast,retrograde,ephemeris,saturn,return,phase,sign",
+      "promotional_text": "Real planetary math, not generated horoscopes. Every line traces back to a placement in your own chart — or we don't write it.",
+      "description": "Finally, an astrology app that doesn't fake it.\n\nMost apps in this category approximate your planetary positions, generate horoscopes that would fit anyone, and bury the cancel button. Lumina does none of that.\n\nYOUR CHART, COMPUTED — NOT GUESSED\n\nLumina draws your birth chart from a real ephemeris: the same planetary math astronomers use. Exact degrees, real house cusps, true aspect angles. Choose Placidus, Whole-sign or Sidereal houses — your planets stay put, only the frame changes. No birth time? You still get your real signs and planets, and we tell you plainly which parts need a time instead of inventing them.\n\nEVERY WORD TIED TO A PLACEMENT\n\nToday's reading is built from the transits actually happening to your chart right now — the planet, the aspect, the natal point it touches, the exact orb. Tap \"Why these?\" and you see the raw data behind every sentence. If a line can't be traced back to your chart, it doesn't get written.\n\nWHAT'S INSIDE\n\n• Today — your reading from real transits, the live moon phase and its ritual, what's retrograde, and what's coming next\n• Birth chart — an interactive wheel, every placement explained in plain language, plus your Big Three and the standouts that make your chart yours\n• Ask your chart — grounded answers about your own placements, never invented\n• Moon — a 3D moon lit by the true Sun-Moon-Earth angle for tonight, not a stock illustration\n• People — add friends and partners, see the real synastry aspects between your charts and the composite chart you make together\n• Human Design — your bodygraph from the same birth data: defined centres, channels, type and authority\n• Reflect — a private journal that stays on your device, with prompts drawn from the sky that day\n• Home-screen widget — your sky, kept current\n\nHONEST BY DESIGN\n\nYour reflections and your friends' names never leave your iPhone. Your birth details go to our chart service to compute your chart and nothing is stored there. Export everything you've written whenever you want. Delete your account from inside the app — no email, no support ticket.\n\nNo streaks. No push notifications engineered to pull you back. No countdown timers on the paywall. Cancel is one tap from Settings, and we'll never hide it.\n\nLUMINA PLUS\n\nThe daily reading and your full birth chart are free, permanently — they're the reason to open the app. Plus adds Human Design, compatibility for everyone you add, the months-ahead transit forecast, and the widget.\n\nA note on what we don't do: Lumina doesn't read palms today. We're building it on-device, and we'd rather say that than fake it with a stock overlay.\n\nFor entertainment purposes. Astrology is a lens for reflection, not a substitute for professional advice.",
+      "whats_new": "Lumina 1.0.\n\nYour chart, computed from a real ephemeris — exact degrees, real houses, true aspects. Daily readings built from the transits actually hitting your chart, with the raw data one tap away. A 3D moon lit by tonight's real phase angle. Synastry and composite charts for the people you add. Your Human Design bodygraph. A private journal that never leaves your iPhone.\n\nWe'd rather ship what's real than claim what isn't. Palm reading is being built on-device and will arrive when it works fairly for everyone — not before."
+    },
+    "es-MX": {
+      "$comment": "English long-tail. The US storefront indexes es-MX metadata alongside en-US, and this field is never shown to a user — see docs/aso/KEYWORD-RESEARCH.md §5.",
+      "keywords": "aspects,houses,composite,placidus,sidereal,ascendant,venus,mars,mercury,ritual,journal,tracker"
+    },
+    "en-GB": {
+      "$comment": "Serves the UK storefront, where these terms are indexed for real users. It does NOT feed US search — Apple's US secondary locales are ar, zh-Hans, zh-Hant, fr, ko, pt-BR, ru, es-MX and vi. See docs/aso/KEYWORD-RESEARCH.md §5.",
+      "keywords": "star,lunar,eclipse,solar,planet,degree,orb,report,reading,guide,calendar,planner,insight,sky,cusp"
+    },
+    "pt-BR": {
+      "$comment": "The third US-indexed field. Portuguese (Brazil) is on Apple's US secondary-locale list, so English long-tail here reaches US search the same way es-MX does — and Brazil is a large astrology market worth having a presence in.",
+      "keywords": "conjunction,trine,square,sextile,opposition,jupiter,neptune,uranus,pluto,element,cycle,wheel,couple"
+    }
+  },
+  "in_app_purchases": [
+    {
+      "reference_name": "Lumina Plus Monthly",
+      "display_name": "Plus: Human Design & Synastry",
+      "description": "Human Design, synastry, forecast, widget."
+    },
+    {
+      "reference_name": "Lumina Plus Annual",
+      "display_name": "Plus Yearly: Full Chart Access",
+      "description": "One year of everything in Lumina Plus."
+    }
+  ],
+  "review": {
+    "demo_account_required": true,
+    "notes": "Lumina computes real charts from a Swiss-Ephemeris backend, so the app needs network access to show its main content.\n\nWHAT TO ENTER\nOnboarding asks for a birth date, time and place. Any values work; for a chart with every feature populated, use 14 March 1990, 09:25, Stockholm, Sweden.\n\nWHERE THE SUBSCRIPTION IS\nSettings > Lumina Plus opens the paywall, and every gated surface (Chart > Human Design, People > any person > Compatibility, Today > Ahead > What's coming) offers it too. Restore Purchases is on the paywall and in Settings > Account.\n\nACCOUNT DELETION\nSettings > Account > Delete account removes the account and all server-side data in-app, per Guideline 5.1.1(v). No email or support request is involved.\n\nWHAT THIS BUILD DOES NOT DO\nThe app does not read palms. Earlier marketing mentioned it; nothing in this binary claims it as a shipping feature, the Palm tab is not present, and the in-app FAQ states plainly that it isn't built yet.\n\nENTERTAINMENT DISCLAIMER\nAstrological content is presented for entertainment and self-reflection, disclosed on the Today tab, in Settings > About, and in the description.\n\nRATING PROMPT IN ONBOARDING\nThe last-but-one onboarding screen asks \"How excited are you to start your Lumina adventure?\" with five tappable stars, then opens SKStoreReviewController via SwiftUI's requestReview environment action. Three things about it, since Guideline 1.1.7 is the reason this note exists: the stars are not a review and are never sent anywhere, they measure anticipation before the app has been used; the system card is presented for EVERY answer including one star, so no sentiment filtering takes place; and the screen is skippable with a Skip button rather than gating progress. The screen states in advance that Apple's card will follow. The app asks at most once per version — a user asked here is not asked again by the in-app engagement prompt on the Today tab."
+  },
+  "accuracy_rules": {
+    "$comment": "Enforced by scripts/aso_lint.py. Terms that must not appear in any user-visible metadata field while the feature is unreachable in the binary (Guideline 2.3.1).",
+    "forbidden_terms": [
+      "palm",
+      "palmistry",
+      "tarot",
+      "psychic",
+      "fortune telling",
+      "numerology"
+    ],
+    "forbidden_terms_reason": "No palm capture, no tarot deck, no numerology engine ships in 1.0. Keywords are indexed metadata and fall under the same accuracy rule as the app name."
+  },
+  "keyword_bench": {
+    "$comment": "Ranked candidates NOT in the live fields, with what each would replace. Keyword fields can only change with a new version, so every release should swap the bottom performers rather than rewriting the whole set — a wholesale rewrite makes the result unattributable. aso_lint.py checks these don't already collide with a live field.",
+    "candidates": [
+      {
+        "term": "chiron",
+        "replaces": "cusp",
+        "why": "A real chart point with a devoted audience and almost no competition. Only swap in once the chart actually plots it."
+      },
+      {
+        "term": "vedic",
+        "replaces": "solar",
+        "why": "Sidereal houses ship, and 'vedic' is the term that audience searches. Verify the app satisfies the intent before betting on it."
+      },
+      {
+        "term": "birthday",
+        "replaces": "orb",
+        "why": "High volume via 'birthday horoscope'; combines with the name's 'birth'. Broad, so expect low conversion."
+      },
+      {
+        "term": "nodes",
+        "replaces": "degree",
+        "why": "North/south node searches are small and high-intent — but only once the chart shows them."
+      },
+      {
+        "term": "almanac",
+        "replaces": "planner",
+        "why": "Adjacent, low competition, and honest for a transit forecast."
+      }
+    ],
+    "do_not_use": [
+      {
+        "term": "tarot",
+        "why": "no tarot deck ships"
+      },
+      {
+        "term": "palm",
+        "why": "no palm capture ships"
+      },
+      {
+        "term": "psychic",
+        "why": "the app makes no such claim, and the word attracts refund-prone intent"
+      },
+      {
+        "term": "numerology",
+        "why": "no numerology engine ships"
+      },
+      {
+        "term": "free",
+        "why": "Apple ignores it and it wastes four characters"
+      }
+    ]
+  }
+}

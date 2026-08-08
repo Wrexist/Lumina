@@ -85,7 +85,7 @@ struct BigThreeBand: View {
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.6))
                 Text(longitude.map(signGlyph) ?? "—")
                     .font(.system(size: glyphSize))
-                    .foregroundStyle(LuminaColors.mutedGold)
+                    .foregroundStyle(LuminaColors.goldInk)
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
                 Text(longitude.map(signName) ?? "Hidden")

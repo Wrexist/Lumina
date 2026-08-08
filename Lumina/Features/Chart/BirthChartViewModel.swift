@@ -23,7 +23,13 @@ final class BirthChartViewModel {
     private let store: UserBirthDataStore
 
     private(set) var state: LoadState = .idle
-    var houseSystem: HouseSystem = .placidus
+    /// Backed by `AppPreferences` so the choice survives a relaunch. This was
+    /// view-model-only state, which meant Whole-sign and Sidereal silently
+    /// reset to Placidus every cold launch.
+    var houseSystem: HouseSystem {
+        get { AppPreferences.shared.houseSystem }
+        set { AppPreferences.shared.houseSystem = newValue }
+    }
 
     /// The in-flight load, kept so a newer request can cancel it — a rapid
     /// house-system switch must never let a stale response overwrite `state`.

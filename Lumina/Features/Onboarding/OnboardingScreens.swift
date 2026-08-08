@@ -144,7 +144,7 @@ enum OnboardingScreens {
                         get: { date ?? defaultDate },
                         set: { date = $0 }
                     ),
-                    in: ...Date.now,
+                    in: BirthData.selectableBirthDates,
                     displayedComponents: .date
                 )
                 .datePickerStyle(.wheel)
@@ -220,44 +220,6 @@ enum OnboardingScreens {
 
         private var defaultTime: Date {
             Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: .now) ?? .now
-        }
-    }
-
-    struct WhatNext: View {
-        let onPick: (LuminaDeepLink) -> Void
-
-        var body: some View {
-            ScrollView {
-                VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
-                    VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                        Text("What you can do next")
-                            .font(LuminaTypography.heading)
-                        Text("Pick one — you can come back to the others any time.")
-                            .font(LuminaTypography.bodyLight)
-                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-                    }
-                    quickWin("Read today", body: "Your reading, grounded in today's real transits.", destination: .today)
-                    quickWin("See your chart", body: "The full wheel — tap any planet to explore it.", destination: .chart(planet: nil))
-                    quickWin("Add a friend", body: "Compare charts and see what's between you.", destination: .people(friendID: nil))
-                }
-                .padding(LuminaSpacing.lg)
-            }
-        }
-
-        private func quickWin(_ title: String, body: String, destination: LuminaDeepLink) -> some View {
-            Button {
-                onPick(destination)
-            } label: {
-                LuminaCard {
-                    VStack(alignment: .leading, spacing: LuminaSpacing.sm) {
-                        Text(title).font(LuminaTypography.heading)
-                        Text(body)
-                            .font(LuminaTypography.body)
-                            .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-                    }
-                }
-            }
-            .buttonStyle(.plain)
         }
     }
 }

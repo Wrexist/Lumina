@@ -49,7 +49,7 @@ struct AscendantDetailSheet: View {
         HStack(spacing: LuminaSpacing.md) {
             Text(ChartGlyphs.signGlyph(sign))
                 .font(.system(size: glyphSize))
-                .foregroundStyle(LuminaColors.mutedGold)
+                .foregroundStyle(LuminaColors.goldInk)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
             VStack(alignment: .leading, spacing: LuminaSpacing.xs) {

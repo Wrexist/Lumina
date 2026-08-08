@@ -32,7 +32,7 @@ struct ChartQuizCard: View {
         LuminaCard(surface: .glass) {
             HStack(spacing: LuminaSpacing.md) {
                 Image(systemName: "sparkles")
-                    .foregroundStyle(LuminaColors.mutedGold)
+                    .foregroundStyle(LuminaColors.goldInk)
                 VStack(alignment: .leading, spacing: LuminaSpacing.xs) {
                     Text("Know your chart?")
                         .font(LuminaTypography.heading)

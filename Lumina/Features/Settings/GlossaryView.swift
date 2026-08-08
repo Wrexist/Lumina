@@ -11,7 +11,7 @@ struct GlossaryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: LuminaSpacing.lg) {
-                Text("Plain-language definitions for every astrology, palmistry, and Human Design term in Lumina. Tap any one to read more.")
+                Text("Plain-language definitions for every astrology and Human Design term in Lumina. Tap any one to read more.")
                     .font(LuminaTypography.bodyLight)
                     .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
                 ForEach(GlossaryEntry.Category.allCases, id: \.self) { category in

@@ -19,6 +19,8 @@ final class AppPreferences {
         static let reflectReminderEnabled = "luminaReflectReminderEnabled"
         static let reflectReminderHour = "luminaReflectReminderHour"
         static let reflectReminderMinute = "luminaReflectReminderMinute"
+        static let houseSystem = "luminaHouseSystem"
+        static let displayName = "luminaDisplayName"
     }
 
     static let shared = AppPreferences()
@@ -37,6 +39,31 @@ final class AppPreferences {
         didSet {
             guard oldValue != reduceMotionOverride else { return }
             defaults.set(reduceMotionOverride, forKey: Keys.reduceMotionOverride)
+        }
+    }
+
+    /// The house system the Chart tab renders. Persisted because it was
+    /// previously plain view-model state held in a `@State` — so the user's
+    /// choice of Whole-sign or Sidereal silently reverted to Placidus on every
+    /// relaunch, and Settings claimed "Placidus" regardless.
+    var houseSystem: HouseSystem {
+        didSet {
+            guard oldValue != houseSystem else { return }
+            defaults.set(houseSystem.rawValue, forKey: Keys.houseSystem)
+        }
+    }
+
+    /// What the user asked to be called.
+    ///
+    /// Onboarding has always collected a name and gated the Continue button
+    /// on it, then thrown it away at `persistAndComplete` — `BirthData` has no
+    /// name field. Asking for something and never using it is worse than not
+    /// asking; this is where it lands now. Empty string means "not given",
+    /// which is also what a cleared account leaves behind.
+    var displayName: String {
+        didSet {
+            guard oldValue != displayName else { return }
+            defaults.set(displayName, forKey: Keys.displayName)
         }
     }
 
@@ -96,5 +123,8 @@ final class AppPreferences {
         self.reflectReminderEnabled = defaults.bool(forKey: Keys.reflectReminderEnabled)
         self.reflectReminderHour = defaults.object(forKey: Keys.reflectReminderHour) as? Int ?? 21
         self.reflectReminderMinute = defaults.object(forKey: Keys.reflectReminderMinute) as? Int ?? 0
+        self.houseSystem = (defaults.string(forKey: Keys.houseSystem)
+            .flatMap(HouseSystem.init(rawValue:))) ?? .placidus
+        self.displayName = defaults.string(forKey: Keys.displayName) ?? ""
     }
 }

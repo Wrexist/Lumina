@@ -1,0 +1,36 @@
+Finally, an astrology app that doesn't fake it.
+
+Most apps in this category approximate your planetary positions, generate horoscopes that would fit anyone, and bury the cancel button. Lumina does none of that.
+
+YOUR CHART, COMPUTED — NOT GUESSED
+
+Lumina draws your birth chart from a real ephemeris: the same planetary math astronomers use. Exact degrees, real house cusps, true aspect angles. Choose Placidus, Whole-sign or Sidereal houses — your planets stay put, only the frame changes. No birth time? You still get your real signs and planets, and we tell you plainly which parts need a time instead of inventing them.
+
+EVERY WORD TIED TO A PLACEMENT
+
+Today's reading is built from the transits actually happening to your chart right now — the planet, the aspect, the natal point it touches, the exact orb. Tap "Why these?" and you see the raw data behind every sentence. If a line can't be traced back to your chart, it doesn't get written.
+
+WHAT'S INSIDE
+
+• Today — your reading from real transits, the live moon phase and its ritual, what's retrograde, and what's coming next
+• Birth chart — an interactive wheel, every placement explained in plain language, plus your Big Three and the standouts that make your chart yours
+• Ask your chart — grounded answers about your own placements, never invented
+• Moon — a 3D moon lit by the true Sun-Moon-Earth angle for tonight, not a stock illustration
+• People — add friends and partners, see the real synastry aspects between your charts and the composite chart you make together
+• Human Design — your bodygraph from the same birth data: defined centres, channels, type and authority
+• Reflect — a private journal that stays on your device, with prompts drawn from the sky that day
+• Home-screen widget — your sky, kept current
+
+HONEST BY DESIGN
+
+Your reflections and your friends' names never leave your iPhone. Your birth details go to our chart service to compute your chart and nothing is stored there. Export everything you've written whenever you want. Delete your account from inside the app — no email, no support ticket.
+
+No streaks. No push notifications engineered to pull you back. No countdown timers on the paywall. Cancel is one tap from Settings, and we'll never hide it.
+
+LUMINA PLUS
+
+The daily reading and your full birth chart are free, permanently — they're the reason to open the app. Plus adds Human Design, compatibility for everyone you add, the months-ahead transit forecast, and the widget.
+
+A note on what we don't do: Lumina doesn't read palms today. We're building it on-device, and we'd rather say that than fake it with a stock overlay.
+
+For entertainment purposes. Astrology is a lens for reflection, not a substitute for professional advice.

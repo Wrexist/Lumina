@@ -94,7 +94,12 @@ final class FeatureFixTests: XCTestCase {
         let url = try XCTUnwrap(FeedbackMail.mailtoURL(subject: "A thought", message: "Love the app"))
         XCTAssertEqual(url.scheme, "mailto")
         let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
-        XCTAssertEqual(components.path, "feedback@lumina.app")
+        // Pinned to the constant, not a literal: the address moved once
+        // already (lumina.app never existed, so every mail to it bounced) and
+        // a hardcoded copy here would have gone stale silently.
+        XCTAssertEqual(components.path, FeedbackMail.address)
+        XCTAssertTrue(FeedbackMail.address.contains("@"), "feedback address must be a real mailbox")
+        XCTAssertFalse(FeedbackMail.address.hasSuffix("@lumina.app"), "lumina.app does not exist yet")
         XCTAssertEqual(components.queryItems?.first { $0.name == "subject" }?.value, "A thought")
         XCTAssertEqual(components.queryItems?.first { $0.name == "body" }?.value, "Love the app")
     }
@@ -107,21 +112,71 @@ final class FeatureFixTests: XCTestCase {
         XCTAssertEqual(components.queryItems?.first { $0.name == "body" }?.value, body)
     }
 
-    // MARK: - PaywallOfferView.PriceDisplay
+    // MARK: - PaywallCopy
+    //
+    // These replace two tests that asserted the *old* behaviour: a hardcoded
+    // "$59.99" and a "$41.99" rescue price. That rescue price was never
+    // charged — the view purchased the standard annual package — so the tests
+    // were pinning a Guideline 3.1.2 violation in place. What follows pins
+    // the invariant that replaced it: a price reaches the screen only by
+    // being read off a real `PlanOffer`.
 
-    func testPaywallFallbackPricesMatchVariant() {
-        let initial = PaywallOfferView.PriceDisplay.fallback(for: .initial)
-        let rescue = PaywallOfferView.PriceDisplay.fallback(for: .rescue)
-        XCTAssertEqual(initial.yearlyPrice, "$59.99")
-        XCTAssertEqual(rescue.yearlyPrice, "$41.99")
+    private func offer(
+        _ plan: IAPManager.PremiumPlan,
+        _ price: String,
+        intro: String? = nil
+    ) -> IAPManager.PlanOffer {
+        IAPManager.PlanOffer(plan: plan, localizedPrice: price, introductoryOffer: intro)
     }
 
-    func testPaywallFallbackDisclosesUSDReferencePricing() {
-        // The fallback must never masquerade as a localized price — the copy
-        // has to say the shown figure is the USD reference.
+    func testPlanTitleQuotesTheStorefrontPriceVerbatim() {
+        // A non-USD, comma-decimal storefront: the string must survive
+        // untouched. Any reformatting here would be a price we don't charge.
+        XCTAssertEqual(planTitleFor(offer(.annual, "59,99 €")), "59,99 € / year")
+        XCTAssertEqual(planTitleFor(offer(.monthly, "¥1,500")), "¥1,500 / month")
+    }
+
+    func testPrimaryCTAQuotesNoPriceWhenNoOfferResolved() {
+        // RevenueCat unconfigured, offering not live, or the network is down.
+        let title = PaywallCopy.primaryCTATitle(for: .annual, in: [])
+        XCTAssertEqual(title, "Continue")
+        XCTAssertFalse(title.contains("$"))
+    }
+
+    func testPrimaryCTAUsesTheSelectedPlanNotTheFirstOne() {
+        // The old view substituted the annual package for whatever was
+        // selected, charging a price the user was never shown.
+        let offers = [offer(.annual, "$59.99"), offer(.monthly, "$9.99")]
+        XCTAssertEqual(
+            PaywallCopy.primaryCTATitle(for: .monthly, in: offers),
+            "Subscribe — $9.99"
+        )
+    }
+
+    func testPrimaryCTAPromisesATrialOnlyWhenTheProductCarriesOne() {
+        let withTrial = [offer(.annual, "$59.99", intro: "7 days free")]
+        XCTAssertEqual(
+            PaywallCopy.primaryCTATitle(for: .annual, in: withTrial),
+            "Start your 7 days free"
+        )
+        let withoutTrial = [offer(.annual, "$59.99")]
+        XCTAssertFalse(
+            PaywallCopy.primaryCTATitle(for: .annual, in: withoutTrial)
+                .localizedCaseInsensitiveContains("free")
+        )
+    }
+
+    func testRescueCopyNeverImpliesADiscount() {
         for variant in [PaywallOfferView.Variant.initial, .rescue] {
-            let display = PaywallOfferView.PriceDisplay.fallback(for: variant)
-            XCTAssertTrue(display.disclosure.contains("USD"))
+            let copy = PaywallCopy.trustCopy(for: variant)
+            XCTAssertFalse(copy.contains("%"), "\(variant) copy implies a discount")
+            XCTAssertFalse(copy.contains("$"), "\(variant) copy hardcodes a price")
+            XCTAssertTrue(copy.contains("Cancel anytime"), "\(variant) copy must keep the cancel promise")
         }
+        XCTAssertTrue(PaywallCopy.trustCopy(for: .rescue).hasPrefix("This is the last time"))
+    }
+
+    private func planTitleFor(_ offer: IAPManager.PlanOffer) -> String {
+        PaywallCopy.planTitle(offer)
     }
 }

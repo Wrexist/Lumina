@@ -16,6 +16,38 @@ actor IAPManager {
     enum ManagerError: Error, Equatable {
         case notConfigured
         case noOfferingsAvailable
+        /// The requested plan isn't in the current offering. Surfaced rather
+        /// than silently substituting another plan — the paywall used to
+        /// advertise a monthly option and a discounted annual, then buy the
+        /// standard annual regardless.
+        case planUnavailable(PremiumPlan)
+    }
+
+    /// The plans the paywall can offer. Each maps to a RevenueCat package;
+    /// nothing else in the app picks a package.
+    enum PremiumPlan: String, Sendable, CaseIterable {
+        case monthly
+        case annual
+
+        var packageType: PackageType {
+            switch self {
+            case .monthly: .monthly
+            case .annual: .annual
+            }
+        }
+    }
+
+    /// A plan's real, storefront-localized price. The paywall previously
+    /// hardcoded "$59.99" / "$9.99 / month", which is wrong for every
+    /// non-US storefront and violates Guideline 3.1.2 (the price shown must
+    /// be the price charged).
+    struct PlanOffer: Sendable, Equatable {
+        let plan: PremiumPlan
+        /// e.g. "59,99 €" — already formatted for the user's storefront.
+        let localizedPrice: String
+        /// Introductory offer description if the product carries one,
+        /// e.g. "7 days free". `nil` when there is no trial.
+        let introductoryOffer: String?
     }
 
     static let shared = IAPManager()
@@ -61,16 +93,59 @@ actor IAPManager {
         return Self.entitlements(from: customerInfo)
     }
 
-    /// Fetches the current offering and attempts to purchase it — the
-    /// annual package if one is configured, otherwise the first package
-    /// available. Returns whether `lumina_plus` is active afterward.
-    /// User-cancellation is a normal `false` result, not a thrown error.
-    func purchaseCurrentOffering() async throws -> Bool {
+    /// Real, storefront-localized prices for every plan the current offering
+    /// actually sells. The paywall renders these instead of hardcoded USD.
+    /// Returns an empty array when unconfigured so the caller can fall back
+    /// to non-committal copy rather than quoting a price it can't honour.
+    func availableOffers() async -> [PlanOffer] {
+        guard isConfigured else { return [] }
+        do {
+            let offerings = try await Purchases.shared.offerings()
+            guard let offering = offerings.current else { return [] }
+            return PremiumPlan.allCases.compactMap { plan in
+                guard let package = Self.package(for: plan, in: offering) else { return nil }
+                let product = package.storeProduct
+                return PlanOffer(
+                    plan: plan,
+                    localizedPrice: product.localizedPriceString,
+                    introductoryOffer: product.introductoryDiscount.map {
+                        Self.describe(introductory: $0)
+                    }
+                )
+            }
+        } catch {
+            logger.error("offerings fetch failed: \(error.localizedDescription)")
+            return []
+        }
+    }
+
+    private static func describe(introductory discount: StoreProductDiscount) -> String {
+        let unitCount = discount.subscriptionPeriod.value
+        let unit: String
+        switch discount.subscriptionPeriod.unit {
+        case .day: unit = unitCount == 1 ? "day" : "days"
+        case .week: unit = unitCount == 1 ? "week" : "weeks"
+        case .month: unit = unitCount == 1 ? "month" : "months"
+        case .year: unit = unitCount == 1 ? "year" : "years"
+        @unknown default: unit = "days"
+        }
+        return "\(unitCount) \(unit) free"
+    }
+
+    /// Purchases a specific plan. Throws `.planUnavailable` rather than
+    /// quietly substituting a different package — the paywall showed a
+    /// monthly option and a "30% off" annual, then bought the standard
+    /// annual either way, so the user was charged a price they were never
+    /// shown. User-cancellation is a normal `false` result, not an error.
+    func purchase(plan: PremiumPlan) async throws -> Bool {
         guard isConfigured else { throw ManagerError.notConfigured }
 
         let offerings = try await Purchases.shared.offerings()
-        guard let offering = offerings.current, let package = Self.preferredPackage(in: offering) else {
+        guard let offering = offerings.current else {
             throw ManagerError.noOfferingsAvailable
+        }
+        guard let package = Self.package(for: plan, in: offering) else {
+            throw ManagerError.planUnavailable(plan)
         }
 
         let result = try await Purchases.shared.purchase(package: package)
@@ -82,8 +157,11 @@ actor IAPManager {
         return result.customerInfo.entitlements[Entitlement.luminaPlus.rawValue]?.isActive == true
     }
 
-    private static func preferredPackage(in offering: Offering) -> Package? {
-        offering.annual ?? offering.availablePackages.first
+    private static func package(for plan: PremiumPlan, in offering: Offering) -> Package? {
+        switch plan {
+        case .monthly: offering.monthly
+        case .annual: offering.annual
+        }
     }
 
     /// Wraps `Purchases.shared.restorePurchases()`. Returns whether

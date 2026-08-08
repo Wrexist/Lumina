@@ -111,10 +111,22 @@ struct JournalEntryDetailView: View {
     }
 
     private func handleDelete() {
-        modelContext.delete(entry)
-        modelContext.saveOrLog(category: "Reflect")
-        // Pop immediately — this screen would otherwise keep rendering a
-        // deleted model.
+        // Order matters. `dismiss()` is asynchronous — the pop animation runs
+        // for ~350ms with this view still mounted — while `delete` + `save`
+        // invalidates the model and fires observation, which re-evaluates
+        // `body`. `body` reads `entry.prompt`, `entry.body`, `entry.wordCount`,
+        // `entry.updatedAt` and `entry.date`, and reading a persistent
+        // property off an invalidated `PersistentModel` is a hard crash.
+        //
+        // So: start the dismissal, let this view unmount, and delete on the
+        // next runloop turn. Capture the model first — `entry` is a `let` on
+        // the view, which is gone by the time the closure runs.
+        let doomed = entry
+        let context = modelContext
         dismiss()
+        Task { @MainActor in
+            context.delete(doomed)
+            context.saveOrLog(category: "Reflect")
+        }
     }
 }

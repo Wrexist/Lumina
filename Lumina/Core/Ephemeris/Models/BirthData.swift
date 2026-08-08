@@ -18,6 +18,20 @@ struct BirthData: Codable, Hashable, Sendable {
     let longitude: Double
     let timeZoneIdentifier: String
 
+    /// The range every birth-date picker in the app must be bounded to.
+    ///
+    /// Mirrors the backend's `plausibleInstant` schema (1800–2200), which in
+    /// turn reflects where `astronomy-engine` is valid. Without a lower bound
+    /// the wheel scrolls to year 1, and the request comes back as a generic
+    /// server error with nothing telling the user what they did — the picker
+    /// should not be able to express a date the service will reject.
+    static let selectableBirthDates: ClosedRange<Date> = {
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(identifier: "UTC") ?? .gmt
+        let earliest = utc.date(from: DateComponents(year: 1800, month: 1, day: 1)) ?? .distantPast
+        return earliest ... Date.now
+    }()
+
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(birthDate, forKey: .birthDate)

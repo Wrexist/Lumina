@@ -8,18 +8,28 @@ import SwiftUI
 struct SignInView: View {
     var onSignedIn: (AuthSession) -> Void = { _ in }
 
+    @Environment(\.dismiss) private var dismiss
     @State private var authManager = AuthManager.shared
     @State private var isSigningIn = false
     @State private var error: LuminaError?
 
     var body: some View {
         VStack(spacing: LuminaSpacing.xl) {
+            // This is presented as a sheet from a Settings row that is itself
+            // a sheet, and it had no visible way out — the only exit was the
+            // swipe-down gesture, which is invisible and which VoiceOver users
+            // can't reach at all. docs/NAVIGATION.md §3: every screen has a
+            // way forward and a way out.
+            HStack {
+                Spacer()
+                LuminaDismissButton(accessibilityLabel: "Close sign in") { dismiss() }
+            }
             Spacer()
 
             VStack(spacing: LuminaSpacing.sm) {
                 Image(systemName: "sparkles")
                     .font(.system(.largeTitle))
-                    .foregroundStyle(LuminaColors.mutedGold)
+                    .foregroundStyle(LuminaColors.goldInk)
                     .accessibilityHidden(true)
                 Text("Sign in to sync")
                     .font(LuminaTypography.heading)

@@ -71,15 +71,23 @@ final class DesignTokensAndErrorTests: XCTestCase {
         XCTAssertEqual(LuminaError.from(URLError(.timedOut)), .timeout)
     }
 
-    func testMapsUnknownError() {
+    /// An unrecognised error must become *our* copy, never the underlying
+    /// framework's. `userBody` renders this string verbatim as the app's own
+    /// body text, so passing `localizedDescription` through put Foundation
+    /// sentences like "A server with the specified hostname could not be
+    /// found." on screen as if Lumina had written them. This test used to
+    /// assert exactly that leak.
+    func testMapsUnknownErrorToOurOwnCopyNotTheUnderlyingDescription() {
         struct DummyError: Error, LocalizedError {
             var errorDescription: String? { "boom" }
         }
-        if case .unknown(let message) = LuminaError.from(DummyError()) {
-            XCTAssertEqual(message, "boom")
-        } else {
-            XCTFail("expected .unknown")
+        guard case .unknown(let message) = LuminaError.from(DummyError()) else {
+            return XCTFail("expected .unknown")
         }
+        XCTAssertFalse(message.contains("boom"), "developer text must not reach the user")
+        XCTAssertFalse(message.isEmpty)
+        // And it has to read like something a person wrote.
+        XCTAssertTrue(message.hasSuffix("."), "user copy is a sentence")
     }
 
     func testPassesThroughExistingLuminaError() {

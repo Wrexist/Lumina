@@ -17,14 +17,22 @@ struct LuminaStarfield: View {
     var parallax: CGSize = .zero
 
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @State private var preferences = AppPreferences.shared
 
     private var reduceMotion: Bool {
         LuminaMotion.isReduced(system: systemReduceMotion, appOverride: preferences.reduceMotionOverride)
     }
 
+    /// `TimelineView(.animation)` keeps ticking while the app is inactive or
+    /// backgrounded, and two of these stack behind the launch tab. Freeze the
+    /// field whenever it can't be seen — same code path Reduce Motion uses.
+    private var isAnimating: Bool {
+        !reduceMotion && scenePhase == .active
+    }
+
     var body: some View {
-        if reduceMotion {
+        if !isAnimating {
             // A single static frame — no `TimelineView`, so nothing animates.
             Canvas { context, size in
                 draw(in: context, size: size, time: 0)
@@ -44,10 +52,8 @@ struct LuminaStarfield: View {
     // MARK: - Drawing
 
     private func draw(in context: GraphicsContext, size: CGSize, time: Double) {
-        for index in 0..<starCount {
-            let star = star(index: index, size: size)
-            let twinkle = twinkleOpacity(seed: index, base: star.opacity, time: time)
-            drawStar(star, twinkle: twinkle, in: context)
+        for seed in Self.seeds.prefix(min(starCount, Self.maxStarCount)) {
+            drawStar(star(seed, size: size), twinkle: twinkleOpacity(seed, time: time), in: context)
         }
     }
 
@@ -78,14 +84,42 @@ struct LuminaStarfield: View {
         var radius: CGFloat
         var opacity: Double
         var hasGlow: Bool
-        /// Depth factor 0.4…1.6 — scales how far this star drifts with parallax.
-        var depth: CGFloat
     }
 
-    private func star(index: Int, size: CGSize) -> Star {
-        let rx = Self.pseudoRandom(index * 3 + 1)
-        let ry = Self.pseudoRandom(index * 3 + 2)
-        let rz = Self.pseudoRandom(index * 3 + 3)
+    /// Everything about a star that never changes: its normalised position, its
+    /// size tier, and its twinkle phase.
+    ///
+    /// These used to be re-derived inside the draw loop — six hash
+    /// evaluations per star, per frame, for values that are the same every
+    /// frame. With two stacked fields behind the launch tab at 120 Hz that was
+    /// ~150,000 hashes a second computing constants. They're hoisted into a
+    /// single `static let` now; the draw loop does arithmetic only.
+    private struct StarSeed: Sendable {
+        let unitX: CGFloat
+        let unitY: CGFloat
+        let radius: CGFloat
+        let baseOpacity: Double
+        let hasGlow: Bool
+        /// Depth factor 0.4…1.6 — scales how far this star drifts with parallax.
+        let depth: CGFloat
+        let twinklePhase: Double
+        let twinkleSpeed: Double
+    }
+
+    /// Precomputed once for the largest field any caller asks for; smaller
+    /// fields take a prefix, so star *n* is identical everywhere it appears.
+    ///
+    /// `nonisolated` because the view type infers `@MainActor` (it holds
+    /// `@State` on a main-actor-isolated store), and a main-actor function
+    /// can't be passed to `map` in a non-isolated static initialiser. These
+    /// are pure arithmetic over `Sendable` values, so isolation buys nothing.
+    private nonisolated static let maxStarCount = 256
+    private nonisolated static let seeds: [StarSeed] = (0..<maxStarCount).map(makeSeed)
+
+    private nonisolated static func makeSeed(index: Int) -> StarSeed {
+        let rx = pseudoRandom(index * 3 + 1)
+        let ry = pseudoRandom(index * 3 + 2)
+        let rz = pseudoRandom(index * 3 + 3)
 
         // Three size tiers so the field reads as layered, not uniform.
         let tier = Int(rz * 3) % 3
@@ -103,30 +137,42 @@ struct LuminaStarfield: View {
             baseOpacity = 0.85
         }
 
-        // Brighter stars sit "nearer" and drift further with the parallax.
-        let depth = 0.4 + CGFloat(baseOpacity) * 1.2
-        let drift = CGSize(width: parallax.width * depth, height: parallax.height * depth)
-        let position = CGPoint(
-            x: CGFloat(rx) * size.width + drift.width,
-            y: CGFloat(ry) * size.height + drift.height
+        return StarSeed(
+            unitX: CGFloat(rx),
+            unitY: CGFloat(ry),
+            radius: radius,
+            baseOpacity: baseOpacity,
+            // The largest tier plus a deterministic subset carry a glow.
+            hasGlow: tier == 2 && pseudoRandom(index * 7 + 5) > 0.5,
+            // Brighter stars sit "nearer" and drift further with the parallax.
+            depth: 0.4 + CGFloat(baseOpacity) * 1.2,
+            twinklePhase: pseudoRandom(index * 11 + 7) * .pi * 2,
+            twinkleSpeed: 0.6 + pseudoRandom(index * 13 + 3) * 0.8
         )
-        // The largest tier plus a deterministic subset of others carry a glow.
-        let hasGlow = tier == 2 && Self.pseudoRandom(index * 7 + 5) > 0.5
-        return Star(position: position, radius: radius, opacity: baseOpacity, hasGlow: hasGlow, depth: depth)
     }
 
-    /// Slow opacity "breathing" keyed to each star's seed so they twinkle out of
-    /// phase. Amplitude is small (±25%) to stay calm, not blinking.
-    private func twinkleOpacity(seed: Int, base: Double, time: Double) -> Double {
-        let phase = Self.pseudoRandom(seed * 11 + 7) * .pi * 2
-        let speed = 0.6 + Self.pseudoRandom(seed * 13 + 3) * 0.8
-        let wave = sin(time * speed + phase)
-        return base * (0.75 + 0.25 * (wave * 0.5 + 0.5))
+    private func star(_ seed: StarSeed, size: CGSize) -> Star {
+        Star(
+            position: CGPoint(
+                x: seed.unitX * size.width + parallax.width * seed.depth,
+                y: seed.unitY * size.height + parallax.height * seed.depth
+            ),
+            radius: seed.radius,
+            opacity: seed.baseOpacity,
+            hasGlow: seed.hasGlow
+        )
+    }
+
+    /// Slow opacity "breathing", out of phase per star. Amplitude is small
+    /// (±25%) to stay calm, not blinking.
+    private func twinkleOpacity(_ seed: StarSeed, time: Double) -> Double {
+        let wave = sin(time * seed.twinkleSpeed + seed.twinklePhase)
+        return seed.baseOpacity * (0.75 + 0.25 * (wave * 0.5 + 0.5))
     }
 
     /// Deterministic hash-based PRNG (splitmix-style) → 0…1, matching
     /// `MoonSphere3DView`'s crater placement so star positions never reseed.
-    private static func pseudoRandom(_ seed: Int) -> Double {
+    private nonisolated static func pseudoRandom(_ seed: Int) -> Double {
         var value = UInt64(bitPattern: Int64(seed)) &* 0x9E37_79B9_7F4A_7C15
         value ^= value >> 30
         value = value &* 0xBF58_476D_1CE4_E5B9

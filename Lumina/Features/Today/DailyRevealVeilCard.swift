@@ -17,6 +17,11 @@ struct DailyRevealVeilCard: View {
     /// the text it stands in for.
     @ScaledMetric private var minHeight: CGFloat = 148
 
+    /// Width of the crescent-and-orbits mark. The art is roughly 16:9, so
+    /// this adds about 56pt of height — enough to carry the card, little
+    /// enough that the veil still lands near the revealed reading's height.
+    @ScaledMetric private var markWidth: CGFloat = 96
+
     var body: some View {
         Button(action: onUnveil) {
             LuminaCard(surface: .midnight, padding: 0) {
@@ -33,9 +38,14 @@ struct DailyRevealVeilCard: View {
             // Static under Reduce Motion — the starfield handles that itself.
             LuminaStarfield(starCount: 40, tint: LuminaColors.mutedGold)
             VStack(spacing: LuminaSpacing.sm) {
-                Image(systemName: "sparkles")
-                    .font(LuminaTypography.caption)
-                    .foregroundStyle(LuminaColors.mutedGold)
+                // Gold-and-cream line art on the midnight card face: the same
+                // palette as the starfield behind it, so the veil reads as
+                // one drawn surface rather than a symbol pasted on a texture.
+                LuminaImageAsset.revealSignature.image
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: markWidth)
+                    .accessibilityHidden(true)
                 Text("Your sky is ready")
                     .font(LuminaTypography.heading)
                 Text("Tap to unveil today's reading")

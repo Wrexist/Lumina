@@ -125,14 +125,22 @@ external groups need a short Beta App Review).
 
 ## Versioning
 
-- **Marketing version** (`0.1.0`) and **build number** (`1`) live once in
+- **Marketing version** (`1.0`) and **build number** (`1`) live once in
   `project.yml` (`MARKETING_VERSION` / `CURRENT_PROJECT_VERSION`) and feed both
   the app and the widget, so their versions can never drift (a mismatch is an
   ASC rejection).
 - Each upload needs a **unique, increasing build number** for a given marketing
   version. The workflow handles this via the run number / the `build_number`
-  input. Bump `MARKETING_VERSION` in `project.yml` for a new user-facing
-  version (e.g. `0.2.0`).
+  input — leave the input blank and it uses the run number, which only ever
+  goes up. Bump `MARKETING_VERSION` in `project.yml` for a new user-facing
+  version (e.g. `1.1`).
+- **`MARKETING_VERSION` must equal `version` in `metadata/app-store.json`.**
+  App Store Connect attaches an upload to the App Store version whose number
+  matches it; a build stamped `0.1.0` against a `1.0` release simply never
+  appears in the build list — no error, no email, nothing to debug from. This
+  repo sat in exactly that state (project said `0.1.0`, the release notes
+  opened with "Lumina 1.0") until `scripts/aso_lint.py` grew a check for it.
+  That check runs in CI, so the two can no longer drift silently.
 
 ---
 

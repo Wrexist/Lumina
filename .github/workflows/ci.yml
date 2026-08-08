@@ -5,15 +5,28 @@ on:
     branches: [main, "claude/**"]
   pull_request:
     branches: [main]
+  # Re-run the full pipeline without pushing — for when a run was cancelled,
+  # or a flake needs a second look.
+  workflow_dispatch:
 
 # A push to a claude/** branch and the pull_request opened from that same
-# branch fire two separate events for the same commit. github.ref differs
-# between them (refs/heads/<branch> vs refs/pull/<n>/merge), so without
-# normalizing, both used to run the full pipeline — including the iOS job —
-# in parallel. Falling back to the PR's source-branch name keys both events
-# to the same group, so cancel-in-progress kills the older, redundant run.
+# branch fire two separate events for the same commit, and both used to run
+# the full pipeline — including the 45-minute macOS job — in parallel.
+#
+# Keyed on the **commit**, not the branch. Branch-keyed grouping deduped those
+# two events but also let each new commit cancel the previous commit's run,
+# which produced a failure mode worth spelling out: a burst of commits left
+# only the last one verified, and when that run was itself superseded, nothing
+# was. Worse, a docs-only commit would cancel an in-flight iOS run and its
+# replacement would skip the iOS job entirely (paths filter), leaving the
+# branch with no iOS verification at all while every check showed green.
+#
+# Commit-keyed grouping still collapses the push/PR double-run — same SHA,
+# same group — and never cancels a run for a different commit. It costs runner
+# minutes on a fast series of pushes; on a public repo those are free, and an
+# unverified commit is not.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -28,6 +41,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       ios: ${{ steps.filter.outputs.ios }}
+      metadata: ${{ steps.filter.outputs.metadata }}
     steps:
       - uses: actions/checkout@v4
 
@@ -38,11 +52,23 @@ jobs:
             backend:
               - 'backend/**'
               - '.github/workflows/ci.yml'
+            metadata:
+              - 'metadata/**'
+              - 'scripts/aso_lint.py'
+              - '.github/workflows/ci.yml'
             ios:
               - 'Lumina/**'
               - 'LuminaTests/**'
               - 'LuminaWidget/**'
               - 'ios/**'
+              # The wire contract. Renaming a field in a route or changing a
+              # schema breaks the Swift decoders, but the iOS job used to be
+              # skipped for any backend-only change — so a contract break
+              # merged green. Only the contract surface is listed here, not
+              # all of backend/**, so pure lib/service work still skips the
+              # 45-minute macOS runner.
+              - 'backend/src/routes/**'
+              - 'backend/src/types.ts'
               - 'project.yml'
               - 'project.xcconfig'
               - '.swiftlint.yml'
@@ -79,6 +105,54 @@ jobs:
       - name: Test
         run: npm test
 
+      # Guards the class of bug that shipped a backend which could not boot:
+      # `interpret.ts` used a TypeScript parameter property, which vitest
+      # (esbuild) and `tsc --noEmit` both accept but which the production
+      # entrypoint — `node --experimental-strip-types` — rejects outright.
+      # Nothing in CI executed the real entrypoint, so every Fly deploy would
+      # have crash-looped. Boot it for real and hit /health.
+      - name: Boot production entrypoint and probe /health
+        env:
+          LUMINA_API_SECRET: ci-smoke-secret-not-a-real-credential
+          PORT: "3099"
+          HOST: "127.0.0.1"
+        run: |
+          npm start &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:3099/health" >/dev/null 2>&1; then
+              echo "health OK after ${i}s"
+              curl -fsS "http://127.0.0.1:3099/health"
+              exit 0
+            fi
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+              echo "::error::server exited during boot — production entrypoint is broken"
+              wait "$SERVER_PID" || true
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "::error::/health never became ready within 30s"
+          exit 1
+
+  metadata:
+    name: App Store metadata — limits · overlap · accuracy
+    needs: changes
+    if: needs.changes.outputs.metadata == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Seconds, not minutes — and it catches the failures App Store Connect
+      # will not: a keyword field one character over 100 is ignored in full,
+      # and a term naming an unshipped feature is a 2.3.1 rejection after a
+      # week of review queue.
+      - name: Validate metadata/app-store.json
+        run: python3 scripts/aso_lint.py
+
   secrets:
     name: Secret scan — gitleaks
     runs-on: ubuntu-latest
@@ -97,8 +171,17 @@ jobs:
 
       # Scan the working tree (--no-git) so the gate is about what's *in* the
       # source now; the .gitleaks.toml allowlist keeps templates from tripping it.
-      - name: Scan for secrets
+      - name: Scan for secrets (working tree)
         run: gitleaks detect --no-git --redact --verbose --config .gitleaks.toml --source .
+
+      # A working-tree-only scan cannot see a key that was committed and later
+      # deleted — it stays in history forever, still exfiltratable from any
+      # clone. This pass covers that. Needs full history, hence fetch-depth 0.
+      - name: Fetch full history
+        run: git fetch --prune --unshallow || true
+
+      - name: Scan for secrets (full history)
+        run: gitleaks detect --redact --verbose --config .gitleaks.toml --source .
 
   ios:
     name: iOS — generate · build · lint · test
@@ -110,8 +193,9 @@ jobs:
     env:
       # ANTHROPIC_API_KEY is intentionally absent — the app never embeds it;
       # LLM interpretation is server-side (backend `/interpret`).
-      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-      ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+      # ELEVENLABS_* were here too, for audio narration that isn't
+      # implemented; `inject_env.sh` never wrote them, so they only widened
+      # the set of secrets exposed to a build that couldn't use them.
       REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
       ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -174,6 +258,14 @@ jobs:
       # `ScreenshotTests` renders key screens to PNGs via ImageRenderer; upload
       # them so the UI is reviewable without a Mac. `always()` so they surface
       # even if a later test fails.
+      - name: Upload App Store screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-screenshots
+          path: LuminaTests/__AppStoreShots__/*.png
+          if-no-files-found: warn
+
       - name: Upload UI screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -190,7 +282,7 @@ jobs:
         if: always()
         run: |
           shopt -s nullglob
-          for f in LuminaTests/__Screenshots__/*.png; do
+          for f in LuminaTests/__Screenshots__/*.png LuminaTests/__AppStoreShots__/*.png; do
             echo "===SHOT_BEGIN $(basename "$f")==="
             openssl base64 -A -in "$f"
             echo ""

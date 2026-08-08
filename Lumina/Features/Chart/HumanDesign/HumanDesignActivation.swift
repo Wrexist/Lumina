@@ -21,7 +21,7 @@ struct HumanDesignActivation: Sendable, Equatable {
         let line: Int
     }
 
-    /// Personality-side activations, one per natal planet.
+    /// Personality-side activations: one per natal planet, plus the Earth.
     let personality: [GateActivation]
     /// Set of all activated gate numbers, derived from `personality`.
     let activatedGates: Set<Int>
@@ -29,13 +29,7 @@ struct HumanDesignActivation: Sendable, Equatable {
     let definedCenters: Set<HumanDesignCenter>
 
     static func compute(from chart: NatalChart) -> HumanDesignActivation {
-        let personality = chart.planets.map { planet in
-            GateActivation(
-                planet: planet.planet,
-                gate: HumanDesignMandala.gate(forLongitude: planet.longitude),
-                line: HumanDesignMandala.line(forLongitude: planet.longitude)
-            )
-        }
+        let personality = chart.planets.flatMap(Self.activations(for:))
         let activatedGates = Set(personality.map(\.gate))
         // A center is defined only when a complete channel reaches it;
         // a hanging gate (its partner gate unactivated) does not define.
@@ -45,6 +39,32 @@ struct HumanDesignActivation: Sendable, Equatable {
             personality: personality,
             activatedGates: activatedGates,
             definedCenters: defined
+        )
+    }
+
+    /// The activations a single natal body contributes: its own gate, and —
+    /// for the Sun alone — the Earth's.
+    ///
+    /// The Earth is one of the thirteen personality activations in every Human
+    /// Design chart, and it is always exactly opposite the Sun, so it costs no
+    /// ephemeris call — only arithmetic that nobody had done. Leaving it out
+    /// mattered: the backend returns ten bodies, and with ten gates a large
+    /// share of real charts complete no channel at all and render a bodygraph
+    /// with every centre open. Adding the Earth is one more chance at a
+    /// channel for a paid feature that was silently blank for many people.
+    private static func activations(for planet: NatalChart.PlanetPosition) -> [GateActivation] {
+        let own = activation(planet: planet.planet, longitude: planet.longitude)
+        guard planet.planet == "Sun" else { return [own] }
+        return [own, activation(planet: "Earth", longitude: planet.longitude + 180)]
+    }
+
+    /// `HumanDesignMandala` normalises the angle itself, so Sun + 180° needs
+    /// no wrapping here.
+    private static func activation(planet: String, longitude: Double) -> GateActivation {
+        GateActivation(
+            planet: planet,
+            gate: HumanDesignMandala.gate(forLongitude: longitude),
+            line: HumanDesignMandala.line(forLongitude: longitude)
         )
     }
 }

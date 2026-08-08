@@ -43,6 +43,9 @@ actor ChartCache {
     // Day-invariant, persisted across launches, keyed by (birthData, houseSystem).
     private var natalCache: [String: NatalChart] = [:]
 
+    // In-flight `/chart` fetches, so simultaneous callers share one request.
+    private var natalFetches: [String: Task<NatalChart, any Error>] = [:]
+
     // Day-scoped: flushed whenever the calendar day rolls over.
     private var cachedDay: String?
     private var transitsCache: [String: TransitsResult] = [:]
@@ -64,27 +67,50 @@ actor ChartCache {
 
     /// The natal chart. Served from memory, then disk, then the network —
     /// persisting on the first successful fetch so later launches are offline-instant.
+    ///
+    /// Concurrent callers for the same key share one fetch. Today and Chart
+    /// both ask for the natal chart on cold launch, and without this they each
+    /// issued a `/chart` request: two round trips for one answer, and — because
+    /// both read `store.read()` before either wrote — a lost update, so one of
+    /// the two charts never reached disk and the next launch went to the
+    /// network again.
     func chart(for birthData: BirthData, houseSystem: HouseSystem? = nil) async throws -> NatalChart {
-        let key = natalKey(birthData, houseSystem)
+        guard let key = natalKey(birthData, houseSystem) else {
+            return try await service.chart(for: birthData, houseSystem: houseSystem)
+        }
         if let hit = natalCache[key] { return hit }
-        var persisted = store.read()
+        let persisted = store.read()
         if let entry = persisted[key], entry.matches(birthData, houseSystem) {
             natalCache[key] = entry.chart
             return entry.chart
         }
-        let chart = try await service.chart(for: birthData, houseSystem: houseSystem)
+        if let existing = natalFetches[key] {
+            return try await existing.value
+        }
+        let task = Task { [service] in
+            try await service.chart(for: birthData, houseSystem: houseSystem)
+        }
+        natalFetches[key] = task
+        defer { natalFetches[key] = nil }
+        // A throw propagates with nothing cached, so a failed fetch is always
+        // retried — same contract as every other read here.
+        let chart = try await task.value
         natalCache[key] = chart
-        // Keep only the current birth data's charts, then persist this one.
-        persisted = persisted.filter { $0.value.birthData == birthData }
-        persisted[key] = PersistedNatalChart(birthData: birthData, houseSystem: houseSystem, chart: chart)
-        store.write(persisted)
+        // Re-read rather than reusing the snapshot above: the disk may have
+        // moved while we were awaiting. Keep only the current birth data's
+        // charts, then persist this one.
+        var latest = store.read().filter { $0.value.birthData == birthData }
+        latest[key] = PersistedNatalChart(birthData: birthData, houseSystem: houseSystem, chart: chart)
+        store.write(latest)
         return chart
     }
 
     /// Today's transit→natal aspects.
     func transits(for birthData: BirthData) async throws -> TransitsResult {
         flushDayScopedIfNeeded()
-        let key = encodeKey(birthData)
+        guard let key = encodeKey(birthData) else {
+            return try await service.transits(for: birthData, at: nil)
+        }
         if let hit = transitsCache[key] { return hit }
         let result = try await service.transits(for: birthData, at: nil)
         transitsCache[key] = result
@@ -112,7 +138,9 @@ actor ChartCache {
     /// Today's secondary-progressed chart.
     func progressions(for birthData: BirthData) async throws -> ProgressionsResult {
         flushDayScopedIfNeeded()
-        let key = encodeKey(birthData)
+        guard let key = encodeKey(birthData) else {
+            return try await service.progressions(for: birthData, on: nil)
+        }
         if let hit = progressionsCache[key] { return hit }
         let result = try await service.progressions(for: birthData, on: nil)
         progressionsCache[key] = result
@@ -122,7 +150,9 @@ actor ChartCache {
     /// Upcoming Jupiter/Saturn returns from now.
     func returns(for birthData: BirthData) async throws -> ReturnsResult {
         flushDayScopedIfNeeded()
-        let key = encodeKey(birthData)
+        guard let key = encodeKey(birthData) else {
+            return try await service.returns(for: birthData, from: nil)
+        }
         if let hit = returnsCache[key] { return hit }
         let result = try await service.returns(for: birthData, from: nil)
         returnsCache[key] = result
@@ -132,7 +162,9 @@ actor ChartCache {
     /// The default upcoming-transit forecast window from now.
     func forecast(for birthData: BirthData) async throws -> ForecastResult {
         flushDayScopedIfNeeded()
-        let key = encodeKey(birthData)
+        guard let key = encodeKey(birthData) else {
+            return try await service.forecast(for: birthData, from: nil, days: nil)
+        }
         if let hit = forecastCache[key] { return hit }
         let result = try await service.forecast(for: birthData, from: nil, days: nil)
         forecastCache[key] = result
@@ -142,7 +174,9 @@ actor ChartCache {
     /// Synastry cross-aspects between two people.
     func synastry(personA: SynastryPerson, personB: SynastryPerson) async throws -> SynastryResult {
         flushDayScopedIfNeeded()
-        let key = encodeKey([personA, personB])
+        guard let key = encodeKey([personA, personB]) else {
+            return try await service.synastry(personA: personA, personB: personB)
+        }
         if let hit = synastryCache[key] { return hit }
         let result = try await service.synastry(personA: personA, personB: personB)
         synastryCache[key] = result
@@ -152,7 +186,9 @@ actor ChartCache {
     /// The composite (midpoint) chart of two people.
     func composite(personA: SynastryPerson, personB: SynastryPerson) async throws -> CompositeResult {
         flushDayScopedIfNeeded()
-        let key = encodeKey([personA, personB])
+        guard let key = encodeKey([personA, personB]) else {
+            return try await service.composite(personA: personA, personB: personB)
+        }
         if let hit = compositeCache[key] { return hit }
         let result = try await service.composite(personA: personA, personB: personB)
         compositeCache[key] = result
@@ -163,6 +199,8 @@ actor ChartCache {
     /// account eraser (Apple 5.1.1(v)) so nothing of a deleted account survives.
     func clear() {
         natalCache.removeAll()
+        for task in natalFetches.values { task.cancel() }
+        natalFetches.removeAll()
         cachedDay = nil
         transitsCache.removeAll()
         moonCache = nil
@@ -177,18 +215,24 @@ actor ChartCache {
 
     // MARK: - Keys
 
-    private func natalKey(_ birthData: BirthData, _ houseSystem: HouseSystem?) -> String {
-        encodeKey(birthData) + "|" + (houseSystem?.rawValue ?? "default")
+    private func natalKey(_ birthData: BirthData, _ houseSystem: HouseSystem?) -> String? {
+        guard let encoded = encodeKey(birthData) else { return nil }
+        return encoded + "|" + (houseSystem?.rawValue ?? "default")
     }
 
     /// A stable, launch-invariant key. `Hashable.hashValue` is per-process
     /// randomized, so we key on the canonical JSON instead.
-    private func encodeKey(_ value: some Encodable) -> String {
+    ///
+    /// Returns `nil` rather than `""` on failure. `""` was a *colliding
+    /// sentinel*: every value that failed to encode shared one cache slot, so
+    /// one person's transits could be served for another's birth data. A nil
+    /// key bypasses the cache instead — slower, never wrong.
+    private func encodeKey(_ value: some Encodable) -> String? {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = .sortedKeys
         guard let data = try? encoder.encode(value), let string = String(data: data, encoding: .utf8) else {
-            return ""
+            return nil
         }
         return string
     }

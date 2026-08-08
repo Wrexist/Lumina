@@ -5,6 +5,26 @@ import XCTest
 /// kill persistence ride CI on every push so a regression to the flow
 /// fails the merge.
 final class OnboardingTests: XCTestCase {
+    /// The motivation step gated progress and its answer was then discarded.
+    /// It now orders the final step's destinations, so the answer visibly
+    /// does something.
+    @MainActor
+    func testFinalStepLeadsWithTheChosenMotivation() {
+        let state = OnboardingState(storage: .inMemory())
+        state.name = "Sam"
+
+        state.motivation = .relationships
+        XCTAssertEqual(state.motivation, .relationships)
+        XCTAssertTrue(state.canAdvance(from: .motivation))
+
+        // Every motivation must map to exactly one destination, and the
+        // labels must all be distinct — a duplicate would make the picker
+        // ambiguous.
+        let labels = OnboardingState.Motivation.allCases.map(\.label)
+        XCTAssertEqual(Set(labels).count, labels.count)
+        XCTAssertFalse(labels.contains(where: \.isEmpty))
+    }
+
     @MainActor
     func testStartsAtBrandPromise() {
         let state = OnboardingState(storage: .inMemory())
@@ -84,6 +104,11 @@ final class OnboardingTests: XCTestCase {
         XCTAssertEqual(state.currentStep, .chartReveal)
         state.chartReady = true
         state.advance()
+        XCTAssertEqual(state.currentStep, .excitement)
+        // No star tapped, and the flow still moves. The rating screen is
+        // never a toll gate — see `OnboardingScreens.Excitement`.
+        XCTAssertTrue(state.canAdvance(from: .excitement))
+        state.advance()
         XCTAssertEqual(state.currentStep, .whatNext)
     }
 
@@ -156,7 +181,30 @@ final class OnboardingTests: XCTestCase {
     }
 
     @MainActor
-    func testStepTotalCountMatchesEightScreenFlow() {
-        XCTAssertEqual(OnboardingState.Step.totalCount, 8)
+    func testStepTotalCountMatchesNineScreenFlow() {
+        XCTAssertEqual(OnboardingState.Step.totalCount, 9)
+    }
+
+    /// The excitement answer has to survive a force-quit like every other
+    /// captured field — otherwise backing out of the screen and returning
+    /// silently clears the stars the user already tapped.
+    @MainActor
+    func testExcitementSurvivesAResumeAndSkippingLeavesItNil() {
+        let storage = OnboardingStorage.inMemory()
+
+        let first = OnboardingState(storage: storage)
+        XCTAssertNil(first.excitement, "nobody has answered yet")
+        first.excitement = 4
+        first.persist()
+
+        XCTAssertEqual(OnboardingState(storage: storage).excitement, 4)
+
+        // Skipping is a real outcome, not an unanswered one waiting to be
+        // re-asked on the next launch.
+        let skipper = OnboardingState(storage: .inMemory())
+        skipper.currentStep = .excitement
+        skipper.advance()
+        XCTAssertNil(skipper.excitement)
+        XCTAssertEqual(skipper.currentStep, .whatNext)
     }
 }

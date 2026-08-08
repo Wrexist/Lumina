@@ -15,6 +15,8 @@ struct AddFriendView: View {
     @State private var search = BirthPlaceSearch()
     @State private var query = ""
     @State private var resolved: BirthPlaceSearch.Resolved?
+    /// Inline message when a tapped suggestion can't be resolved.
+    @State private var resolveError: String?
 
     var body: some View {
         NavigationStack {
@@ -61,7 +63,7 @@ struct AddFriendView: View {
                 .font(LuminaTypography.caption)
                 .tracking(1.2)
                 .foregroundStyle(LuminaColors.inkBlack.opacity(0.7))
-            DatePicker("Birth date", selection: $birthDate, in: ...Date.now, displayedComponents: .date)
+            DatePicker("Birth date", selection: $birthDate, in: BirthData.selectableBirthDates, displayedComponents: .date)
                 .datePickerStyle(.compact)
                 .labelsHidden()
         }
@@ -97,6 +99,7 @@ struct AddFriendView: View {
                 helper: resolved == nil
                     ? "Optional — pick a city for an exact chart."
                     : "Using \(resolved?.displayName ?? "")",
+                error: resolveError,
                 textContentType: .addressCityAndState
             )
         }
@@ -167,9 +170,15 @@ struct AddFriendView: View {
         do {
             let result = try await search.resolve(suggestion)
             resolved = result
+            resolveError = nil
             query = result.displayName
             Haptics.success.play()
         } catch {
+            // Was a bare haptic: offline or on a flaky network the user
+            // tapped a city, felt a buzz, and the field simply didn't fill —
+            // no message, and Save stayed disabled with no explanation. The
+            // onboarding equivalent already surfaced this properly.
+            resolveError = LuminaError.from(error).userBody
             Haptics.failure.play()
         }
     }
@@ -190,12 +199,10 @@ struct AddFriendView: View {
             birthTimeZoneIdentifier: resolved?.timeZoneIdentifier,
             source: .manual
         )
-        if let userBirth = UserBirthDataStore.userDefaults.load() {
-            friend.compatibilityScore = CompatibilityScorer.score(
-                userBirth.birthDate, calendar: BirthMoment.calendar(userBirth.timeZoneIdentifier),
-                friend.birthDate, calendar: BirthMoment.calendar(friend.birthTimeZoneIdentifier)
-            )
-        }
+        // Deliberately NOT seeded with a Sun-sign heuristic. The score is
+        // only ever written from real synastry cross-aspects (see
+        // `FriendDetailView.applyLoadedAspects`), so People shows no number
+        // until one exists rather than a hash-derived placeholder.
         modelContext.insert(friend)
         modelContext.saveOrLog(category: "People")
         // First person ever added earns the "Your first companion" moment.

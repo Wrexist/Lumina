@@ -2,8 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- Marks the document as script-capable so the scroll-reveal CSS may hide
+     content it can later reveal. Without JS the class never lands and every
+     section renders visible. Inline and first so it runs before paint. -->
+<script>document.documentElement.classList.add("js");</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lumina — Real Astrology &amp; Palm Reading for iOS</title>
+<title>Lumina — Real Astrology &amp; Birth Charts for iOS</title>
 <meta name="description" content="Genuine ephemeris-grade birth charts and interpretations grounded in your real placements — never generic, never faked. On-device palm reading is next. Finally, a real one.">
 <meta property="og:title" content="Lumina — Finally, a real one.">
 <meta property="og:description" content="Real astronomy, grounded interpretations, and honest about what's shipped and what's next.">
@@ -40,7 +44,7 @@
   </div>
   <div class="hero-scrim" aria-hidden="true"></div>
   <div class="hero-content on-dark">
-    <span class="eyebrow">iOS 26 · Astrology + Palm Reading</span>
+    <span class="eyebrow">iOS 26 · Astrology &amp; Birth Charts</span>
     <h1>Finally, a real one.</h1>
     <p class="lede">Every other app in this category fakes the sky, fakes a palm reading, or hides behind dark-pattern billing. Lumina computes a genuine chart from real planetary math, and never tells you a feature is ready before it actually is.</p>
     <div class="hero-actions">
@@ -54,7 +58,7 @@
 <div class="trust-strip">
   <div class="container trust-grid">
     <span>Real planetary math</span>
-    <span>Photos never leave your phone</span>
+    <span>Your birth data stays yours</span>
     <span>Monthly &amp; annual only</span>
     <span>No confetti. No streaks. No games.</span>
   </div>
@@ -145,8 +149,8 @@
       </div>
       <div class="feature-card reveal">
         <img src="assets/img/screenshots/palm.png" alt="Palm reading tab, showing its honest in-progress status">
-        <h3>Palm Reading</h3>
-        <p>On-device by design and in final accuracy testing. We're telling you it's not ready rather than faking it.</p>
+        <h3>Palm Reading <span class="feature-flag">not yet shipped</span></h3>
+        <p>On-device by design, and not in the app yet. We're telling you it's not ready rather than faking it.</p>
       </div>
       <div class="feature-card reveal">
         <img src="assets/img/screenshots/reflect.png" alt="Reflect tab — transit-aware journal">

@@ -63,27 +63,73 @@ struct SharedBirthData: Codable, Sendable, Hashable {
         )
     }
 
+    /// Decodes an **untrusted** payload: this arrives from a scanned QR code or
+    /// a `lumina://share/<base64>` URL that anyone can craft. Every field is
+    /// range-checked here rather than downstream, so a hostile or corrupt
+    /// payload fails as a clean `DecodingError` — "we couldn't read that
+    /// code" — instead of producing a plausible-looking chart for month 77 of
+    /// year 99999, or a `DateComponents` that silently resolves to
+    /// `.distantPast`.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         name = try container.decodeIfPresent(String.self, forKey: .name)
-        placeName = try container.decode(String.self, forKey: .placeName)
-        latitude = try container.decode(Double.self, forKey: .latitude)
-        longitude = try container.decode(Double.self, forKey: .longitude)
-        timeZoneIdentifier = try container.decode(String.self, forKey: .timeZoneIdentifier)
-        if let year = try container.decodeIfPresent(Int.self, forKey: .birthYear) {
-            birthYear = year
-            birthMonth = try container.decode(Int.self, forKey: .birthMonth)
-            birthDay = try container.decode(Int.self, forKey: .birthDay)
-        } else {
-            // Legacy payload (pre component encoding): an ISO-8601 instant.
-            // Best effort — read its day in the shared time zone.
-            let legacy = try container.decode(Date.self, forKey: .birthDate)
-            let parts = BirthMoment.calendar(timeZoneIdentifier)
-                .dateComponents([.year, .month, .day], from: legacy)
-            birthYear = parts.year ?? 1970
-            birthMonth = parts.month ?? 1
-            birthDay = parts.day ?? 1
+            .map { String($0.prefix(Self.maxNameLength)) }
+        let rawPlace = try container.decode(String.self, forKey: .placeName)
+        placeName = String(rawPlace.prefix(Self.maxPlaceNameLength))
+        latitude = try Self.validate(
+            try container.decode(Double.self, forKey: .latitude),
+            in: -90 ... 90, forKey: .latitude, in: container, what: "latitude"
+        )
+        longitude = try Self.validate(
+            try container.decode(Double.self, forKey: .longitude),
+            in: -180 ... 180, forKey: .longitude, in: container, what: "longitude"
+        )
+        let rawZone = try container.decode(String.self, forKey: .timeZoneIdentifier)
+        guard TimeZone(identifier: rawZone) != nil else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .timeZoneIdentifier,
+                in: container,
+                debugDescription: "unknown time zone identifier"
+            )
         }
+        timeZoneIdentifier = rawZone
+        let day = try Self.decodeBirthDay(from: container, timeZoneIdentifier: rawZone)
+        birthYear = day.year
+        birthMonth = day.month
+        birthDay = day.day
+    }
+
+    /// The birth day, from either the current component encoding or the
+    /// legacy ISO-8601 instant. Year is bounded to the same 1800–2200 window
+    /// the backend enforces, so a payload that decodes here is one the service
+    /// will actually accept.
+    private static func decodeBirthDay(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        timeZoneIdentifier: String
+    ) throws -> (year: Int, month: Int, day: Int) {
+        if let year = try container.decodeIfPresent(Int.self, forKey: .birthYear) {
+            return (
+                try validate(year, in: 1800 ... 2200, forKey: .birthYear, in: container, what: "birth year"),
+                try validate(
+                    try container.decode(Int.self, forKey: .birthMonth),
+                    in: 1 ... 12, forKey: .birthMonth, in: container, what: "birth month"
+                ),
+                try validate(
+                    try container.decode(Int.self, forKey: .birthDay),
+                    in: 1 ... 31, forKey: .birthDay, in: container, what: "birth day"
+                )
+            )
+        }
+        // Legacy payload (pre component encoding): an ISO-8601 instant.
+        // Best effort — read its day in the shared time zone.
+        let legacy = try container.decode(Date.self, forKey: .birthDate)
+        let parts = BirthMoment.calendar(timeZoneIdentifier)
+            .dateComponents([.year, .month, .day], from: legacy)
+        return (
+            try validate(parts.year ?? 0, in: 1800 ... 2200, forKey: .birthDate, in: container, what: "birth year"),
+            parts.month ?? 1,
+            parts.day ?? 1
+        )
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -122,6 +168,29 @@ struct SharedBirthData: Codable, Sendable, Hashable {
     private static func coarsen(_ value: Double) -> Double {
         (value * 10).rounded() / 10
     }
+
+    /// Caps on the two free-text fields. A QR payload is size-bounded by the
+    /// scanner, but a `lumina://share/<base64>` URL is not, and these strings
+    /// are rendered straight into the accept sheet.
+    private static let maxNameLength = 60
+    private static let maxPlaceNameLength = 200
+
+    private static func validate<T: Comparable>(
+        _ value: T,
+        in range: ClosedRange<T>,
+        forKey key: CodingKeys,
+        in container: KeyedDecodingContainer<CodingKeys>,
+        what: String
+    ) throws -> T {
+        guard range.contains(value) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: key,
+                in: container,
+                debugDescription: "\(what) out of range"
+            )
+        }
+        return value
+    }
 }
 
 extension JSONEncoder {
@@ -152,8 +221,18 @@ extension Data {
             .replacingOccurrences(of: "=", with: "")
     }
 
-    /// Decodes URL-safe base64 (with or without padding).
+    /// The largest share payload we will even attempt to decode.
+    ///
+    /// A real `SharedBirthData` is a few hundred bytes. The cap exists because
+    /// the input is a URL anyone can construct: without it, a multi-megabyte
+    /// `lumina://share/<...>` would be base64-decoded and JSON-parsed in full
+    /// on the main thread before any of the field validation could reject it.
+    static let maxSharePayloadBytes = 4096
+
+    /// Decodes URL-safe base64 (with or without padding), refusing anything
+    /// implausibly large for a share payload.
     init?(base64URLEncoded string: String) {
+        guard string.utf8.count <= Data.maxSharePayloadBytes else { return nil }
         var base64 = string
             .replacingOccurrences(of: "-", with: "+")
             .replacingOccurrences(of: "_", with: "/")

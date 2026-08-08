@@ -5,7 +5,11 @@ import UIKit
 /// grouped by topic, fully on-device. The pull-down search on Today
 /// (Phase 13) will index this content alongside the glossary.
 struct HelpView: View {
-    fileprivate struct Article: Identifiable, Hashable {
+    /// Internal, not fileprivate: `ReleaseAccuracyTests` reads the article
+    /// bodies to prove no shipped copy claims a feature the binary lacks.
+    /// `Sendable` so `allArticles` can be `nonisolated` — a constant array of
+    /// strings has no business requiring the main actor to read.
+    struct Article: Identifiable, Hashable, Sendable {
         let id: String
         let topic: Topic
         let title: String
@@ -15,7 +19,6 @@ struct HelpView: View {
     enum Topic: String, CaseIterable, Hashable, Identifiable, Sendable {
         case gettingStarted
         case chart
-        case palm
         case people
         case privacy
         case billing
@@ -26,7 +29,6 @@ struct HelpView: View {
             switch self {
             case .gettingStarted: "Getting started"
             case .chart: "Your chart"
-            case .palm: "Palm reading"
             case .people: "People"
             case .privacy: "Privacy"
             case .billing: "Billing & subscription"
@@ -34,11 +36,11 @@ struct HelpView: View {
         }
     }
 
-    private static let allArticles: [Article] = [
+    nonisolated static let allArticles: [Article] = [
         .init(id: "what-is-lumina", topic: .gettingStarted, title: "What is Lumina?",
-              body: "Lumina is a premium astrology and palm-reading app. We use real Swiss-Ephemeris chart math, "
-                  + "on-device palm analysis, and interpretations grounded in your actual chart — "
-                  + "never generic horoscope copy."),
+              body: "Lumina is a premium astrology app built on real Swiss-Ephemeris chart math. Your birth "
+                  + "chart, today's transits, the moon phase and every reading come from the actual sky — "
+                  + "never generic horoscope copy, never invented placements."),
         .init(id: "what-time-do-i-need", topic: .gettingStarted, title: "Why do you need my birth time?",
               body: "The exact time decides your rising sign and which house each planet falls into. Without time "
                   + "we still calculate your sign and planets — only houses are hidden. You can always update it "
@@ -55,22 +57,25 @@ struct HelpView: View {
               body: "It's the traditional retrograde marker — the planet appears to move backwards from Earth's "
                   + "vantage point. Astrologers read it as an invitation to revisit, review, or revise rather "
                   + "than initiate."),
-        .init(id: "palm-when", topic: .palm, title: "When does palm scanning arrive?",
-              body: "It's coming soon. We're making sure the on-device line tracing works fairly across every "
-                  + "skin tone before we ship it — that's the part we won't rush. The walkthrough in the Palm "
-                  + "tab shows exactly how it will run on your phone."),
-        .init(id: "palm-photo", topic: .palm, title: "Does my palm photo leave my phone?",
-              body: "No. Your phone finds your hand and traces the lines on-device, then turns them into about "
-                  + "50 numbers (line lengths, curvature). Only those numbers go to our server — never the "
-                  + "photo. See the full walkthrough in Palm → How this works."),
+        // Kept — and kept honest. The name and the marketing site have both
+        // carried palm reading, so people will look for it; saying plainly
+        // that it isn't here beats a Help section implying it is.
+        .init(id: "palm-when", topic: .gettingStarted, title: "Does Lumina do palm reading?",
+              body: "Not yet, and we'd rather say so than fake it. We're building on-device line tracing and "
+                  + "won't ship it until it works fairly across every skin tone. There's nothing to try in "
+                  + "the app today — when it arrives it'll be announced, not quietly switched on."),
         .init(id: "add-friend", topic: .people, title: "How do I add someone?",
               body: "Open the People tab and tap the + menu. \"Add someone\" opens a manual form; \"Share my chart\" generates a QR a friend can scan with any camera app."),
         .init(id: "compatibility-score", topic: .people, title: "How is compatibility calculated?",
-              body: "The headline score is a quick read from your Sun signs' element and modality. Open any "
-                  + "friend to see the real chart-to-chart aspects between you — \"your Venus conjunct their "
-                  + "Mars\" — and a fuller weighted score is coming soon."),
+              body: "From the real aspects between your two charts — \"your Venus conjunct their Mars\" — "
+                  + "weighted by how exact each contact is, with the relationship planets counting for more. "
+                  + "If we haven't computed those aspects yet, we show no score rather than a guess."),
         .init(id: "data-storage", topic: .privacy, title: "Where does my data live?",
-              body: "Your chart, friends, and Reflect entries live on this device only. Open Settings → Privacy → Privacy dashboard to see exactly what's where."),
+              body: "Your Reflect entries never leave this device, and neither do your friends' names. "
+                  + "Your birth date, time and city coordinates are sent to our chart service to draw "
+                  + "your chart; a friend's birth date and time are sent when we score your "
+                  + "compatibility. Nothing is stored there, and nothing else is ever sent. "
+                  + "Open Settings → Privacy → Privacy dashboard to see exactly what's where."),
         .init(id: "subscription", topic: .billing, title: "How do I cancel my subscription?",
               body: "Settings → Account → Manage subscription opens Apple's native subscription management screen. We never bury cancel — that's a brand pillar."),
     ]
@@ -189,7 +194,7 @@ private struct ArticleView: View {
 /// Builds the pre-filled `mailto:` URL for `FeedbackView`. A separate type
 /// so the address and query encoding are unit-testable.
 enum FeedbackMail {
-    static let address = "feedback@lumina.app"
+    static let address = "Luminasupporthelp@gmail.com"
 
     /// `nil` only if `URLComponents` can't serialize (practically never).
     static func mailtoURL(subject: String, message: String) -> URL? {

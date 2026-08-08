@@ -19,6 +19,8 @@ struct EditBirthInfoView: View {
     @State private var search = BirthPlaceSearch()
     @State private var query = ""
     @State private var resolved: BirthPlaceSearch.Resolved?
+    /// Inline message when a tapped suggestion can't be resolved.
+    @State private var resolveError: String?
     @State private var hydrated = false
     @State private var manualSheet = false
 
@@ -65,7 +67,7 @@ struct EditBirthInfoView: View {
                     body: "Your birth date sets every planet's exact position at the moment you were born."
                 )
             }
-            DatePicker("Birth date", selection: $birthDate, in: ...Date.now, displayedComponents: .date)
+            DatePicker("Birth date", selection: $birthDate, in: BirthData.selectableBirthDates, displayedComponents: .date)
                 .datePickerStyle(.compact)
                 .labelsHidden()
         }
@@ -100,6 +102,7 @@ struct EditBirthInfoView: View {
             helper: resolved == nil
                 ? "Pick a city for an exact chart."
                 : "Using \(resolved?.displayName ?? "")",
+            error: resolveError,
             textContentType: .addressCityAndState
         )
     }
@@ -199,9 +202,15 @@ struct EditBirthInfoView: View {
         do {
             let result = try await search.resolve(suggestion)
             resolved = result
+            resolveError = nil
             query = result.displayName
             Haptics.success.play()
         } catch {
+            // Was a bare haptic: offline or on a flaky network the user
+            // tapped a city, felt a buzz, and the field simply didn't fill —
+            // no message, and Save stayed disabled with no explanation. The
+            // onboarding equivalent already surfaced this properly.
+            resolveError = LuminaError.from(error).userBody
             Haptics.failure.play()
         }
     }
@@ -229,23 +238,21 @@ struct EditBirthInfoView: View {
             timeZoneIdentifier: resolved.timeZoneIdentifier
         )
         UserBirthDataStore.userDefaults.save(birthData)
-        refreshFriendScores(with: birthData)
+        clearCachedFriendScores()
         Haptics.success.play()
         dismiss()
     }
 
     /// Cached `Friend.compatibilityScore` values were computed against the
-    /// old birth data; recompute them so People doesn't show stale scores
-    /// forever. Synastry-backed scores refresh on the next friend-detail
-    /// fetch and overwrite these heuristics.
-    private func refreshFriendScores(with birthData: BirthData) {
+    /// user's OLD birth data, so they are wrong the moment it changes.
+    /// Clear them — they are re-derived from real synastry cross-aspects the
+    /// next time each friend's detail screen loads. This used to recompute a
+    /// Sun-sign heuristic instead, which replaced a stale fabricated number
+    /// with a fresh fabricated one.
+    private func clearCachedFriendScores() {
         guard let friends = try? modelContext.fetch(FetchDescriptor<Friend>()) else { return }
-        let userCalendar = BirthMoment.calendar(birthData.timeZoneIdentifier)
         for friend in friends {
-            friend.compatibilityScore = CompatibilityScorer.score(
-                birthData.birthDate, calendar: userCalendar,
-                friend.birthDate, calendar: BirthMoment.calendar(friend.birthTimeZoneIdentifier)
-            )
+            friend.compatibilityScore = nil
         }
         modelContext.saveOrLog(category: "Settings")
     }
@@ -278,7 +285,7 @@ private struct ManualBirthPlaceSheetEdit: View {
                     if let error {
                         Text(error)
                             .font(LuminaTypography.caption)
-                            .foregroundStyle(LuminaColors.blush)
+                            .foregroundStyle(LuminaColors.error)
                     }
                     LuminaButton(title: "Save", variant: .primary, isEnabled: validated != nil) { save() }
                 }

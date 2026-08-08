@@ -141,7 +141,7 @@ struct ChartQuizView: View {
         VStack(spacing: LuminaSpacing.lg) {
             Image(systemName: "sparkles")
                 .font(.system(size: sparkleSize))
-                .foregroundStyle(LuminaColors.mutedGold)
+                .foregroundStyle(LuminaColors.goldInk)
             Text("\(lastScore) of \(lastTotal)")
                 .font(LuminaTypography.display)
             Text(ChartQuizEngine.verdict(correct: lastScore, total: lastTotal))

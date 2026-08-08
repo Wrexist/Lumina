@@ -36,6 +36,26 @@ final class AppRouter {
     /// detail sheet on the Chart tab). Cleared by the consumer.
     var pendingPresentation: LuminaDeepLink?
 
+    /// Where inside Settings to land once it opens.
+    ///
+    /// Exists because "Add birth info" — the primary CTA of every empty state
+    /// in the app, and the one thing a new user must do — dropped them on the
+    /// Settings root and left them to find the row themselves. Not part of
+    /// `LuminaDeepLink`: this is in-app intent, not an inbound URL contract.
+    enum SettingsDestination: Equatable, Sendable {
+        case birthInfo
+    }
+
+    /// Set alongside a `.settings` presentation; `SettingsView` consumes and
+    /// clears it.
+    var pendingSettingsDestination: SettingsDestination?
+
+    /// Opens Settings straight onto `destination`.
+    func openSettings(_ destination: SettingsDestination? = nil) {
+        pendingSettingsDestination = destination
+        handle(deepLink: .settings)
+    }
+
     /// `true` while the user is mid-onboarding *or* the app is on its first
     /// cold launch and we haven't yet decided where to land. Bind from
     /// `LuminaApp` to drive the root `WindowGroup`.

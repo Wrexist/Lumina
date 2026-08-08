@@ -463,7 +463,7 @@ The flagship retention feature (a home-screen Cosmic Signature widget) was the h
 `ci.yml` builds `-destination "platform=iOS Simulator"` with `CODE_SIGNING_ALLOWED=NO`. TestFlight needs a **signed device `.ipa`** (`generic/platform=iOS`). Added a separate **`ios-testflight.yml`** (workflow_dispatch) modeled on the Silicon-Tech-Tycoon repo: App Store Connect **API-key cloud signing** (no `.p12`/keychain) — decode the `.p8` to `~/.appstoreconnect/private_keys/AuthKey_<KEYID>.p8`, then `xcodebuild archive -allowProvisioningUpdates -authenticationKeyPath/ID/IssuerID CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM=…` → `-exportArchive` with `ios/ExportOptions.plist` (`method: app-store-connect`) → `xcrun altool --upload-app`. Only 3 new secrets: `APP_STORE_CONNECT_KEY_ID`, `_ISSUER_ID`, `_API_KEY_BASE64` (+ the existing app-runtime secrets). Full runbook in `docs/TESTFLIGHT.md`; copy-paste store listing in `docs/APP-STORE-LISTING.md`.
 
 **[2026-07] Version indirection so app + appex never drift**
-App and widget `CFBundleShortVersionString`/`CFBundleVersion` now reference `$(MARKETING_VERSION)`/`$(CURRENT_PROJECT_VERSION)` (defaults `0.1.0`/`1` in `settings.base`). The TestFlight workflow overrides `CURRENT_PROJECT_VERSION` on the command line, which applies to every target in the scheme — so each upload gets a unique build number and the appex version always matches the host app (a mismatch is an ASC rejection).
+App and widget `CFBundleShortVersionString`/`CFBundleVersion` now reference `$(MARKETING_VERSION)`/`$(CURRENT_PROJECT_VERSION)` (defaults `1.0`/`1` in `settings.base`). The TestFlight workflow overrides `CURRENT_PROJECT_VERSION` on the command line, which applies to every target in the scheme — so each upload gets a unique build number and the appex version always matches the host app (a mismatch is an ASC rejection).
 
 ---
 
@@ -491,3 +491,85 @@ For a from-scratch immersive 3D view (a phase-accurate Moon sphere) with no prio
 
 **[2026-07] Background Modes (`audio`) deliberately NOT added despite being one of the 5 audited capabilities**
 The capabilities audit that motivated this whole pass listed Background Modes as unneeded specifically *because* no feature needs it yet (Phase 5's audio player is still blocked on ElevenLabs). Adding the capability now — with no audio code behind it — would recreate the exact "capability with nothing wired up" anti-pattern the audit flagged for Push/IAP in the first place. Add it exactly when Phase 5's `AVAudioSession`/`MPNowPlayingInfoCenter` code ships, matching how every other capability in this repo's history (App Group, Face ID) was added at the moment its feature landed, never speculatively ahead of it.
+
+---
+
+## [2026-08-04] Pre-launch audit + remediation — branch `claude/pre-launch-audit-checklist-7dwc53`
+
+Eight parallel audits, compiled into `LAUNCH-READINESS.md`, then worked
+top-down. The fixes are in the branch history; what follows is what they
+taught, so the next session doesn't relearn it.
+
+**[2026-08] `tsc` and `vitest` both accept syntax the production entrypoint rejects — boot it in CI**
+The backend ran under `node --experimental-strip-types` in production, which
+*erases* types but does not *transform* syntax. `interpret.ts` used a
+TypeScript parameter property (`constructor(readonly status: number)`), so
+`npm start` crashed on import — while `tsc --noEmit` passed and all 130 tests
+passed, because vitest transpiles through esbuild. Every Fly deploy would have
+crash-looped, and nothing in CI would have said so. The rule: **if production
+runs a different loader than your tests, CI has to execute the production
+entrypoint.** `ci.yml` now boots it and probes `/health`. The same trap applies
+to `enum` and namespaces under strip-types.
+
+**[2026-08] xcconfig treats `//` as a line comment ANYWHERE on the line**
+`SWISS_EPH_SERVICE_URL = https://host` silently becomes the literal `https:`.
+That value is non-empty, so `BuildConfig.realValue` accepted it, and every
+backend call failed at runtime — invisible in CI (simulator builds are
+*expected* to hit `.missingConfiguration`) and only manifesting in the
+TestFlight/App Store build. The fix is xcconfig's empty-substitution idiom:
+`https:$()//host` parses as the original string while breaking up the `//`
+token. Apply it to every value, not just ones that look like URLs, and
+**verify the round trip** — `inject_env.sh` now fails the build rather than
+shipping a binary that can't reach its backend.
+
+**[2026-08] gitleaks ships no rule for Anthropic keys, and a path allowlist silently disables every rule for that path**
+The repo's `.gitleaks.toml` allowlisted `.env.example`, which is exactly where
+a key had been committed. Write explicit rules for the vendors you actually
+use, keep allowlists to *fingerprints* (`.gitleaksignore`) rather than paths,
+and scan full history as well as the working tree — the working tree can be
+clean while the history isn't.
+
+**[2026-08] Verify a finding before fixing it — three of the audits' P0s were wrong**
+One reported a J2000-vs-of-date reference-frame mismatch in the ephemeris. I
+tested it: the Sun reads exactly 0.0000° at the March equinox for 1800 → 2050,
+so the library returns true ecliptic *of date* and planets and angles share one
+frame. The *comment* was wrong, not the code — and "fixing" the code to match
+the comment would have shifted every chart in the app. Two others (a
+`@Environment` crash, an `Int(Double)` trap) were also unreachable. All three
+are recorded under *Corrections* in `LAUNCH-READINESS.md` so they don't get
+"fixed" into real bugs later.
+
+**[2026-08] The target treats warnings as errors AND enables existential-any**
+`SWIFT_TREAT_WARNINGS_AS_ERRORS` + `SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY` on
+the `Lumina` target means a bare `Error?` is a hard build failure, not a
+warning. Same for an unused variable. SPM dependency builds are unaffected.
+
+**[2026-08] A nested `CodingKeys` isn't in scope in a sibling helper's signature**
+Adding a static validation helper that names `CodingKeys` in its parameter
+types resolved *outward* to the enclosing type's synthesized `CodingKeys` and
+failed to compile. Declare `CodingKeys` explicitly on any nested `Codable`
+type whose helpers mention it.
+
+**[2026-08] A View type infers `@MainActor` from its property wrappers, and that leaks into its statics**
+`LuminaStarfield` picked up `@MainActor` from `@State private var preferences`
+(where `AppPreferences` is `@MainActor`), so a `static func` couldn't be passed
+to `map` in a static initialiser. Mark pure static helpers `nonisolated`.
+Conversely, extracting a helper *out* of a `@MainActor` function drops the
+isolation the caller had — re-annotate it.
+
+**[2026-08] `scripts/local_checks.sh` exists because CI is a 9-minute round trip**
+It approximates the lint gates that are pure text analysis: line length, type
+body length, file length, function body length, `String(decoding:)`, YAML and
+plist parse, plus the backend typecheck and tests. Every rule in it was added
+after that rule cost a CI round trip. **Run it before every push**, and when CI
+catches something the script could have caught, add it to the script — the
+function-body check initially missed every wrapped signature, which is exactly
+how one reached CI.
+
+**[2026-08] Asking for something and discarding it is worse than not asking**
+Onboarding gated its Continue button on a name and a motivation, then dropped
+both at `persistAndComplete`. Same class of defect as the paywall advertising
+six features and gating none, and the privacy dashboard promising a data export
+that didn't exist. When auditing, grep for what the app *claims* and check each
+claim against the binary — that class of finding was more common here than any
+kind of crash.

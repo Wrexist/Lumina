@@ -28,7 +28,11 @@ settings:
     # CURRENT_PROJECT_VERSION on the xcodebuild command line so every upload
     # gets a unique build number — and app + appex stay in lockstep (a
     # mismatch is an App Store Connect rejection).
-    MARKETING_VERSION: "0.1.0"
+    # Must equal `version` in metadata/app-store.json — App Store Connect
+    # attaches an upload to the App Store version whose number matches this
+    # string, so a build stamped 0.1.0 simply never appears under a 1.0
+    # release. `scripts/aso_lint.py` fails the build if the two drift.
+    MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "1"
     # Warnings-as-errors and upcoming-features are applied per-target below
     # so they only gate our own code, not SPM dependency builds.
@@ -51,24 +55,18 @@ packages:
   OneSignal:
     url: https://github.com/OneSignal/OneSignal-XCFramework
     from: 5.0.0
-  Lottie:
-    url: https://github.com/airbnb/lottie-ios
-    from: 4.0.0
 
 targets:
   Lumina:
     type: application
     platform: iOS
     sources:
+      # Sweeping the directory already picks up Resources/ — including
+      # PrivacyInfo.xcprivacy, Glossary.json and Localizable.xcstrings — and
+      # classifies them into the resources build phase. There used to be a
+      # `resources:` block here as well; that is not a valid XcodeGen target
+      # key, so it (and its `optional: true` markers) was silently ignored.
       - path: Lumina
-    resources:
-      - path: Lumina/Resources/Fonts
-        optional: true
-      - path: Lumina/Resources/Glossary.json
-        optional: true
-      - path: Lumina/Resources/Localizable.xcstrings
-        optional: true
-      - path: Lumina/Resources/PrivacyInfo.xcprivacy
     info:
       path: Lumina/Resources/Info.plist
       properties:
@@ -95,11 +93,17 @@ targets:
         UIUserInterfaceStyle: Light
         ITSAppUsesNonExemptEncryption: false
         NSFaceIDUsageDescription: "Lumina uses Face ID to keep your reflections private on this device."
+        # Required for the "Save Image" action in the share sheet — the chart,
+        # daily-reading, compatibility and QR share cards all offer it, and
+        # the add-only Photos path throws an uncaught exception without a
+        # usage string.
+        NSPhotoLibraryAddUsageDescription: "Lumina asks for permission only when you choose to save a chart or reading card to your photos."
         # NOTE: the Anthropic key is intentionally NOT embedded in the app —
         # LLM interpretation runs server-side via the backend. Shipping the key
         # in Info.plist would make it extractable from the IPA.
-        LuminaElevenLabsAPIKey: $(ELEVENLABS_API_KEY)
-        LuminaElevenLabsVoiceID: $(ELEVENLABS_VOICE_ID)
+        # ElevenLabs keys removed: audio narration isn't implemented and no
+        # Swift file read them, so they were an extractable private key
+        # shipped in the IPA for nothing. Re-add when the audio player lands.
         LuminaRevenueCatAPIKeyIOS: $(REVENUECAT_API_KEY_IOS)
         LuminaOneSignalAppID: $(ONESIGNAL_APP_ID)
         LuminaSupabaseURL: $(SUPABASE_URL)
@@ -162,8 +166,6 @@ targets:
         product: Supabase
       - package: OneSignal
         product: OneSignalFramework
-      - package: Lottie
-        product: Lottie
       - target: LuminaWidget
         embed: true
     preBuildScripts:
@@ -179,9 +181,22 @@ targets:
     platform: iOS
     sources:
       - path: LuminaWidget
-      # The snapshot store is the one file shared with the app target (pure
-      # Foundation, compiled into both) — the widget reads what the app writes.
+      # The snapshot store is shared with the app target (pure Foundation,
+      # compiled into both) — the widget reads what the app writes.
       - path: Lumina/Core/Widget/WidgetSharedStore.swift
+      # …and so is the palette. The widget used to re-declare midnight,
+      # parchment and gold as raw `Color(red:green:blue:)` literals because
+      # `LuminaColors` lived only in the app target — three hand-copied values
+      # guaranteed to drift the first time the brand palette moved, on the
+      # one surface that sits permanently on the user's home screen.
+      # `LuminaColors` is self-contained (SwiftUI only), so it just compiles
+      # into both.
+      - path: Lumina/Design/Tokens/LuminaColors.swift
+      # An app extension is its own bundle and needs its own privacy
+      # manifest. Without one, the App Store upload fails with ITMS-91053
+      # because WidgetSharedStore calls UserDefaults(suiteName:).
+      - path: LuminaWidget/PrivacyInfo.xcprivacy
+        buildPhase: resources
     info:
       path: LuminaWidget/Info.plist
       properties:
