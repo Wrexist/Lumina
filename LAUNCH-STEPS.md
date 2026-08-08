@@ -124,8 +124,16 @@ supported configuration, not a bug.
 > deployed; the ephemeris is `astronomy-engine`. Don't rename it — the app, the
 > injection script and both workflows all agree on this name.
 
-The release workflow refuses to build if the first four are empty, and asserts the
-URL is `https`, so a mistake here fails loudly instead of shipping a dead app.
+The release workflow refuses to build if the **first three** are empty, and asserts
+the URL is `https`, so a mistake here fails loudly instead of shipping a dead app.
+`ONESIGNAL_APP_ID` only warns — a build without it simply has no push.
+
+> That guard used to require `ONESIGNAL_APP_ID` too, which contradicted the row
+> above and forced a OneSignal account before anyone could get a first build to
+> TestFlight. The app has always degraded cleanly without it:
+> `PushNotificationManager.initialize` returns without touching the SDK on an
+> empty or placeholder ID, `NotificationPermission` falls back to the system
+> API, and local transit notifications never used OneSignal at all.
 
 ---
 
