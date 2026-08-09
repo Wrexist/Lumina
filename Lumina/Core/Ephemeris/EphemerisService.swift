@@ -188,22 +188,80 @@ actor EphemerisService {
         let request = try makeRequest(path: "chart", baseURL: baseURL, apiSecret: apiSecret, body: body)
         logger.debug("chart requested for \(birthData.placeName, privacy: .public)")
 
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
-        guard (200..<300).contains(http.statusCode) else {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            throw ServiceError.httpError(status: http.statusCode, body: body)
-        }
-        return try Self.chartDecoder.decode(NatalChart.self, from: data)
+        return try await send(request, as: NatalChart.self)
     }
 
-    /// Builds the authenticated JSON POST every route shares. The 10-second
-    /// timeout enforces `docs/NAVIGATION.md` §12 — beyond it, fail to a retry
-    /// state, never spin forever.
+    /// Per-attempt timeouts. They sum, with `retryDelay` between them, to the
+    /// same ten seconds `docs/NAVIGATION.md` §12 allows before the UI must
+    /// show an error with a retry — the retry happens *inside* that budget,
+    /// it does not extend it.
+    nonisolated static let attemptTimeouts: [TimeInterval] = [4, 5]
+
+    /// Long enough for a suspended container to finish booting, short enough
+    /// to leave the second attempt most of the budget.
+    nonisolated static let retryDelay: Duration = .seconds(1)
+
+    /// Sends the request, retrying once through the transient failures a
+    /// scale-to-zero host produces while it wakes up.
+    ///
+    /// There was no retry at all: one 10-second attempt, and any blip failed
+    /// the call. On a host that suspends when idle, the first launch of the
+    /// day therefore errored on Today, Chart, People and Reflect at once, and
+    /// the only available fix was to pay for a permanently warm machine.
+    ///
+    /// Only genuinely transient conditions retry — a timeout, a refused or
+    /// dropped connection, and the 502/503/504 a proxy returns while the
+    /// instance behind it boots. A 401 or a 400 never retries; those are
+    /// wrong, not early. Neither does a decode failure.
+    private func send<T: Decodable>(_ request: URLRequest, as type: T.Type) async throws -> T {
+        var lastError: any Error = ServiceError.invalidResponse
+        for (attempt, timeout) in Self.attemptTimeouts.enumerated() {
+            if attempt > 0 {
+                try? await Task.sleep(for: Self.retryDelay)
+                logger.debug("retrying \(request.url?.lastPathComponent ?? "request", privacy: .public)")
+            }
+            var attemptRequest = request
+            attemptRequest.timeoutInterval = timeout
+            do {
+                let (data, response) = try await session.data(for: attemptRequest)
+                guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
+                guard (200..<300).contains(http.statusCode) else {
+                    let errorBody = String(data: data, encoding: .utf8) ?? ""
+                    let failure = ServiceError.httpError(status: http.statusCode, body: errorBody)
+                    guard Self.isWaking(status: http.statusCode) else { throw failure }
+                    lastError = failure
+                    continue
+                }
+                return try Self.chartDecoder.decode(T.self, from: data)
+            } catch let error as URLError where Self.isTransient(error) {
+                lastError = error
+            }
+        }
+        throw lastError
+    }
+
+    /// Transport failures that a second attempt can plausibly fix.
+    /// `.notConnectedToInternet` is deliberately absent — the device is
+    /// offline, and retrying only delays telling the user so.
+    nonisolated static func isTransient(_ error: URLError) -> Bool {
+        switch error.code {
+        case .timedOut, .cannotConnectToHost, .networkConnectionLost, .cannotFindHost, .dnsLookupFailed:
+            true
+        default:
+            false
+        }
+    }
+
+    /// What a load balancer answers while the instance behind it is booting.
+    nonisolated static func isWaking(status: Int) -> Bool {
+        [502, 503, 504].contains(status)
+    }
+
+    /// Builds the authenticated JSON POST every route shares. The timeout is
+    /// set per attempt in `send(_:as:)`, which owns the §12 budget.
     private func makeRequest(path: String, baseURL: URL, apiSecret: String, body: some Encodable) throws -> URLRequest {
         var request = URLRequest(url: baseURL.appendingPathComponent(path))
         request.httpMethod = "POST"
-        request.timeoutInterval = 10
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue(apiSecret, forHTTPHeaderField: "X-Lumina-Secret")
@@ -221,13 +279,7 @@ actor EphemerisService {
         let body = TransitsRequestBody(birthData: birthData, at: moment)
         let request = try makeRequest(path: "transits", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
-        guard (200..<300).contains(http.statusCode) else {
-            let errorBody = String(data: data, encoding: .utf8) ?? ""
-            throw ServiceError.httpError(status: http.statusCode, body: errorBody)
-        }
-        return try Self.chartDecoder.decode(TransitsResult.self, from: data)
+        return try await send(request, as: TransitsResult.self)
     }
 
     /// Synastry (relationship) cross-aspects between two people's charts.
@@ -240,13 +292,7 @@ actor EphemerisService {
         let body = SynastryRequestBody(personA: personA, personB: personB)
         let request = try makeRequest(path: "synastry", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
-        guard (200..<300).contains(http.statusCode) else {
-            let errorBody = String(data: data, encoding: .utf8) ?? ""
-            throw ServiceError.httpError(status: http.statusCode, body: errorBody)
-        }
-        return try Self.chartDecoder.decode(SynastryResult.self, from: data)
+        return try await send(request, as: SynastryResult.self)
     }
 
     /// The composite (midpoint) relationship chart of two people — a single
@@ -259,13 +305,7 @@ actor EphemerisService {
         let body = SynastryRequestBody(personA: personA, personB: personB)
         let request = try makeRequest(path: "composite", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
-        guard (200..<300).contains(http.statusCode) else {
-            let errorBody = String(data: data, encoding: .utf8) ?? ""
-            throw ServiceError.httpError(status: http.statusCode, body: errorBody)
-        }
-        return try Self.chartDecoder.decode(CompositeResult.self, from: data)
+        return try await send(request, as: CompositeResult.self)
     }
 
     /// Tonight's Moon — phase, illumination, next new/full. Global sky data
@@ -277,13 +317,7 @@ actor EphemerisService {
         let body = MoonRequestBody(at: moment)
         let request = try makeRequest(path: "moon", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
-        guard (200..<300).contains(http.statusCode) else {
-            let errorBody = String(data: data, encoding: .utf8) ?? ""
-            throw ServiceError.httpError(status: http.statusCode, body: errorBody)
-        }
-        return try Self.chartDecoder.decode(MoonPhaseResult.self, from: data)
+        return try await send(request, as: MoonPhaseResult.self)
     }
 
     /// Which bodies are retrograde now and when each next stations. Global sky
@@ -295,13 +329,7 @@ actor EphemerisService {
         let body = MoonRequestBody(at: moment)
         let request = try makeRequest(path: "retrogrades", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
-        guard (200..<300).contains(http.statusCode) else {
-            let errorBody = String(data: data, encoding: .utf8) ?? ""
-            throw ServiceError.httpError(status: http.statusCode, body: errorBody)
-        }
-        return try Self.chartDecoder.decode(RetrogradesResult.self, from: data)
+        return try await send(request, as: RetrogradesResult.self)
     }
 
     /// The secondary-progressed chart for `date` (defaults to now). Real
@@ -313,13 +341,7 @@ actor EphemerisService {
         let body = ProgressionsRequestBody(birthData: birthData, on: date)
         let request = try makeRequest(path: "progressions", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
-        guard (200..<300).contains(http.statusCode) else {
-            let errorBody = String(data: data, encoding: .utf8) ?? ""
-            throw ServiceError.httpError(status: http.statusCode, body: errorBody)
-        }
-        return try Self.chartDecoder.decode(ProgressionsResult.self, from: data)
+        return try await send(request, as: ProgressionsResult.self)
     }
 
     /// Upcoming Jupiter and Saturn returns to the natal chart (from `from`,
@@ -331,13 +353,7 @@ actor EphemerisService {
         let body = ReturnsRequestBody(birthData: birthData, from: from)
         let request = try makeRequest(path: "returns", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
-        guard (200..<300).contains(http.statusCode) else {
-            let errorBody = String(data: data, encoding: .utf8) ?? ""
-            throw ServiceError.httpError(status: http.statusCode, body: errorBody)
-        }
-        return try Self.chartDecoder.decode(ReturnsResult.self, from: data)
+        return try await send(request, as: ReturnsResult.self)
     }
 
     /// Upcoming exact transit dates over a window (default 30 days from now).
@@ -349,12 +365,6 @@ actor EphemerisService {
         let body = ForecastRequestBody(birthData: birthData, from: from, days: days)
         let request = try makeRequest(path: "forecast", baseURL: baseURL, apiSecret: apiSecret, body: body)
 
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else { throw ServiceError.invalidResponse }
-        guard (200..<300).contains(http.statusCode) else {
-            let errorBody = String(data: data, encoding: .utf8) ?? ""
-            throw ServiceError.httpError(status: http.statusCode, body: errorBody)
-        }
-        return try Self.chartDecoder.decode(ForecastResult.self, from: data)
+        return try await send(request, as: ForecastResult.self)
     }
 }

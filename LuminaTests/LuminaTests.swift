@@ -128,6 +128,36 @@ final class LuminaTests: XCTestCase {
         XCTAssertEqual(chart.aspects, [])
     }
 
+    /// `docs/NAVIGATION.md` §12 requires an error state with a retry beyond
+    /// ten seconds. The retry therefore has to fit *inside* that budget — two
+    /// attempts plus the gap between them, not two full timeouts stacked.
+    func testRetryBudgetStaysInsideTheTenSecondRule() {
+        let attempts = EphemerisService.attemptTimeouts.reduce(0, +)
+        let gap = Double(EphemerisService.retryDelay.components.seconds)
+        XCTAssertEqual(attempts + gap, 10, accuracy: 0.001, "§12 allows ten seconds before the retry state")
+        XCTAssertGreaterThan(EphemerisService.attemptTimeouts.count, 1, "a single attempt is no retry at all")
+    }
+
+    /// Which failures get a second attempt. This is what makes a host that
+    /// suspends when idle usable: it answers 503 (or refuses the connection)
+    /// for a second or two while it boots, and that used to fail the call
+    /// outright — so the service could only run on a permanently warm machine.
+    func testOnlyWakingAndTransportFailuresRetry() {
+        for status in [502, 503, 504] {
+            XCTAssertTrue(EphemerisService.isWaking(status: status), "\(status) means 'booting'")
+        }
+        for status in [200, 400, 401, 404, 500] {
+            XCTAssertFalse(EphemerisService.isWaking(status: status), "\(status) is wrong, not early")
+        }
+
+        for code in [URLError.timedOut, .cannotConnectToHost, .networkConnectionLost, .cannotFindHost] {
+            XCTAssertTrue(EphemerisService.isTransient(URLError(code)), "\(code) should retry")
+        }
+        // The device is offline. Retrying only delays saying so.
+        XCTAssertFalse(EphemerisService.isTransient(URLError(.notConnectedToInternet)))
+        XCTAssertFalse(EphemerisService.isTransient(URLError(.badURL)))
+    }
+
     func testEphemerisServiceSurfacesHTTPErrors() async {
         MockURLProtocol.handler = { request in
             let response = try makeHTTPResponse(
